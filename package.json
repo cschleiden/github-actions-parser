@@ -1,6 +1,6 @@
 {
   "name": "github-actions-interpreter",
-  "version": "0.5.1-0",
+  "version": "0.5.1-1",
   "author": "Christopher Schleiden <cschleiden@live.de>",
   "license": "MIT",
   "source": "src/index.ts",
@@ -15,7 +15,8 @@
   "scripts": {
     "dev": "microbundle watch --jsx React.createElement -f modern,umd,es,cjs --tsconfig ./tsconfig.json",
     "build": "microbundle --jsx React.createElement -f modern,umd,es,cjs --tsconfig ./tsconfig.json",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "yarn build",
+    "test": "jest"
   },
   "dependencies": {
     "@primer/octicons-v2-react": "0.0.0-dd899ea",
@@ -31,9 +32,11 @@
     "react-dom": "*"
   },
   "devDependencies": {
+    "@babel/core": "^7.10.0",
     "@babel/plugin-proposal-optional-chaining": "^7.9.0",
     "@babel/preset-env": "^7.9.6",
     "@babel/preset-typescript": "^7.9.0",
+    "@types/jest": "22.2.3",
     "@types/react": "^16.9.35",
     "@types/react-dom": "^16.9.8",
     "jest": "^26.0.1",
