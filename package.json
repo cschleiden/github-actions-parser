@@ -16,7 +16,8 @@
     "dev": "microbundle watch --jsx React.createElement -f modern,umd,es,cjs --tsconfig ./tsconfig.json",
     "build": "microbundle --jsx React.createElement -f modern,umd,es,cjs --tsconfig ./tsconfig.json",
     "prepublishOnly": "yarn build",
-    "test": "jest"
+    "test": "jest",
+    "test-watch": "jest --watch"
   },
   "dependencies": {
     "@primer/octicons-v2-react": "0.0.0-dd899ea",
@@ -25,7 +26,8 @@
     "js-yaml": "^3.13.1",
     "micromatch": "^4.0.2",
     "react": "16.13.1",
-    "react-dom": "16.13.1"
+    "react-dom": "16.13.1",
+    "yaml-ast-parser": "^0.0.43"
   },
   "peerDependencies": {
     "react": "*",
@@ -37,6 +39,7 @@
     "@babel/preset-env": "^7.9.6",
     "@babel/preset-typescript": "^7.9.0",
     "@types/jest": "22.2.3",
+    "@types/js-yaml": "^3.12.4",
     "@types/react": "^16.9.35",
     "@types/react-dom": "^16.9.8",
     "jest": "^26.0.1",
