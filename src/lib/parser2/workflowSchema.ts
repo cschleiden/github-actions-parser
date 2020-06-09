@@ -89,13 +89,7 @@ export const workflowSchema: NodeDesc = {
           type: "sequence",
           itemDesc: {
             type: "map",
-            keys: {
-              "runs": {
-                type: "value":
-
-              }
-            }
-          }
+          },
         },
       },
 

@@ -4,22 +4,20 @@ import { buildWorkflowSyntaxTree, Node } from "./tree";
 describe("Transforms YAML AST to Workflow ST", () => {
   it("mapping", () => {
     expect(buildWorkflowSyntaxTree(safeLoad(`name: Matrix`))).toEqual({
-      startPos: 0,
-      endPos: 12,
+      pos: [0, 12],
       type: "map",
+      parent: undefined,
       mappings: [
-        {
+        expect.objectContaining({
           type: "mapping",
-          startPos: 0,
-          endPos: 12,
+          pos: [0, 12],
           key: "name",
-          value: {
-            endPos: 12,
-            startPos: 6,
+          value: expect.objectContaining({
+            pos: [6, 12],
             type: "value",
             value: "Matrix",
-          },
-        },
+          }),
+        }),
       ],
     } as Node);
   });

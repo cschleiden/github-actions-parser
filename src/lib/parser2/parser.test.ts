@@ -1,49 +1,106 @@
+import { complete } from "./complete";
 import { DiagnosticKind, parse } from "./parser";
+import { NodeDesc } from "./schema";
+
+const schema: NodeDesc = {
+  type: "map",
+  keys: {
+    name: {
+      type: "value",
+      allowedValues: [
+        {
+          value: "test",
+        },
+        { value: "foo" },
+      ],
+    },
+    type: {
+      type: "value",
+    },
+  },
+
+  required: ["name"],
+};
 
 describe("Validation", () => {
   it("Reports missing keys", () => {
-    const doc = parse(`name: test
-on: push`);
+    const doc = parse(`type: push`, schema);
 
     expect(doc.diagnostics).toEqual([
       {
-        start: 0,
-        end: 19,
         kind: DiagnosticKind.Error,
-        message: "Missing required key 'jobs'",
+        pos: [0, 10],
+        message: "Missing required key 'name'",
       },
     ]);
   });
 
-  it("Reports additional keys", () => {
-    const doc = parse(`name123: test
-on: push
-jobs:
-  build:
-    runs-on: ubuntu-latest`);
+  it("Reports wrong value", () => {
+    const doc = parse(`name: push`, schema);
 
     expect(doc.diagnostics).toEqual([
       {
-        start: 0,
-        end: 13,
         kind: DiagnosticKind.Error,
-        message: "Key 'name123' is not allowed",
+        pos: [6, 10],
+        message: "'push' is not in the list of allowed values",
       },
     ]);
   });
 });
 
-// describe("Successful parsing of workflow", () => {
-//   it("basic with name", () => {
-//     const wd = parse(`name: test
-// on: push
-// jobs:
-//   first:
-//     runs-on: ubuntu-latest
-//     steps:
-//     - run: echo 1`);
+describe("Completion", () => {
+  const testComplete = (input: string) => {
+    const pos = input.indexOf("|");
+    input = input.replace("|", "");
+    const doc = parse(input, schema);
+    return complete(doc, pos, input);
+  };
 
-//     expect(wd.workflow.name).toBe("test");
-//     // expect(wd.workflow.on)("push");
-//   });
-// });
+  describe("map", () => {
+    it("completes top level key", () => {
+      const suggestions = testComplete(`|`);
+
+      expect(suggestions).toEqual([
+        {
+          value: "name",
+        },
+        {
+          value: "type",
+        },
+      ]);
+    });
+
+    it("completes top level key", () => {
+      const suggestions = testComplete(`n|`);
+
+      expect(suggestions).toEqual([
+        {
+          value: "name",
+        },
+      ]);
+    });
+
+    it("completes value", () => {
+      const suggestions = testComplete(`name: |`);
+
+      expect(suggestions).toEqual([
+        {
+          value: "test",
+        },
+        {
+          value: "foo",
+        },
+      ]);
+    });
+
+    it("completes partial value", () => {
+      const suggestions = testComplete(`name: t|`);
+
+      expect(suggestions).toEqual([
+        {
+          value: "test",
+        },
+      ]);
+    });
+  });
+});

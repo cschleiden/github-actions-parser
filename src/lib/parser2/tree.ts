@@ -7,6 +7,9 @@ import {
   YAMLSequence,
 } from "yaml-ast-parser";
 import { ParseError } from "./error";
+import { NodeDesc } from "./schema";
+
+export type Position = [number, number];
 
 export type Value = string | number | boolean;
 
@@ -16,37 +19,48 @@ type Mapping = {
   value: Node;
 };
 
-export type NodeMapping = Mapping & {
-  startPos: number;
-  endPos: number;
+type AddMeta<T> = T & NodeMeta;
+
+export type NodeMapping = AddMeta<Mapping>;
+
+type Sequence = {
+  type: "sequence";
+  items: Node[] | Value[];
 };
 
-export type Node = (
+export type NodeSequence = AddMeta<Sequence>;
+
+type Map = {
+  type: "map";
+  mappings: NodeMapping[];
+};
+
+export type NodeMap = AddMeta<Map>;
+
+type NodeMeta = {
+  pos: Position;
+
+  parent?: Node;
+  desc?: NodeDesc;
+};
+
+export type Node = AddMeta<
   | Mapping
-  | {
-      type: "sequence";
-      items: Node[] | Value[];
-    }
-  | {
-      type: "map";
-      mappings: NodeMapping[];
-    }
+  | Sequence
+  | Map
   | {
       type: "value";
       value: string | number;
     }
-) & {
-  startPos: number;
-  endPos: number;
-};
+>;
 
-function transform(yamlNode: YAMLNode): Node {
+function transform(yamlNode: YAMLNode, parent: Node = undefined): Node {
   switch (yamlNode.kind) {
     case Kind.SCALAR: {
       const yamlScalar = yamlNode as YAMLScalar;
       return {
-        startPos: yamlScalar.startPosition,
-        endPos: yamlScalar.endPosition,
+        pos: [yamlScalar.startPosition, yamlScalar.endPosition],
+        parent,
         type: "value",
         value: yamlScalar.value,
       };
@@ -54,22 +68,31 @@ function transform(yamlNode: YAMLNode): Node {
 
     case Kind.MAP: {
       const yamlMap = yamlNode as YamlMap;
-      return {
-        startPos: yamlMap.startPosition,
-        endPos: yamlMap.endPosition,
+      const mapNode: NodeMap = {
+        pos: [yamlMap.startPosition, yamlMap.endPosition],
+        parent,
         type: "map",
-        mappings: yamlNode.mappings.map(transform),
+        mappings: [],
       };
+
+      mapNode.mappings = yamlMap.mappings.map(
+        (x) => transform(x, mapNode) as NodeMapping
+      );
+
+      return mapNode;
     }
 
     case Kind.SEQ: {
       const yamlSeq = yamlNode as YAMLSequence;
-      return {
-        startPos: yamlSeq.startPosition,
-        endPos: yamlSeq.endPosition,
+      const sequenceNode: NodeSequence = {
+        pos: [yamlSeq.startPosition, yamlSeq.endPosition],
+        parent,
         type: "sequence",
-        items: yamlSeq.items.map(transform),
+        items: [],
       };
+      sequenceNode.items = yamlSeq.items.map((x) => transform(x, sequenceNode));
+
+      return sequenceNode;
     }
 
     case Kind.MAPPING: {
@@ -82,13 +105,19 @@ function transform(yamlNode: YAMLNode): Node {
         );
       }
 
-      return {
-        startPos: yamlMapping.startPosition,
-        endPos: yamlMapping.endPosition,
+      const mapping: NodeMapping = {
+        pos: [yamlMapping.startPosition, yamlMapping.endPosition],
+        parent,
         type: "mapping",
         key: yamlMapping.key.value,
-        value: transform(yamlMapping.value),
+        value: undefined,
       };
+
+      if (yamlMapping.value) {
+        mapping.value = transform(yamlMapping.value, mapping);
+      }
+
+      return mapping;
     }
   }
 }

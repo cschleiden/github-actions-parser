@@ -1,14 +1,18 @@
 import { Kind, safeLoad, YAMLNode } from "yaml-ast-parser";
 import { NodeDesc } from "./schema";
-import { buildWorkflowSyntaxTree } from "./tree";
+import { buildWorkflowSyntaxTree, Node, Position } from "./tree";
 import { validate } from "./validator";
+import { workflowSchema } from "./workflowSchema";
 
 export interface Workflow {
   name?: string;
 }
 
 export interface WorkflowDocument {
+  /** Normalized workflow */
   workflow?: Workflow;
+
+  workflowST: Node;
 
   diagnostics: Diagnostic[];
 }
@@ -23,8 +27,7 @@ export interface Diagnostic {
 
   message: string;
 
-  start: number;
-  end: number;
+  pos: Position;
 }
 
 const kindToType = {
@@ -42,17 +45,17 @@ function walk(node: YAMLNode, desc: NodeDesc) {
   // for (const child of node.mappings)
 }
 
-export function parse(input: string): WorkflowDocument {
-  const workflowDoc: WorkflowDocument = {
-    diagnostics: [],
-  };
+export function parse(
+  input: string,
+  schema = workflowSchema
+): WorkflowDocument {
+  const diagnostics: Diagnostic[] = [];
 
-  const addError = (start: number, end: number, message: string) => {
-    workflowDoc.diagnostics.push({
+  const addError = (pos: Position, message: string) => {
+    diagnostics.push({
       kind: DiagnosticKind.Error,
       message,
-      start,
-      end,
+      pos,
     });
   };
 
@@ -60,13 +63,12 @@ export function parse(input: string): WorkflowDocument {
 
   const workflowST = buildWorkflowSyntaxTree(yamlRoot);
 
-  const errors = validate(workflowST);
-  workflowDoc.diagnostics.push(
-    ...errors.map(({ startPos, endPos, message }) => ({
+  const errors = validate(workflowST, schema);
+  diagnostics.push(
+    ...errors.map(({ pos, message }) => ({
       kind: DiagnosticKind.Error,
       message,
-      start: startPos,
-      end: endPos,
+      pos,
     }))
   );
 
@@ -85,16 +87,9 @@ export function parse(input: string): WorkflowDocument {
   //  - Future: do we need the runtime model for anything? Env, secrets, labels?
   //  - Somehow tie in expressions..., maybe separate auto-complete logic?
 
-  return workflowDoc;
-}
-
-export interface CompletionOption {
-  value: string;
-}
-
-export function autoComplete(
-  input: string,
-  offset: number
-): CompletionOption[] {
-  return [];
+  return {
+    workflow: {},
+    workflowST,
+    diagnostics,
+  };
 }

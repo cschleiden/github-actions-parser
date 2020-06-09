@@ -27,11 +27,16 @@ type SequenceNodeDesc = {
   itemDesc?: NodeDesc;
 };
 
+type AllowedValue = {
+  value: string;
+  description?: string;
+};
+
 type ValueNodeDesc = {
   type: "value";
 
   /** Allowed values */
-  allowedValues?: string[];
+  allowedValues?: AllowedValue[];
 };
 
 export type NodeDesc = (

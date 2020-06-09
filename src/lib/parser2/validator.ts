@@ -1,10 +1,8 @@
 import { NodeDesc } from "./schema";
-import { Node, NodeMapping } from "./tree";
-import { workflowSchema } from "./workflowSchema";
+import { Node, NodeMapping, Position } from "./tree";
 
 export interface ValidationError {
-  startPos: number;
-  endPos: number;
+  pos: Position;
   message: string;
 }
 
@@ -13,37 +11,38 @@ function validateNode(
   nodeDesc: NodeDesc,
   errors: ValidationError[]
 ): boolean {
-  const checkNodeType = () => {
-    if (node.type !== nodeDesc.type) {
-      errors.push({
-        startPos: node.startPos,
-        endPos: node.endPos,
-        message: `Unexpected node type ${node.type}, expected ${nodeDesc.type}`,
-      });
-      return false;
-    }
-
+  if (!node) {
     return true;
+  }
+
+  const reportTypeMismatch = () => {
+    errors.push({
+      pos: node.pos,
+      message: `Unexpected node type ${node.type}, expected ${nodeDesc.type}`,
+    });
+    return false;
   };
 
   switch (nodeDesc.type) {
     case "oneOf": {
+      return true;
     }
 
     case "value": {
-      if (checkNodeType()) {
-        return false;
+      if (node.type !== nodeDesc.type) {
+        return reportTypeMismatch();
       }
+
+      node.desc = nodeDesc;
 
       if (
         nodeDesc.allowedValues &&
         typeof node.value === "string" &&
-        nodeDesc.allowedValues.indexOf(node.value) === -1
+        !nodeDesc.allowedValues.find((x) => x.value === node.value)
       ) {
         errors.push({
-          startPos: node.startPos,
-          endPos: node.endPos,
-          message: `${node.value} is not in the list of allowed values`,
+          pos: node.pos,
+          message: `'${node.value}' is not in the list of allowed values`,
         });
       }
 
@@ -52,16 +51,19 @@ function validateNode(
 
     case "map": {
       if (node.type === nodeDesc.type) {
+        node.desc = nodeDesc;
+
         const seenKeys = new Map<string, NodeMapping>();
 
         for (const mapping of node.mappings) {
           seenKeys.set(mapping.key, mapping);
 
+          // Check if we know more about this key
           const mappingDesc = nodeDesc.keys && nodeDesc.keys[mapping.key];
           if (mappingDesc) {
             if (Array.isArray(mappingDesc)) {
             } else {
-              validateNode(mapping, mappingDesc, errors);
+              validateNode(mapping.value, mappingDesc, errors);
             }
           }
         }
@@ -72,8 +74,7 @@ function validateNode(
             (key) => !seenKeys.has(key)
           )) {
             errors.push({
-              startPos: node.startPos,
-              endPos: node.endPos,
+              pos: node.pos,
               message: `Missing required key '${missingKey}'`,
             });
           }
@@ -84,8 +85,7 @@ function validateNode(
             ([key]) => !nodeDesc.keys[key]
           )) {
             errors.push({
-              startPos: mapping.startPos,
-              endPos: mapping.endPos,
+              pos: node.pos,
               message: `Key '${extraKey}' is not allowed`,
             });
           }
@@ -97,10 +97,10 @@ function validateNode(
   return true;
 }
 
-export function validate(root: Node): ValidationError[] {
+export function validate(root: Node, schema: NodeDesc): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  validateNode(root, workflowSchema, errors);
+  validateNode(root, schema, errors);
 
   return errors;
 }
