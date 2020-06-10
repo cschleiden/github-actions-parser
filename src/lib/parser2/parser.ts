@@ -1,6 +1,6 @@
 import { Kind, safeLoad, YAMLNode } from "yaml-ast-parser";
 import { NodeDesc } from "./schema";
-import { buildWorkflowSyntaxTree, Node, Position } from "./tree";
+import { Position } from "./types";
 import { validate } from "./validator";
 import { workflowSchema } from "./workflowSchema";
 
@@ -12,7 +12,9 @@ export interface WorkflowDocument {
   /** Normalized workflow */
   workflow?: Workflow;
 
-  workflowST: Node;
+  workflowST: YAMLNode;
+
+  nodeToDesc: Map<YAMLNode, NodeDesc>;
 
   diagnostics: Diagnostic[];
 }
@@ -51,21 +53,10 @@ export function parse(
 ): WorkflowDocument {
   const diagnostics: Diagnostic[] = [];
 
-  const addError = (pos: Position, message: string) => {
-    diagnostics.push({
-      kind: DiagnosticKind.Error,
-      message,
-      pos,
-    });
-  };
-
   const yamlRoot = safeLoad(input);
-
-  const workflowST = buildWorkflowSyntaxTree(yamlRoot);
-
-  const errors = validate(workflowST, schema);
+  const validationResult = validate(yamlRoot, schema);
   diagnostics.push(
-    ...errors.map(({ pos, message }) => ({
+    ...validationResult.errors.map(({ pos, message }) => ({
       kind: DiagnosticKind.Error,
       message,
       pos,
@@ -89,7 +80,8 @@ export function parse(
 
   return {
     workflow: {},
-    workflowST,
+    workflowST: yamlRoot,
+    nodeToDesc: validationResult.nodeToDesc,
     diagnostics,
   };
 }

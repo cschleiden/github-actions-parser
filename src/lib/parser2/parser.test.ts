@@ -23,6 +23,18 @@ const schema: NodeDesc = {
 };
 
 describe("Validation", () => {
+  it("Unknown top-level key", () => {
+    const doc = parse(`t`, schema);
+
+    expect(doc.diagnostics).toEqual([
+      {
+        kind: DiagnosticKind.Error,
+        pos: [0, 1],
+        message: "Unknown key 't'",
+      },
+    ]);
+  });
+
   it("Reports missing keys", () => {
     const doc = parse(`type: push`, schema);
 
@@ -56,51 +68,23 @@ describe("Completion", () => {
     return complete(doc, pos, input);
   };
 
+  const completeSimple = (input: string, expected: string[]) => {
+    const suggestions = testComplete(input);
+
+    expect(suggestions.map((x) => x.value)).toEqual(expected);
+  };
+
   describe("map", () => {
-    it("completes top level key", () => {
-      const suggestions = testComplete(`|`);
-
-      expect(suggestions).toEqual([
-        {
-          value: "name",
-        },
-        {
-          value: "type",
-        },
-      ]);
-    });
-
-    it("completes top level key", () => {
-      const suggestions = testComplete(`n|`);
-
-      expect(suggestions).toEqual([
-        {
-          value: "name",
-        },
-      ]);
+    it("completes top level keys", () => {
+      completeSimple("|", ["name", "type"]);
+      completeSimple("n|", ["name"]);
     });
 
     it("completes value", () => {
-      const suggestions = testComplete(`name: |`);
-
-      expect(suggestions).toEqual([
-        {
-          value: "test",
-        },
-        {
-          value: "foo",
-        },
-      ]);
-    });
-
-    it("completes partial value", () => {
-      const suggestions = testComplete(`name: t|`);
-
-      expect(suggestions).toEqual([
-        {
-          value: "test",
-        },
-      ]);
+      completeSimple("name: |", ["test", "foo"]);
+      completeSimple("name: t|", ["test"]);
+      completeSimple("name: t|\ntype: 42", ["test"]);
+      completeSimple("type: 42\nname: fo|", ["foo"]);
     });
   });
 });

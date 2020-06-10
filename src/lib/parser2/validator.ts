@@ -1,5 +1,13 @@
+import {
+  Kind,
+  YAMLMap,
+  YAMLMapping,
+  YAMLNode,
+  YAMLScalar,
+} from "yaml-ast-parser";
+import { YNode } from "../../types";
 import { NodeDesc } from "./schema";
-import { Node, NodeMapping, Position } from "./tree";
+import { Position } from "./types";
 
 export interface ValidationError {
   pos: Position;
@@ -7,41 +15,46 @@ export interface ValidationError {
 }
 
 function validateNode(
-  node: Node,
+  node: YAMLNode,
   nodeDesc: NodeDesc,
+  nodeToDesc: Map<YAMLNode, NodeDesc>,
   errors: ValidationError[]
 ): boolean {
   if (!node) {
     return true;
   }
 
-  const reportTypeMismatch = () => {
+  const n = node as YNode;
+
+  const reportTypeMismatch = (expectedKind: Kind) => {
     errors.push({
-      pos: node.pos,
-      message: `Unexpected node type ${node.type}, expected ${nodeDesc.type}`,
+      pos: [node.startPosition, node.endPosition],
+      message: `Unexpected node of kind '${node.key}', expected ${expectedKind}`,
     });
     return false;
   };
 
   switch (nodeDesc.type) {
-    case "oneOf": {
-      return true;
-    }
+    // case "oneOf": {
+    //   return true;
+    // }
 
     case "value": {
-      if (node.type !== nodeDesc.type) {
-        return reportTypeMismatch();
+      if (node.kind !== Kind.SCALAR) {
+        reportTypeMismatch(Kind.SCALAR);
       }
 
-      node.desc = nodeDesc;
+      const scalarNode = node as YAMLScalar;
+
+      nodeToDesc.set(scalarNode, nodeDesc);
 
       if (
         nodeDesc.allowedValues &&
-        typeof node.value === "string" &&
-        !nodeDesc.allowedValues.find((x) => x.value === node.value)
+        typeof scalarNode.value === "string" &&
+        !nodeDesc.allowedValues.find((x) => x.value === scalarNode.value)
       ) {
         errors.push({
-          pos: node.pos,
+          pos: [scalarNode.startPosition, scalarNode.endPosition],
           message: `'${node.value}' is not in the list of allowed values`,
         });
       }
@@ -50,45 +63,59 @@ function validateNode(
     }
 
     case "map": {
-      if (node.type === nodeDesc.type) {
-        node.desc = nodeDesc;
-
-        const seenKeys = new Map<string, NodeMapping>();
-
-        for (const mapping of node.mappings) {
-          seenKeys.set(mapping.key, mapping);
-
-          // Check if we know more about this key
-          const mappingDesc = nodeDesc.keys && nodeDesc.keys[mapping.key];
-          if (mappingDesc) {
-            if (Array.isArray(mappingDesc)) {
-            } else {
-              validateNode(mapping.value, mappingDesc, errors);
-            }
-          }
+      if (n.kind !== Kind.MAP) {
+        if (n.kind === Kind.SCALAR) {
+          errors.push({
+            pos: [n.startPosition, n.endPosition],
+            message: `Unknown key '${n.value}'`,
+          });
+          return false;
         }
 
-        // Check required keys
-        if (nodeDesc.required) {
-          for (const missingKey of nodeDesc.required.filter(
-            (key) => !seenKeys.has(key)
-          )) {
-            errors.push({
-              pos: node.pos,
-              message: `Missing required key '${missingKey}'`,
-            });
+        reportTypeMismatch(Kind.MAP);
+      }
+
+      const mapNode = node as YAMLMap;
+
+      nodeToDesc.set(node, nodeDesc);
+
+      const seenKeys = new Map<string, YAMLMapping>();
+
+      for (const mapping of mapNode.mappings) {
+        const key = mapping.key.value;
+        seenKeys.set(key, mapping);
+
+        // Check if we know more about this key
+        const mappingDesc = nodeDesc.keys && nodeDesc.keys[key];
+        if (mappingDesc) {
+          if (Array.isArray(mappingDesc)) {
+            // Check if it satisfies one of the definitions
+          } else {
+            validateNode(mapping.value, mappingDesc, nodeToDesc, errors);
           }
         }
+      }
 
-        if (nodeDesc.keys) {
-          for (const [extraKey, mapping] of Array.from(seenKeys).filter(
-            ([key]) => !nodeDesc.keys[key]
-          )) {
-            errors.push({
-              pos: node.pos,
-              message: `Key '${extraKey}' is not allowed`,
-            });
-          }
+      // Check required keys
+      if (nodeDesc.required) {
+        for (const missingKey of nodeDesc.required.filter(
+          (key) => !seenKeys.has(key)
+        )) {
+          errors.push({
+            pos: [node.startPosition, node.endPosition],
+            message: `Missing required key '${missingKey}'`,
+          });
+        }
+      }
+
+      if (nodeDesc.keys) {
+        for (const [extraKey, mapping] of Array.from(seenKeys).filter(
+          ([key]) => !nodeDesc.keys[key]
+        )) {
+          errors.push({
+            pos: [node.startPosition, node.endPosition],
+            message: `Key '${extraKey}' is not allowed`,
+          });
         }
       }
     }
@@ -97,10 +124,21 @@ function validateNode(
   return true;
 }
 
-export function validate(root: Node, schema: NodeDesc): ValidationError[] {
+export interface ValidationResult {
+  errors: ValidationError[];
+
+  nodeToDesc: Map<YAMLNode, NodeDesc>;
+}
+
+export function validate(root: YAMLNode, schema: NodeDesc): ValidationResult {
   const errors: ValidationError[] = [];
+  const nodeToDesc = new Map<YAMLNode, NodeDesc>();
+  nodeToDesc.set(null, schema);
 
-  validateNode(root, schema, errors);
+  validateNode(root, schema, nodeToDesc, errors);
 
-  return errors;
+  return {
+    errors,
+    nodeToDesc,
+  };
 }
