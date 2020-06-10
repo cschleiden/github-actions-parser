@@ -17,6 +17,25 @@ const schema: NodeDesc = {
     type: {
       type: "value",
     },
+    level: {
+      type: "map",
+      keys: {
+        steps: {
+          type: "value",
+          allowedValues: [
+            {
+              value: "1",
+            },
+            {
+              value: "42",
+            },
+          ],
+        },
+        doors: {
+          type: "value",
+        },
+      },
+    },
   },
 
   required: ["name"],
@@ -76,7 +95,7 @@ describe("Completion", () => {
 
   describe("map", () => {
     it("completes top level keys", () => {
-      completeSimple("|", ["name", "type"]);
+      completeSimple("|", ["name", "type", "level"]);
       completeSimple("n|", ["name"]);
     });
 
@@ -85,6 +104,16 @@ describe("Completion", () => {
       completeSimple("name: t|", ["test"]);
       completeSimple("name: t|\ntype: 42", ["test"]);
       completeSimple("type: 42\nname: fo|", ["foo"]);
+    });
+
+    it("completes value in nested map", () => {
+      completeSimple("level:\n  steps: |", ["1", "42"]);
+      completeSimple("level:\n  steps: | ", ["1", "42"]);
+      completeSimple("level:\n  steps: 4| ", ["42"]);
+      completeSimple("level:\n  steps: |\nname: foo", ["1", "42"]);
+      completeSimple("level:\n  steps: |   \nname: foo", ["1", "42"]);
+      completeSimple("level:\n  steps: 4|   \nname: foo", ["42"]);
+      completeSimple("level:\n  steps: 5| \nname: foo", []);
     });
   });
 });

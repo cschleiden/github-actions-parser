@@ -99,8 +99,13 @@ function doComplete(
           throw new Error("Could not find key node for map");
         }
 
+        const mapDesc = doc.nodeToDesc.get(mapping.parent);
+        if (mapDesc.type !== "map") {
+          throw new Error("Could not find map node");
+        }
+
         const key = mapping.key.value;
-        return doComplete(mapping, desc.keys[key], input, pos, doc);
+        return doComplete(mapping, mapDesc.keys[key], input, pos, doc);
       }
 
       if (desc.keys) {
