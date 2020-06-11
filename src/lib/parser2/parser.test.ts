@@ -166,17 +166,28 @@ describe("Completion", () => {
   });
 
   describe("sequence", () => {
-    it("completes value items", () => {
-      completeSimple("array:\n- |", ["bar", "foo"]);
-      completeSimple("array:\n- b|", ["bar"]);
+    describe("square", () => {
+      it("completes value items", () => {
+        completeSimple("array: [ | ]", ["bar", "foo"]);
+        completeSimple("array: [ b| ]", ["bar"]);
 
-      completeSimple("array:\n- b|\n- foo", ["bar"]);
-      completeSimple("array:\n- foo\n- b|", ["bar"]);
+        completeSimple("array: [ foo, b| ]", ["bar"]);
+      });
     });
 
-    it("completes map items", () => {
-      completeSimple("arrayMap:\n- |", ["foo"]);
-      completeSimple("arrayMap:\n-|", ["foo"]);
+    describe("dash", () => {
+      it("completes value items", () => {
+        completeSimple("array:\n- |", ["bar", "foo"]);
+        completeSimple("array:\n- b|", ["bar"]);
+
+        completeSimple("array:\n- b|\n- foo", ["bar"]);
+        completeSimple("array:\n- foo\n- b|", ["bar"]);
+      });
+
+      it("completes map items", () => {
+        completeSimple("arrayMap:\n- |", ["foo"]);
+        completeSimple("arrayMap:\n-|", ["foo"]);
+      });
     });
   });
 });

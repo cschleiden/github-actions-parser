@@ -89,9 +89,23 @@ function doComplete(
     case "value": {
       let p = pos;
       // TODO: this will break for `[1,2,3]`
-      while (p >= 0 && input[p] !== ":" && input[p] !== "-") {
+      // TODO: We can't do that.. do it in the seq/map case?
+      // TODO: urgs this is ugly.
+      while (
+        p >= 0 &&
+        input[p] !== ":" &&
+        input[p] !== "-" &&
+        input[p] !== "[" &&
+        input[p] !== ","
+      ) {
         --p;
       }
+
+      if (p < 0) {
+        // Reset for array case
+        p = pos;
+      }
+
       const searchInput = input.substring(p + 1, pos + 1).trim();
       if (desc.allowedValues) {
         return desc.allowedValues.filter(
@@ -157,6 +171,9 @@ export function complete(
 
   if (!doc.workflowST || doc.workflowST.kind === Kind.SCALAR) {
     // Empty document, complete top level keys
+    //
+    // Note: Since this is Actions specific, no support for top-level
+    // sequences.
     let inputKey: string = doc.workflowST?.value;
 
     const schema = doc.nodeToDesc.get(null);
