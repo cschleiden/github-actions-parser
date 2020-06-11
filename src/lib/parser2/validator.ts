@@ -14,6 +14,22 @@ export interface ValidationError {
   message: string;
 }
 
+function kindToString(kind: Kind): string {
+  switch (kind) {
+    case Kind.SCALAR:
+      return "value";
+
+    case Kind.MAPPING:
+      return "mapping";
+
+    case Kind.MAP:
+      return "map";
+
+    case Kind.SEQ:
+      return "sequence";
+  }
+}
+
 function validateNode(
   node: YAMLNode,
   nodeDesc: NodeDesc,
@@ -26,22 +42,18 @@ function validateNode(
 
   const n = node as YNode;
 
-  const reportTypeMismatch = (expectedKind: Kind) => {
+  const reportTypeMismatch = (expectedType: string, actualKind: Kind) => {
     errors.push({
-      pos: [node.startPosition, node.endPosition],
-      message: `Unexpected node of kind '${node.key}', expected ${expectedKind}`,
+      pos: [n.startPosition, n.endPosition],
+      message: `Expected ${expectedType}, found ${kindToString(actualKind)}`,
     });
     return false;
   };
 
   switch (nodeDesc.type) {
-    // case "oneOf": {
-    //   return true;
-    // }
-
     case "value": {
-      if (node.kind !== Kind.SCALAR) {
-        reportTypeMismatch(Kind.SCALAR);
+      if (n.kind !== Kind.SCALAR) {
+        reportTypeMismatch("value", n.kind);
       }
 
       const scalarNode = node as YAMLScalar;
@@ -72,7 +84,7 @@ function validateNode(
           return false;
         }
 
-        reportTypeMismatch(Kind.MAP);
+        reportTypeMismatch("map", n.kind);
       }
 
       const mapNode = node as YAMLMap;
@@ -91,6 +103,7 @@ function validateNode(
           if (Array.isArray(mappingDesc)) {
             // Check if it satisfies one of the definitions
           } else {
+            // Validate each mapping
             validateNode(mapping.value, mappingDesc, nodeToDesc, errors);
           }
         }
@@ -118,6 +131,18 @@ function validateNode(
           });
         }
       }
+
+      break;
+    }
+
+    case "sequence": {
+      if (n.kind !== Kind.SEQ) {
+        reportTypeMismatch("sequence", n.kind);
+      }
+
+      nodeToDesc.set(node, nodeDesc);
+
+      break;
     }
   }
 

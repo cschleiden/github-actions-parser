@@ -45,8 +45,17 @@ function findNode(node: YAMLNode, pos: number): YAMLNode {
           return n;
         }
 
+        if (item === null) {
+          // New item like `- |` is inserted
+          return n;
+        }
+
         if (inPos([item.startPosition, item.endPosition], pos)) {
-          return findNode(item, pos);
+          const itemNode = findNode(item, pos);
+          if (itemNode.kind === Kind.SCALAR) {
+            // If the child is a plain value, return the sequence node
+            return n;
+          }
         }
       }
 
@@ -70,11 +79,17 @@ function doComplete(
   input: string,
   pos: number,
   doc: WorkflowDocument
-) {
+): CompletionOption[] {
+  if (!node) {
+    console.error(desc);
+    throw new Error("no node");
+  }
+
   switch (desc.type) {
     case "value": {
       let p = pos;
-      while (input[p] !== ":") {
+      // TODO: this will break for `[1,2,3]`
+      while (p >= 0 && input[p] !== ":" && input[p] !== "-") {
         --p;
       }
       const searchInput = input.substring(p + 1, pos + 1).trim();
@@ -85,6 +100,13 @@ function doComplete(
       }
       break;
     }
+
+    case "sequence":
+      if (desc.itemDesc) {
+        return doComplete(node, desc.itemDesc, input, pos, doc);
+      }
+
+      break;
 
     case "map":
       // Check what to complete
@@ -139,12 +161,14 @@ export function complete(
 
     const schema = doc.nodeToDesc.get(null);
     if (schema.type === "map" && schema.keys) {
-      return Object.keys(schema.keys)
+      const completionOptions = Object.keys(schema.keys)
         .filter((x) => !inputKey || x.startsWith(inputKey))
         .map((key) => ({
           value: key,
           description: schema.keys[key].description,
         }));
+      completionOptions.sort((a, b) => a.value.localeCompare(b.value));
+      return completionOptions;
     }
 
     return [];
@@ -153,7 +177,9 @@ export function complete(
   const node = findNode(doc.workflowST, pos) as YNode;
   const desc = doc.nodeToDesc.get(node);
   if (desc) {
-    return doComplete(node, desc, input, pos, doc);
+    const completionOptions = doComplete(node, desc, input, pos, doc);
+    completionOptions.sort((a, b) => a.value.localeCompare(b.value));
+    return completionOptions;
   }
 
   throw new Error("Could not find schema for node");
