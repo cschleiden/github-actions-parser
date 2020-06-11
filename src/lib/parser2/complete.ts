@@ -156,5 +156,5 @@ export function complete(
     return doComplete(node, desc, input, pos, doc);
   }
 
-  console.log(node);
+  throw new Error("Could not find schema for node");
 }
