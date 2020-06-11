@@ -1,6 +1,4 @@
-import { Node } from "./tree";
-
-type NodeDescMap = { [key: string]: NodeDesc };
+export type NodeDescMap = { [key: string]: NodeDesc };
 
 type OneOfNodeDesc = {
   type: "oneOf";

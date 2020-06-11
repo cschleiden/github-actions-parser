@@ -1,6 +1,13 @@
 import { NodeDesc, NodeDescMap } from "./schema";
 
-export const events = ["push", "pull_request"];
+export const events = [
+  {
+    value: "push",
+  },
+  {
+    value: "pull_request",
+  },
+];
 
 const tagBranchPathFilters: NodeDescMap = {
   branches: {
@@ -73,7 +80,10 @@ export const workflowSchema: NodeDesc = {
         // Can be an array of events
         {
           type: "sequence",
-          allowedValues: events,
+          itemDesc: {
+            type: "value",
+            allowedValues: events,
+          },
         },
         // Can be a map of events
         {
