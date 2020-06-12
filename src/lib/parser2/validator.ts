@@ -138,11 +138,53 @@ function validateNode(
     case "sequence": {
       if (n.kind !== Kind.SEQ) {
         reportTypeMismatch("sequence", n.kind);
+      } else {
+        nodeToDesc.set(node, nodeDesc);
+
+        if (nodeDesc.itemDesc) {
+          for (const item of n.items) {
+            validateNode(item, nodeDesc.itemDesc, nodeToDesc, errors);
+          }
+        }
       }
 
-      nodeToDesc.set(node, nodeDesc);
-
       break;
+    }
+
+    case "oneOf": {
+      let foundMatchingNode = false;
+
+      for (const nDesc of nodeDesc.oneOf) {
+        switch (nDesc.type) {
+          case "value":
+            if (node.kind === Kind.SCALAR) {
+              validateNode(node, nDesc, nodeToDesc, errors);
+              foundMatchingNode = true;
+            }
+            break;
+
+          case "map":
+            if (node.kind === Kind.MAP) {
+              validateNode(node, nDesc, nodeToDesc, errors);
+              foundMatchingNode = true;
+            }
+            break;
+
+          case "sequence":
+            if (node.kind === Kind.SEQ) {
+              validateNode(node, nDesc, nodeToDesc, errors);
+              foundMatchingNode = true;
+            }
+            break;
+        }
+      }
+
+      if (!foundMatchingNode) {
+        errors.push({
+          pos: [node.startPosition, node.endPosition],
+          message: `Did not expect '${kindToString(n.kind)}'`,
+        });
+      }
     }
   }
 

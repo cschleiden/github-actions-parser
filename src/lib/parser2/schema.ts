@@ -10,7 +10,7 @@ type MapNodeDesc = {
   type: "map";
 
   /**
-   * Map of key to Node or Node array. If an array is given, only one of them will have to match
+   * Map of key to Node or Node array.
    */
   keys?: { [key: string]: NodeDesc };
 

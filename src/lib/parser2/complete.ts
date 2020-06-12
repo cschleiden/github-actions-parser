@@ -88,7 +88,6 @@ function doComplete(
   switch (desc.type) {
     case "value": {
       let p = pos;
-      // TODO: this will break for `[1,2,3]`
       // TODO: We can't do that.. do it in the seq/map case?
       // TODO: urgs this is ugly.
       while (

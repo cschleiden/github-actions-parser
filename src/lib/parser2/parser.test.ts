@@ -114,6 +114,26 @@ describe("Validation", () => {
     ]);
   });
 
+  it("Incorrect value in sequence", () => {
+    testValidation("name: test\narray: [ foo2 ]", [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [20, 24],
+        message: "'foo2' is not in the list of allowed values",
+      },
+    ]);
+  });
+
+  it("Incorrect value in sequence using -", () => {
+    testValidation("name: test\narray:\n- foo2", [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [20, 24],
+        message: "'foo2' is not in the list of allowed values",
+      },
+    ]);
+  });
+
   it("Expected value got mapping", () => {
     testValidation("name: test\ntype:\n  foo:", [
       {
@@ -189,5 +209,126 @@ describe("Completion", () => {
         completeSimple("arrayMap:\n-|", ["foo"]);
       });
     });
+  });
+});
+
+// Simple test schema
+const valueNode: NodeDesc = {
+  type: "value",
+  allowedValues: [
+    {
+      value: "foo",
+    },
+    {
+      value: "var",
+    },
+    {
+      value: "123",
+    },
+  ],
+};
+
+const nestedValueNode: NodeDesc = {
+  type: "value",
+  allowedValues: [
+    {
+      value: "1",
+    },
+    {
+      value: "2",
+    },
+  ],
+};
+
+const oneOfSchema: NodeDesc = {
+  type: "map",
+  keys: {
+    on: {
+      type: "oneOf",
+
+      oneOf: [
+        {
+          type: "sequence",
+          itemDesc: valueNode,
+        },
+        valueNode,
+        {
+          type: "map",
+          keys: {
+            foo: nestedValueNode,
+            bar: nestedValueNode,
+          },
+        },
+      ],
+    },
+    on2: {
+      type: "oneOf",
+      oneOf: [
+        valueNode,
+        {
+          type: "sequence",
+          itemDesc: valueNode,
+        },
+      ],
+    },
+    number: {
+      type: "value",
+    },
+  },
+};
+
+describe("OneOf", () => {
+  const testValidation = (input: string, expected: Diagnostic[]) => {
+    const doc = parse(input, oneOfSchema);
+
+    expect(doc.diagnostics).toEqual(expected);
+  };
+
+  it("Unknown keys", () => {
+    testValidation(`on: foo2`, [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [4, 8],
+        message: `'foo2' is not in the list of allowed values`,
+      },
+    ]);
+    testValidation(`on:\n  foo2:\n`, [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [6, 11],
+        message: `Key 'foo2' is not allowed`,
+      },
+    ]);
+    testValidation(`on: [ foo2 ]`, [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [6, 10],
+        message: `'foo2' is not in the list of allowed values`,
+      },
+    ]);
+    testValidation(`on:\n- foo2`, [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [6, 10],
+        message: `'foo2' is not in the list of allowed values`,
+      },
+    ]);
+  });
+
+  it("Incorrect node", () => {
+    testValidation(`on2:\n  foo:\n`, [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [7, 11],
+        message: `Did not expect 'map'`,
+      },
+    ]);
+  });
+
+  it("Allowed keys", () => {
+    testValidation(`on: foo`, []);
+    testValidation(`on:\n  foo:\n`, []);
+    testValidation(`on: [ foo ]`, []);
+    testValidation(`on:\n- foo`, []);
   });
 });
