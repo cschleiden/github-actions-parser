@@ -73,13 +73,13 @@ function findNode(node: YAMLNode, pos: number): YAMLNode {
   return node;
 }
 
-function doComplete(
+async function doComplete(
   node: YNode,
   desc: NodeDesc,
   input: string,
   pos: number,
   doc: WorkflowDocument
-): CompletionOption[] {
+): Promise<CompletionOption[]> {
   if (!node) {
     console.error(desc);
     throw new Error("no node");
@@ -159,11 +159,11 @@ function doComplete(
   }
 }
 
-export function complete(
+export async function complete(
   doc: WorkflowDocument,
   pos: number,
   input: string
-): CompletionOption[] {
+): Promise<CompletionOption[]> {
   if (!doc.workflow) {
     return [];
   }
@@ -193,7 +193,7 @@ export function complete(
   const node = findNode(doc.workflowST, pos) as YNode;
   const desc = doc.nodeToDesc.get(node);
   if (desc) {
-    const completionOptions = doComplete(node, desc, input, pos, doc);
+    const completionOptions = await doComplete(node, desc, input, pos, doc);
     completionOptions.sort((a, b) => a.value.localeCompare(b.value));
     return completionOptions;
   }

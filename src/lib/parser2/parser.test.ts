@@ -147,66 +147,66 @@ describe("Validation", () => {
 
 describe("Completion", () => {
   /** | in string denotes cursor position */
-  const testComplete = (input: string) => {
+  const testComplete = async (input: string) => {
     const pos = input.indexOf("|");
     input = input.replace("|", "");
     const doc = parse(input, schema);
-    return complete(doc, pos, input);
+    return await complete(doc, pos, input);
   };
 
   /** | in string denotes cursor position */
-  const completeSimple = (input: string, expected: string[]) => {
-    const suggestions = testComplete(input);
+  const completeSimple = async (input: string, expected: string[]) => {
+    const suggestions = await testComplete(input);
 
     expect(suggestions.map((x) => x.value)).toEqual(expected);
   };
 
   describe("map", () => {
-    it("completes top level keys", () => {
-      completeSimple("|", ["array", "arrayMap", "level", "name", "type"]);
-      completeSimple("n|", ["name"]);
+    it("completes top level keys", async () => {
+      await completeSimple("|", ["array", "arrayMap", "level", "name", "type"]);
+      await completeSimple("n|", ["name"]);
     });
 
-    it("completes value", () => {
-      completeSimple("name: |", ["foo", "test"]);
-      completeSimple("name: t|", ["test"]);
-      completeSimple("name: t|\ntype: 42", ["test"]);
-      completeSimple("type: 42\nname: fo|", ["foo"]);
+    it("completes value", async () => {
+      await completeSimple("name: |", ["foo", "test"]);
+      await completeSimple("name: t|", ["test"]);
+      await completeSimple("name: t|\ntype: 42", ["test"]);
+      await completeSimple("type: 42\nname: fo|", ["foo"]);
     });
 
-    it("completes value in nested map", () => {
-      completeSimple("level:\n  steps: |", ["1", "42"]);
-      completeSimple("level:\n  steps: | ", ["1", "42"]);
-      completeSimple("level:\n  steps: 4| ", ["42"]);
-      completeSimple("level:\n  steps: |\nname: foo", ["1", "42"]);
-      completeSimple("level:\n  steps: |   \nname: foo", ["1", "42"]);
-      completeSimple("level:\n  steps: 4|   \nname: foo", ["42"]);
-      completeSimple("level:\n  steps: 5| \nname: foo", []);
+    it("completes value in nested map", async () => {
+      await completeSimple("level:\n  steps: |", ["1", "42"]);
+      await completeSimple("level:\n  steps: | ", ["1", "42"]);
+      await completeSimple("level:\n  steps: 4| ", ["42"]);
+      await completeSimple("level:\n  steps: |\nname: foo", ["1", "42"]);
+      await completeSimple("level:\n  steps: |   \nname: foo", ["1", "42"]);
+      await completeSimple("level:\n  steps: 4|   \nname: foo", ["42"]);
+      await completeSimple("level:\n  steps: 5| \nname: foo", []);
     });
   });
 
   describe("sequence", () => {
     describe("square", () => {
-      it("completes value items", () => {
-        completeSimple("array: [ | ]", ["bar", "foo"]);
-        completeSimple("array: [ b| ]", ["bar"]);
+      it("completes value items", async () => {
+        await completeSimple("array: [ | ]", ["bar", "foo"]);
+        await completeSimple("array: [ b| ]", ["bar"]);
 
-        completeSimple("array: [ foo, b| ]", ["bar"]);
+        await completeSimple("array: [ foo, b| ]", ["bar"]);
       });
     });
 
     describe("dash", () => {
-      it("completes value items", () => {
-        completeSimple("array:\n- |", ["bar", "foo"]);
-        completeSimple("array:\n- b|", ["bar"]);
+      it("completes value items", async () => {
+        await completeSimple("array:\n- |", ["bar", "foo"]);
+        await completeSimple("array:\n- b|", ["bar"]);
 
-        completeSimple("array:\n- b|\n- foo", ["bar"]);
-        completeSimple("array:\n- foo\n- b|", ["bar"]);
+        await completeSimple("array:\n- b|\n- foo", ["bar"]);
+        await completeSimple("array:\n- foo\n- b|", ["bar"]);
       });
 
-      it("completes map items", () => {
-        completeSimple("arrayMap:\n- |", ["foo"]);
-        completeSimple("arrayMap:\n-|", ["foo"]);
+      it("completes map items", async () => {
+        await completeSimple("arrayMap:\n- |", ["foo"]);
+        await completeSimple("arrayMap:\n-|", ["foo"]);
       });
     });
   });
