@@ -1,99 +1,416 @@
-import { parse, ParseError } from "./parser";
+import { complete } from "./complete";
+import { Diagnostic, DiagnosticKind, parse } from "./parser";
+import { NodeDesc } from "./schema";
 
-describe("Successful parsing of workflow", () => {
-  it("basic with name", () => {
-    const wf = parse(`name: test
-on: push
-jobs:
-  first:
-    runs-on: ubuntu-latest
-    steps:
-    - run: echo 1`);
+// Simple test schema
+const schema: NodeDesc = {
+  type: "map",
+  keys: {
+    name: {
+      type: "value",
+      allowedValues: [
+        {
+          value: "test",
+        },
+        { value: "foo" },
+      ],
+    },
+    type: {
+      type: "value",
+    },
+    array: {
+      type: "sequence",
+      itemDesc: {
+        type: "value",
+        allowedValues: [
+          {
+            value: "foo",
+          },
+          {
+            value: "bar",
+          },
+        ],
+      },
+    },
+    arrayMap: {
+      type: "sequence",
+      itemDesc: {
+        type: "map",
+        keys: {
+          foo: {
+            type: "value",
+          },
+        },
+      },
+    },
+    level: {
+      type: "map",
+      keys: {
+        steps: {
+          type: "value",
+          allowedValues: [
+            {
+              value: "1",
+            },
+            {
+              value: "42",
+            },
+          ],
+        },
+        doors: {
+          type: "value",
+        },
+      },
+    },
+  },
 
-    expect(wf.name).toBe("test");
-    expect(wf.on).toBe("push");
+  required: ["name"],
+};
+
+describe("Validation", () => {
+  const testValidation = (input: string, expected: Diagnostic[]) => {
+    const doc = parse(input, schema);
+
+    expect(doc.diagnostics).toEqual(expected);
+  };
+
+  it("Unknown top-level key", () => {
+    testValidation(`t`, [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [0, 1],
+        message: "Unknown key 't'",
+      },
+    ]);
   });
 
-  it("with on array", () => {
-    const wf = parse(
-      `name: test
-on: [push, pull_request]
-jobs:
-  first:
-    runs-on: ubuntu-latest
-    steps:
-    - run: echo 1`
-    );
-
-    expect(wf.name).toBe("test");
-    expect(wf.on).toEqual(["push", "pull_request"]);
+  it("Reports missing keys", () => {
+    testValidation(`type: push`, [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [0, 10],
+        message: "Missing required key 'name'",
+      },
+    ]);
   });
 
-  it("with on object", () => {
-    const wf = parse(
-      `name: test
-on:
-  push:
-  pull_request:
-jobs:
-  first:
-    runs-on: ubuntu-latest
-    steps:
-    - run: echo 1`
-    );
-
-    expect(wf.name).toBe("test");
-    expect(wf.on).toEqual({ push: null, pull_request: null });
+  it("Reports wrong value", () => {
+    testValidation(`name: push`, [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [6, 10],
+        message: "'push' is not in the list of allowed values",
+      },
+    ]);
   });
 
-  it("with if expression", () => {
-    const wf = parse(
-      `name: test
-on: [push]
-jobs:
-  first:
-    runs-on: ubuntu-latest
-    if: \${{ env.TEST }}
-    steps:
-    - run: echo 1`
-    );
+  it("Expected sequence got mapping", () => {
+    testValidation("name: test\narray:\n  foo:", [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [20, 24],
+        message: "Expected sequence, found map",
+      },
+    ]);
+  });
 
-    expect(wf.name).toBe("test");
-    expect(wf.on).toEqual(["push"]);
+  it("Incorrect value in sequence", () => {
+    testValidation("name: test\narray: [ foo2 ]", [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [20, 24],
+        message: "'foo2' is not in the list of allowed values",
+      },
+    ]);
+  });
+
+  it("Incorrect value in sequence using -", () => {
+    testValidation("name: test\narray:\n- foo2", [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [20, 24],
+        message: "'foo2' is not in the list of allowed values",
+      },
+    ]);
+  });
+
+  it("Expected value got mapping", () => {
+    testValidation("name: test\ntype:\n  foo:", [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [19, 23],
+        message: "Expected value, found map",
+      },
+    ]);
   });
 });
 
-describe("Parser errors", () => {
-  it("syntax error in on", () => {
-    checkParseError(`on: asf:`, 0, 7);
+describe("Completion", () => {
+  /** | in string denotes cursor position */
+  const testComplete = async (input: string) => {
+    const pos = input.indexOf("|");
+    input = input.replace("|", "");
+    const doc = parse(input, schema);
+    return await complete(doc, pos, input);
+  };
+
+  /** | in string denotes cursor position */
+  const completeSimple = async (input: string, expected: string[]) => {
+    const suggestions = await testComplete(input);
+
+    expect(suggestions.map((x) => x.value)).toEqual(expected);
+  };
+
+  describe("map", () => {
+    it("completes top level keys", async () => {
+      await completeSimple("|", ["array", "arrayMap", "level", "name", "type"]);
+      await completeSimple("n|", ["name"]);
+      await completeSimple("name: test\n|", [
+        "array",
+        "arrayMap",
+        "level",
+        "type",
+      ]);
+      await completeSimple("name: test\nt|", ["type"]);
+      await completeSimple("name: test\n\n| \nlevel:\n  steps: 1", [
+        "array",
+        "arrayMap",
+        "type",
+      ]);
+    });
+
+    it("completes nested keys", async () => {
+      await completeSimple("level:\n  |", ["doors", "steps"]);
+    });
+
+    it("completes value", async () => {
+      await completeSimple("name: |", ["foo", "test"]);
+      await completeSimple("name: t|", ["test"]);
+      await completeSimple("name: t|\ntype: 42", ["test"]);
+      await completeSimple("type: 42\nname: fo|", ["foo"]);
+    });
+
+    it("completes value in nested map", async () => {
+      await completeSimple("level:\n  steps: |", ["1", "42"]);
+      await completeSimple("level:\n  steps: | ", ["1", "42"]);
+      await completeSimple("level:\n  steps: 4| ", ["42"]);
+      await completeSimple("level:\n  steps: | \nname: foo", ["1", "42"]);
+      await completeSimple("level:\n  steps: |   \nname: foo", ["1", "42"]);
+      await completeSimple("level:\n  steps: 4|   \nname: foo", ["42"]);
+      await completeSimple("level:\n  steps: 5| \nname: foo", []);
+    });
   });
 
-  it("requires jobs", () => {
-    checkGeneralParseError(
-      `on: push`,
-      "Validation failed: data should have required property 'jobs'"
-    );
+  describe("sequence", () => {
+    describe("square", () => {
+      it("completes value items", async () => {
+        await completeSimple("array: [ | ]", ["bar", "foo"]);
+        await completeSimple("array: [ b| ]", ["bar"]);
+
+        await completeSimple("array: [ foo, b| ]", ["bar"]);
+        await completeSimple("array: [ foo, | ]", ["bar"]);
+      });
+    });
+
+    describe("dash", () => {
+      it("completes value items", async () => {
+        await completeSimple("array:\n- |", ["bar", "foo"]);
+        await completeSimple("array:\n- b|", ["bar"]);
+
+        await completeSimple("array:\n- b|\n- foo", ["bar"]);
+        await completeSimple("array:\n- foo\n- b|", ["bar"]);
+      });
+
+      it("completes map items", async () => {
+        await completeSimple("arrayMap:\n- |", ["foo"]);
+        await completeSimple("arrayMap:\n-|", ["foo"]);
+      });
+    });
   });
 });
 
-function checkGeneralParseError(workflow: string, msg?: string) {
-  try {
-    parse(workflow);
-    fail("Did not throw");
-  } catch (e) {
-    expect(e instanceof ParseError).toBeTruthy();
-    if (!!msg) {
-      expect(e.message).toBe(msg);
-    }
-  }
-}
+// Simple test schema
+const valueNode: NodeDesc = {
+  type: "value",
+  allowedValues: [
+    {
+      value: "foo",
+    },
+    {
+      value: "var",
+    },
+    {
+      value: "123",
+    },
+  ],
+};
 
-function checkParseError(workflow: string, line: number, column: number) {
-  try {
-    parse(workflow);
-    fail("Did not throw");
-  } catch (e) {
-    expect(e.mark?.line).toBe(line);
-    expect(e.mark?.column).toBe(column);
-  }
-}
+const nestedValueNode: NodeDesc = {
+  type: "value",
+  allowedValues: [
+    {
+      value: "1",
+    },
+    {
+      value: "2",
+    },
+  ],
+};
+
+const oneOfSchema: NodeDesc = {
+  type: "map",
+  keys: {
+    on: {
+      type: "oneOf",
+
+      oneOf: [
+        {
+          type: "sequence",
+          itemDesc: valueNode,
+        },
+        valueNode,
+        {
+          type: "map",
+          keys: {
+            foo: nestedValueNode,
+            bar: nestedValueNode,
+          },
+        },
+      ],
+    },
+    on2: {
+      type: "oneOf",
+      oneOf: [
+        valueNode,
+        {
+          type: "sequence",
+          itemDesc: valueNode,
+        },
+      ],
+    },
+    number: {
+      type: "value",
+    },
+  },
+};
+
+describe("OneOf", () => {
+  const testValidation = (input: string, expected: Diagnostic[]) => {
+    const doc = parse(input, oneOfSchema);
+
+    expect(doc.diagnostics).toEqual(expected);
+  };
+
+  it("Unknown keys", () => {
+    testValidation(`on: foo2`, [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [4, 8],
+        message: `'foo2' is not in the list of allowed values`,
+      },
+    ]);
+    testValidation(`on:\n  foo2:\n`, [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [6, 11],
+        message: `Key 'foo2' is not allowed`,
+      },
+    ]);
+    testValidation(`on: [ foo2 ]`, [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [6, 10],
+        message: `'foo2' is not in the list of allowed values`,
+      },
+    ]);
+    testValidation(`on:\n- foo2`, [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [6, 10],
+        message: `'foo2' is not in the list of allowed values`,
+      },
+    ]);
+  });
+
+  it("Incorrect node", () => {
+    testValidation(`on2:\n  foo:\n`, [
+      {
+        kind: DiagnosticKind.Error,
+        pos: [7, 11],
+        message: `Did not expect 'map'`,
+      },
+    ]);
+  });
+
+  it("Allowed keys", () => {
+    testValidation(`on: foo`, []);
+    testValidation(`on:\n  foo:\n`, []);
+    testValidation(`on: [ foo ]`, []);
+    testValidation(`on:\n- foo`, []);
+  });
+});
+
+const dynamicSchema: NodeDesc = {
+  type: "map",
+  keys: {
+    static: {
+      type: "value",
+    },
+    dynamic: {
+      type: "value",
+      customSuggester: async (desc, input) => {
+        return [{ value: "foo" }, { value: "bar" }].filter(
+          (x) => !input || x.value.startsWith(input)
+        );
+      },
+    },
+    dynSeq: {
+      type: "sequence",
+      itemDesc: {
+        type: "value",
+        customSuggester: async (desc, input, existingValues) => {
+          return [{ value: "foo" }, { value: "bar" }]
+            .filter((x) => !input || x.value.startsWith(input))
+            .filter(
+              (x) =>
+                !existingValues ||
+                existingValues.length === 0 ||
+                existingValues.indexOf(x.value) === -1
+            );
+        },
+      },
+    },
+  },
+};
+
+describe("Async custom completion", () => {
+  /** | in string denotes cursor position */
+  const testComplete = async (input: string) => {
+    const pos = input.indexOf("|");
+    input = input.replace("|", "");
+    const doc = parse(input, dynamicSchema);
+    return await complete(doc, pos, input);
+  };
+
+  /** | in string denotes cursor position */
+  const completeSimple = async (input: string, expected: string[]) => {
+    const suggestions = await testComplete(input);
+
+    expect(suggestions.map((x) => x.value)).toEqual(expected);
+  };
+
+  it("Dynamically completes value", async () => {
+    await completeSimple("dynamic: |", ["bar", "foo"]);
+    await completeSimple("dynamic: ba|", ["bar"]);
+  });
+
+  it("Dynamically completes sequence", async () => {
+    await completeSimple("dynSeq: [ | ]", ["bar", "foo"]);
+    await completeSimple("dynSeq: [ bar, | ]", ["foo"]);
+
+    await completeSimple("dynSeq:\n- |", ["bar", "foo"]);
+    await completeSimple("dynSeq:\n- bar\n- |", ["foo"]);
+    await completeSimple("dynSeq:\n- |\n- bar", ["foo"]);
+    await completeSimple("dynSeq:\n- fo|", ["foo"]);
+  });
+});

@@ -1,6 +1,6 @@
 import { Kind, YAMLNode, YNode } from "../../types";
 import { WorkflowDocument } from "./parser";
-import { NodeDesc } from "./schema";
+import { MapNodeDesc, NodeDesc } from "./schema";
 import { Position } from "./types";
 
 export interface CompletionOption {
@@ -73,6 +73,26 @@ function findNode(node: YAMLNode, pos: number): YAMLNode {
   return node;
 }
 
+async function completeMapKeys(
+  node: YNode | null,
+  mapDesc: MapNodeDesc,
+  line: string
+): Promise<CompletionOption[]> {
+  const existingKeys = new Set(
+    node?.mappings.filter((x) => !!x.key).map((x) => x.key.value) || []
+  );
+
+  const completionOptions = Object.keys(mapDesc.keys)
+    .filter((x) => !existingKeys.has(x))
+    .filter((x) => !line || x.startsWith(line))
+    .map((key) => ({
+      value: key,
+      description: mapDesc.keys[key].description,
+    }));
+  completionOptions.sort((a, b) => a.value.localeCompare(b.value));
+  return completionOptions;
+}
+
 async function doComplete(
   node: YNode,
   desc: NodeDesc,
@@ -89,7 +109,8 @@ async function doComplete(
     case "value": {
       let p = pos;
       // TODO: We can't do that.. do it in the seq/map case?
-      // TODO: urgs this is ugly.
+      // TODO: urgs this is ugly. maybe get the line first? Would prevent this from running across the whole
+      // document
       while (
         p >= 0 &&
         input[p] !== ":" &&
@@ -106,10 +127,25 @@ async function doComplete(
       }
 
       const searchInput = input.substring(p + 1, pos + 1).trim();
+
+      // Are there any existing items?
+      let existingValues: string[] | undefined;
+      if (node.kind === Kind.SEQ) {
+        existingValues = node.items
+          .filter((x) => !!x && x.kind === Kind.SCALAR)
+          .map((x) => x.value);
+      }
+
+      if (desc.customSuggester) {
+        return desc.customSuggester(desc, searchInput, existingValues);
+      }
+
       if (desc.allowedValues) {
-        return desc.allowedValues.filter(
-          (x) => !searchInput || x.value.startsWith(searchInput)
-        );
+        return desc.allowedValues
+          .filter((x) => !searchInput || x.value.startsWith(searchInput))
+          .filter(
+            (x) => !existingValues || existingValues.indexOf(x.value) === -1
+          );
       }
       break;
     }
@@ -125,22 +161,28 @@ async function doComplete(
       // Check what to complete
       if (node.kind === Kind.MAP) {
         // We should be in a mapping, try to find it
-        while (input[pos] !== ":") {
-          --pos;
-        }
+        const line = getCurrentLine(pos, input);
+        if (line.indexOf(":") >= 0) {
+          while (input[pos] !== ":") {
+            --pos;
+          }
 
-        const mapping = findNode(doc.workflowST, pos) as YNode;
-        if (mapping.kind !== Kind.MAPPING) {
-          throw new Error("Could not find key node for map");
-        }
+          const mapping = findNode(doc.workflowST, pos) as YNode;
+          if (mapping.kind !== Kind.MAPPING) {
+            throw new Error("Could not find key node for map");
+          }
 
-        const mapDesc = doc.nodeToDesc.get(mapping.parent);
-        if (mapDesc.type !== "map") {
-          throw new Error("Could not find map node");
-        }
+          const mapDesc = doc.nodeToDesc.get(mapping.parent);
+          if (mapDesc.type !== "map") {
+            throw new Error("Could not find map node");
+          }
 
-        const key = mapping.key.value;
-        return doComplete(mapping, mapDesc.keys[key], input, pos, doc);
+          const key = mapping.key.value;
+          return doComplete(mapping, mapDesc.keys[key], input, pos, doc);
+        } else {
+          // Complete map key
+          return completeMapKeys(node, desc, line);
+        }
       }
 
       if (desc.keys) {
@@ -159,6 +201,20 @@ async function doComplete(
   }
 }
 
+function getCurrentLine(pos: number, input: string) {
+  let s = pos;
+  while (s > 0 && input[s] !== "\n") {
+    --s;
+
+    if (input[s] === "\n") {
+      ++s;
+      break;
+    }
+  }
+
+  return input.substring(s, pos + 1).trim();
+}
+
 export async function complete(
   doc: WorkflowDocument,
   pos: number,
@@ -168,6 +224,9 @@ export async function complete(
     return [];
   }
 
+  const line = getCurrentLine(pos, input);
+  // console.log(line);
+
   if (!doc.workflowST || doc.workflowST.kind === Kind.SCALAR) {
     // Empty document, complete top level keys
     //
@@ -175,16 +234,9 @@ export async function complete(
     // sequences.
     let inputKey: string = doc.workflowST?.value;
 
-    const schema = doc.nodeToDesc.get(null);
-    if (schema.type === "map" && schema.keys) {
-      const completionOptions = Object.keys(schema.keys)
-        .filter((x) => !inputKey || x.startsWith(inputKey))
-        .map((key) => ({
-          value: key,
-          description: schema.keys[key].description,
-        }));
-      completionOptions.sort((a, b) => a.value.localeCompare(b.value));
-      return completionOptions;
+    const rootDesc = doc.nodeToDesc.get(null);
+    if (rootDesc.type === "map" && rootDesc.keys) {
+      return completeMapKeys(null, rootDesc, inputKey);
     }
 
     return [];
@@ -193,7 +245,8 @@ export async function complete(
   const node = findNode(doc.workflowST, pos) as YNode;
   const desc = doc.nodeToDesc.get(node);
   if (desc) {
-    const completionOptions = await doComplete(node, desc, input, pos, doc);
+    const completionOptions =
+      (await doComplete(node, desc, input, pos, doc)) || [];
     completionOptions.sort((a, b) => a.value.localeCompare(b.value));
     return completionOptions;
   }

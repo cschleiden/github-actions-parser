@@ -1,3 +1,5 @@
+import { CompletionOption } from "./complete";
+
 export type NodeDescMap = { [key: string]: NodeDesc };
 
 type OneOfNodeDesc = {
@@ -6,13 +8,18 @@ type OneOfNodeDesc = {
   oneOf: NodeDesc[];
 };
 
-type MapNodeDesc = {
+export type MapNodeDesc = {
   type: "map";
 
   /**
    * Map of key to Node or Node array.
    */
-  keys?: { [key: string]: NodeDesc };
+  keys?: NodeDescMap;
+
+  /**
+   * Alternatively, specify a template to validate children against
+   */
+  itemDesc?: NodeDesc;
 
   required?: string[];
 };
@@ -20,12 +27,10 @@ type MapNodeDesc = {
 type SequenceNodeDesc = {
   type: "sequence";
 
-  allowedValues?: string[];
-
   itemDesc?: NodeDesc;
 };
 
-type AllowedValue = {
+export type ValueDesc = {
   value: string;
   description?: string;
 };
@@ -34,7 +39,7 @@ type ValueNodeDesc = {
   type: "value";
 
   /** Allowed values */
-  allowedValues?: AllowedValue[];
+  allowedValues?: ValueDesc[];
 };
 
 export type NodeDesc = (
@@ -46,7 +51,11 @@ export type NodeDesc = (
   /** Description for this node, can contain markdown */
   description?: string;
 
-  customSuggester?: (node: Node, input?: string) => string[];
+  customSuggester?: (
+    desc: NodeDesc,
+    input?: string,
+    existingItems?: string[]
+  ) => Promise<CompletionOption[]>;
   customValidator?: (
     node: Node,
     reportError: (message: string) => void
