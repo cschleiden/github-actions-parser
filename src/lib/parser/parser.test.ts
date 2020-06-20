@@ -162,32 +162,41 @@ describe("Completion", () => {
   };
 
   describe("map", () => {
-    it("completes top level keys", async () => {
-      await completeSimple("|", ["array", "arrayMap", "level", "name", "type"]);
-      await completeSimple("n|", ["name"]);
-      await completeSimple("name: test\n|", [
-        "array",
-        "arrayMap",
-        "level",
-        "type",
-      ]);
-      await completeSimple("name: test\nt|", ["type"]);
-      await completeSimple("name: test\n\n| \nlevel:\n  steps: 1", [
-        "array",
-        "arrayMap",
-        "type",
-      ]);
+    describe("completes top level keys", () => {
+      it("empty file", () =>
+        completeSimple("|", ["array", "arrayMap", "level", "name", "type"]));
+
+      it("partial match in empty file", () => completeSimple("n|", ["name"]));
+      it("one other key", () =>
+        completeSimple("name: test\n|", [
+          "array",
+          "arrayMap",
+          "level",
+          "type",
+        ]));
+      it("partial match with one other key", () =>
+        completeSimple("name: test\nt|", ["type"]));
+      it("between existing keys", () =>
+        completeSimple("name: test\n\n|\nlevel:\n  steps: 1", [
+          "array",
+          "arrayMap",
+          "type",
+        ]));
     });
 
     it("completes nested keys", async () => {
       await completeSimple("level:\n  |", ["doors", "steps"]);
     });
 
-    it("completes value", async () => {
-      await completeSimple("name: |", ["foo", "test"]);
-      await completeSimple("name: t|", ["test"]);
-      await completeSimple("name: t|\ntype: 42", ["test"]);
-      await completeSimple("type: 42\nname: fo|", ["foo"]);
+    describe("completes value", () => {
+      it("value", () => {
+        return completeSimple("name: |", ["foo", "test"]);
+      });
+      it("partial value", () => completeSimple("name: t|", ["test"]));
+      it("partial value before other one", () =>
+        completeSimple("name: t|\ntype: 42", ["test"]));
+      it("partial value after other one", () =>
+        completeSimple("type: 42\nname: fo|", ["foo"]));
     });
 
     it("completes value in nested map", async () => {
@@ -221,9 +230,9 @@ describe("Completion", () => {
         await completeSimple("array:\n- foo\n- b|", ["bar"]);
       });
 
-      it("completes map items", async () => {
-        await completeSimple("arrayMap:\n- |", ["foo"]);
-        await completeSimple("arrayMap:\n-|", ["foo"]);
+      describe("completes map items", () => {
+        it("with space", () => completeSimple("arrayMap:\n- |", ["foo"]));
+        it("without space", () => completeSimple("arrayMap:\n-|", ["foo"]));
       });
     });
   });

@@ -17,6 +17,8 @@ export interface WorkflowDocument {
   nodeToDesc: Map<YAMLNode, NodeDesc>;
 
   diagnostics: Diagnostic[];
+
+  schema: NodeDesc;
 }
 
 export enum DiagnosticKind {
@@ -83,5 +85,6 @@ export function parse(
     workflowST: yamlRoot,
     nodeToDesc: validationResult.nodeToDesc,
     diagnostics,
+    schema,
   };
 }

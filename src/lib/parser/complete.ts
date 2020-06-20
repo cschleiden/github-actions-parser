@@ -1,5 +1,5 @@
 import { Kind, YAMLNode, YNode } from "../../types";
-import { WorkflowDocument } from "./parser";
+import { parse, WorkflowDocument } from "./parser";
 import { MapNodeDesc, NodeDesc } from "./schema";
 import { Position } from "./types";
 
@@ -34,6 +34,16 @@ function findNode(node: YAMLNode, pos: number): YAMLNode {
       const r = node.value && findNode(n.value, pos);
       if (r) {
         return r;
+      }
+
+      // TODO: What to do here..
+      if (node.key) {
+        if (
+          inPos([n.key.startPosition, n.key.endPosition], pos) ||
+          node.key.value === "dummy"
+        ) {
+          return node.parent;
+        }
       }
 
       break;
@@ -215,6 +225,37 @@ function getCurrentLine(pos: number, input: string) {
   return input.substring(s, pos + 1).trim();
 }
 
+export function _transform(input: string, pos: number): [string, number] {
+  // TODO: Optimize this...
+  const lines = input.split("\n");
+  const posLine = input
+    .substring(0, pos)
+    .split("")
+    .filter((x) => x === "\n").length;
+
+  const line = lines[posLine];
+
+  if (line.indexOf(":") === -1) {
+    const trimmedLine = line.trim();
+    if (trimmedLine === "" || trimmedLine === "-") {
+      // Node in sequence or empty line
+      let spacer = "";
+      if (trimmedLine === "-" && !trimmedLine.endsWith(" ")) {
+        spacer = " ";
+      }
+
+      lines[posLine] = line + spacer + "dummy:";
+    } else {
+      // Add `:` to end of line
+      lines[posLine] = line.trim() + ":";
+    }
+  } else {
+    pos = pos - 1;
+  }
+
+  return [lines.join("\n"), pos];
+}
+
 export async function complete(
   doc: WorkflowDocument,
   pos: number,
@@ -224,29 +265,30 @@ export async function complete(
     return [];
   }
 
-  const line = getCurrentLine(pos, input);
-  // console.log(line);
+  // Need to parse again with fixed text
+  const [newInput, newPos] = _transform(input, pos);
+  const newDoc = parse(newInput, doc.schema);
 
-  if (!doc.workflowST || doc.workflowST.kind === Kind.SCALAR) {
-    // Empty document, complete top level keys
-    //
-    // Note: Since this is Actions specific, no support for top-level
-    // sequences.
-    let inputKey: string = doc.workflowST?.value;
+  // if (!doc.workflowST || doc.workflowST.kind === Kind.SCALAR) {
+  //   // Empty document, complete top level keys
+  //   //
+  //   // Note: Since this is Actions specific, no support for top-level
+  //   // sequences.
+  //   let inputKey: string = doc.workflowST?.value;
 
-    const rootDesc = doc.nodeToDesc.get(null);
-    if (rootDesc.type === "map" && rootDesc.keys) {
-      return completeMapKeys(null, rootDesc, inputKey);
-    }
+  //   const rootDesc = doc.nodeToDesc.get(null);
+  //   if (rootDesc.type === "map" && rootDesc.keys) {
+  //     return completeMapKeys(null, rootDesc, inputKey);
+  //   }
 
-    return [];
-  }
+  //   return [];
+  // }
 
-  const node = findNode(doc.workflowST, pos) as YNode;
-  const desc = doc.nodeToDesc.get(node);
+  const node = findNode(newDoc.workflowST, newPos) as YNode;
+  const desc = newDoc.nodeToDesc.get(node);
   if (desc) {
     const completionOptions =
-      (await doComplete(node, desc, input, pos, doc)) || [];
+      (await doComplete(node, desc, input, newPos, newDoc)) || [];
     completionOptions.sort((a, b) => a.value.localeCompare(b.value));
     return completionOptions;
   }

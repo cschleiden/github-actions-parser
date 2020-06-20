@@ -104,6 +104,9 @@ function validateNode(
             // Check if it satisfies one of the definitions
           } else {
             // Validate each mapping
+
+            // Add mapping desc for later lookup (e.g., to complete keys)
+            nodeToDesc.set(mapping, mappingDesc);
             validateNode(mapping.value, mappingDesc, nodeToDesc, errors);
           }
         }
