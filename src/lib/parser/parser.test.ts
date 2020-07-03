@@ -2,6 +2,25 @@ import { complete } from "./complete";
 import { Diagnostic, DiagnosticKind, parse } from "./parser";
 import { NodeDesc } from "./schema";
 
+/** | in string denotes cursor position */
+const _testComplete = async (input: string, schema: NodeDesc) => {
+  const pos = input.indexOf("|");
+  input = input.replace("|", "");
+  const doc = parse(input, schema);
+  return await complete(doc, pos, input);
+};
+
+/** | in string denotes cursor position */
+const _completeSimple = async (
+  input: string,
+  expected: string[],
+  schema: NodeDesc
+) => {
+  const suggestions = await _testComplete(input, schema);
+
+  expect(suggestions.map((x) => x.value)).toEqual(expected);
+};
+
 // Simple test schema
 const schema: NodeDesc = {
   type: "map",
@@ -146,20 +165,8 @@ describe("Validation", () => {
 });
 
 describe("Completion", () => {
-  /** | in string denotes cursor position */
-  const testComplete = async (input: string) => {
-    const pos = input.indexOf("|");
-    input = input.replace("|", "");
-    const doc = parse(input, schema);
-    return await complete(doc, pos, input);
-  };
-
-  /** | in string denotes cursor position */
-  const completeSimple = async (input: string, expected: string[]) => {
-    const suggestions = await testComplete(input);
-
-    expect(suggestions.map((x) => x.value)).toEqual(expected);
-  };
+  const completeSimple = (input: string, expected: string[]) =>
+    _completeSimple(input, expected, schema);
 
   describe("map", () => {
     describe("completes top level keys", () => {
@@ -310,52 +317,83 @@ describe("OneOf", () => {
     expect(doc.diagnostics).toEqual(expected);
   };
 
-  it("Unknown keys", () => {
-    testValidation(`on: foo2`, [
-      {
-        kind: DiagnosticKind.Error,
-        pos: [4, 8],
-        message: `'foo2' is not in the list of allowed values`,
-      },
-    ]);
-    testValidation(`on:\n  foo2:\n`, [
-      {
-        kind: DiagnosticKind.Error,
-        pos: [6, 11],
-        message: `Key 'foo2' is not allowed`,
-      },
-    ]);
-    testValidation(`on: [ foo2 ]`, [
-      {
-        kind: DiagnosticKind.Error,
-        pos: [6, 10],
-        message: `'foo2' is not in the list of allowed values`,
-      },
-    ]);
-    testValidation(`on:\n- foo2`, [
-      {
-        kind: DiagnosticKind.Error,
-        pos: [6, 10],
-        message: `'foo2' is not in the list of allowed values`,
-      },
-    ]);
+  describe("validation", () => {
+    it("Unknown keys", () => {
+      testValidation(`on: foo2`, [
+        {
+          kind: DiagnosticKind.Error,
+          pos: [4, 8],
+          message: `'foo2' is not in the list of allowed values`,
+        },
+      ]);
+      testValidation(`on:\n  foo2:\n`, [
+        {
+          kind: DiagnosticKind.Error,
+          pos: [6, 11],
+          message: `Key 'foo2' is not allowed`,
+        },
+      ]);
+      testValidation(`on: [ foo2 ]`, [
+        {
+          kind: DiagnosticKind.Error,
+          pos: [6, 10],
+          message: `'foo2' is not in the list of allowed values`,
+        },
+      ]);
+      testValidation(`on:\n- foo2`, [
+        {
+          kind: DiagnosticKind.Error,
+          pos: [6, 10],
+          message: `'foo2' is not in the list of allowed values`,
+        },
+      ]);
+    });
+
+    it("Incorrect node", () => {
+      testValidation(`on2:\n  foo:\n`, [
+        {
+          kind: DiagnosticKind.Error,
+          pos: [7, 11],
+          message: `Did not expect 'map'`,
+        },
+      ]);
+    });
+
+    it("Allowed keys", () => {
+      testValidation(`on: foo`, []);
+      testValidation(`on:\n  foo:\n`, []);
+      testValidation(`on: [ foo ]`, []);
+      testValidation(`on:\n- foo`, []);
+    });
   });
 
-  it("Incorrect node", () => {
-    testValidation(`on2:\n  foo:\n`, [
-      {
-        kind: DiagnosticKind.Error,
-        pos: [7, 11],
-        message: `Did not expect 'map'`,
-      },
-    ]);
-  });
+  describe("completion", () => {
+    const completeSimple = (input: string, expected: string[]) =>
+      _completeSimple(input, expected, oneOfSchema);
 
-  it("Allowed keys", () => {
-    testValidation(`on: foo`, []);
-    testValidation(`on:\n  foo:\n`, []);
-    testValidation(`on: [ foo ]`, []);
-    testValidation(`on:\n- foo`, []);
+    it("oneOf map with key", () => {
+      return completeSimple("on|: ", ["on2"]);
+    });
+
+    it("oneOf as value", () => {
+      return completeSimple("on: |", ["123", "foo", "var"]);
+    });
+
+    it("oneOf as key", () => {
+      return completeSimple("on:\n  |", ["bar", "foo"]);
+    });
+
+    it("oneOf as sequence", () => {
+      return completeSimple("on:\n  - |", ["123", "foo", "var"]);
+    });
+
+    it("oneOf as inline sequence", () => {
+      return completeSimple("on: [ |", ["123", "foo", "var"]);
+    });
+
+    it("oneOf as inline sequence with other values", () => {
+      return completeSimple("on: [ 123, | ]", ["foo", "var"]);
+    });
   });
 });
 

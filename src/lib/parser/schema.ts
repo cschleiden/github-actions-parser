@@ -1,3 +1,4 @@
+import { YAMLNode } from "yaml-ast-parser";
 import { CompletionOption } from "./complete";
 
 export type NodeDescMap = { [key: string]: NodeDesc };
@@ -35,7 +36,7 @@ export type ValueDesc = {
   description?: string;
 };
 
-type ValueNodeDesc = {
+export type ValueNodeDesc = {
   type: "value";
 
   /** Allowed values */
@@ -57,7 +58,7 @@ export type NodeDesc = (
     existingItems?: string[]
   ) => Promise<CompletionOption[]>;
   customValidator?: (
-    node: Node,
+    node: YAMLNode,
     reportError: (message: string) => void
   ) => void;
 };

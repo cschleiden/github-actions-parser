@@ -86,15 +86,16 @@ function findNode(node: YAMLNode, pos: number): YAMLNode {
 async function completeMapKeys(
   node: YNode | null,
   mapDesc: MapNodeDesc,
-  line: string
+  line: string,
+  partialInput: string
 ): Promise<CompletionOption[]> {
   const existingKeys = new Set(
-    node?.mappings.filter((x) => !!x.key).map((x) => x.key.value) || []
+    node?.mappings?.filter((x) => !!x.key).map((x) => x.key.value) || []
   );
 
   const completionOptions = Object.keys(mapDesc.keys)
     .filter((x) => !existingKeys.has(x))
-    .filter((x) => !line || x.startsWith(line))
+    .filter((x) => !partialInput || x.startsWith(partialInput))
     .map((key) => ({
       value: key,
       description: mapDesc.keys[key].description,
@@ -107,6 +108,7 @@ async function doComplete(
   node: YNode,
   desc: NodeDesc,
   input: string,
+  partialInput: string,
   pos: number,
   doc: WorkflowDocument
 ): Promise<CompletionOption[]> {
@@ -114,6 +116,8 @@ async function doComplete(
     console.error(desc);
     throw new Error("no node");
   }
+
+  console.log(desc);
 
   switch (desc.type) {
     case "value": {
@@ -137,6 +141,7 @@ async function doComplete(
       }
 
       const searchInput = input.substring(p + 1, pos + 1).trim();
+      // console.log("searchInput", searchInput);
 
       // Are there any existing items?
       let existingValues: string[] | undefined;
@@ -160,55 +165,85 @@ async function doComplete(
       break;
     }
 
-    case "sequence":
+    case "sequence": {
       if (desc.itemDesc) {
-        return doComplete(node, desc.itemDesc, input, pos, doc);
+        return doComplete(node, desc.itemDesc, input, partialInput, pos, doc);
       }
 
       break;
+    }
 
-    case "map":
+    case "map": {
       // Check what to complete
       if (node.kind === Kind.MAP) {
         // We should be in a mapping, try to find it
-        const line = getCurrentLine(pos, input);
-        if (line.indexOf(":") >= 0) {
-          while (input[pos] !== ":") {
-            --pos;
-          }
-
-          const mapping = findNode(doc.workflowST, pos) as YNode;
-          if (mapping.kind !== Kind.MAPPING) {
-            throw new Error("Could not find key node for map");
-          }
-
+        const mapping = findNode(doc.workflowST, pos) as YNode;
+        if (mapping.kind === Kind.MAPPING) {
           const mapDesc = doc.nodeToDesc.get(mapping.parent);
           if (mapDesc.type !== "map") {
             throw new Error("Could not find map node");
           }
 
           const key = mapping.key.value;
-          return doComplete(mapping, mapDesc.keys[key], input, pos, doc);
-        } else {
-          // Complete map key
-          return completeMapKeys(node, desc, line);
+          return doComplete(
+            mapping,
+            mapDesc.keys[key],
+            input,
+            partialInput,
+            pos,
+            doc
+          );
         }
       }
 
-      if (desc.keys) {
-        const c: CompletionOption[] = [];
-        for (const key of Object.keys(desc.keys)) {
-          c.push({
-            value: key,
-            description: desc.keys[key].description,
-          });
-        }
+      return completeMapKeys(node, desc, input, partialInput);
+    }
 
-        return c;
+    case "oneOf": {
+      // Generate
+      const validTypes = getValidOneOfTypes(node, pos, input);
+
+      const result = [];
+
+      for (const one of desc.oneOf.filter((one) => validTypes.has(one.type))) {
+        const c = await doComplete(node, one, input, partialInput, pos, doc);
+        result.push(...c);
       }
 
-      break;
+      return result;
+    }
   }
+
+  throw new Error(`Unknown node desc ${desc.type}`);
+}
+
+function getValidOneOfTypes(node: YNode, pos: number, input: string) {
+  const validTypes = new Set<NodeDesc["type"]>();
+
+  switch (node.kind) {
+    case Kind.SCALAR: {
+      validTypes.add("value");
+      break;
+    }
+
+    // case Kind.MAP:
+    //   break;
+
+    case Kind.MAPPING: {
+      const line = getCurrentLine(pos, input);
+      if (line.indexOf(":") >= 0) {
+        validTypes.add("value");
+      }
+      break;
+    }
+
+    case Kind.SEQ: {
+      validTypes.add("sequence");
+      break;
+    }
+  }
+
+  return validTypes;
 }
 
 function getCurrentLine(pos: number, input: string) {
@@ -225,7 +260,10 @@ function getCurrentLine(pos: number, input: string) {
   return input.substring(s, pos + 1).trim();
 }
 
-export function _transform(input: string, pos: number): [string, number] {
+export function _transform(
+  input: string,
+  pos: number
+): [string, number, string] {
   // TODO: Optimize this...
   const lines = input.split("\n");
   const posLine = input
@@ -234,8 +272,10 @@ export function _transform(input: string, pos: number): [string, number] {
     .filter((x) => x === "\n").length;
 
   const line = lines[posLine];
+  let partialInput = line.trim();
 
-  if (line.indexOf(":") === -1) {
+  const colon = line.indexOf(":");
+  if (colon === -1) {
     const trimmedLine = line.trim();
     if (trimmedLine === "" || trimmedLine === "-") {
       // Node in sequence or empty line
@@ -245,15 +285,27 @@ export function _transform(input: string, pos: number): [string, number] {
       }
 
       lines[posLine] = line + spacer + "dummy:";
+
+      // Adjust pos by one to prevent a sequence node being marked as active
+      pos = pos + 1;
     } else {
       // Add `:` to end of line
       lines[posLine] = line.trim() + ":";
     }
+
+    if (trimmedLine.startsWith("-")) {
+      partialInput = trimmedLine.substring(trimmedLine.indexOf("-") + 1).trim();
+    }
   } else {
+    partialInput = (pos > colon
+      ? line.substring(colon + 1)
+      : line.substring(0, colon)
+    ).trim();
     pos = pos - 1;
   }
 
-  return [lines.join("\n"), pos];
+  // console.log(`partialInput '${partialInput}'`);
+  return [lines.join("\n"), pos, partialInput];
 }
 
 export async function complete(
@@ -266,29 +318,22 @@ export async function complete(
   }
 
   // Need to parse again with fixed text
-  const [newInput, newPos] = _transform(input, pos);
+  const [newInput, newPos, partialInput] = _transform(input, pos);
   const newDoc = parse(newInput, doc.schema);
-
-  // if (!doc.workflowST || doc.workflowST.kind === Kind.SCALAR) {
-  //   // Empty document, complete top level keys
-  //   //
-  //   // Note: Since this is Actions specific, no support for top-level
-  //   // sequences.
-  //   let inputKey: string = doc.workflowST?.value;
-
-  //   const rootDesc = doc.nodeToDesc.get(null);
-  //   if (rootDesc.type === "map" && rootDesc.keys) {
-  //     return completeMapKeys(null, rootDesc, inputKey);
-  //   }
-
-  //   return [];
-  // }
 
   const node = findNode(newDoc.workflowST, newPos) as YNode;
   const desc = newDoc.nodeToDesc.get(node);
   if (desc) {
-    const completionOptions =
-      (await doComplete(node, desc, input, newPos, newDoc)) || [];
+    // Complete using original position
+    let completionOptions = await doComplete(
+      node,
+      desc,
+      input,
+      partialInput,
+      pos,
+      newDoc
+    );
+    completionOptions = completionOptions || [];
     completionOptions.sort((a, b) => a.value.localeCompare(b.value));
     return completionOptions;
   }

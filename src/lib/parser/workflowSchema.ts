@@ -1,8 +1,9 @@
-import { NodeDesc, NodeDescMap, ValueDesc } from "./schema";
+import { NodeDesc, NodeDescMap, ValueDesc, ValueNodeDesc } from "./schema";
 
-export const events = [
+export const events: ValueDesc[] = [
   {
     value: "push",
+    description: "Whenever code is pushed",
   },
   {
     value: "pull_request",
@@ -75,6 +76,16 @@ export const eventMap: NodeDescMap = {
   },
 };
 
+const runsOn: ValueNodeDesc = {
+  type: "value",
+  allowedValues: [
+    {
+      value: "ubuntu-latest",
+    },
+    { value: "windows-latest" },
+  ],
+};
+
 export const WorkflowSchema: NodeDesc = {
   type: "map",
   keys: {
@@ -113,14 +124,10 @@ export const WorkflowSchema: NodeDesc = {
           "runs-on": {
             type: "oneOf",
             oneOf: [
+              runsOn,
               {
-                type: "value",
-                allowedValues: [
-                  {
-                    value: "ubuntu-latest",
-                  },
-                  { value: "windows-latest" },
-                ],
+                type: "sequence",
+                itemDesc: runsOn,
               },
             ],
           },

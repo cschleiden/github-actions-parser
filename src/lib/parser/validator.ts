@@ -109,6 +109,8 @@ function validateNode(
             nodeToDesc.set(mapping, mappingDesc);
             validateNode(mapping.value, mappingDesc, nodeToDesc, errors);
           }
+        } else if (nodeDesc.itemDesc) {
+          validateNode(mapping.value, nodeDesc.itemDesc, nodeToDesc, errors);
         }
       }
 

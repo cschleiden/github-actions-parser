@@ -25,5 +25,31 @@ describe("Completion", () => {
 
       await completeSimple("name: workflow\n|", ["jobs", "on"]);
     });
+
+    it("complete top level key in workflow", () =>
+      completeSimple(
+        "name: test\non:\n  pull_request:\n    types:\n    - assigned\n|",
+        ["jobs"]
+      ));
+  });
+
+  describe("on", () => {
+    it("value", async () => {
+      await completeSimple("on: |", ["pull_request", "push"]);
+    });
+
+    it("map", async () => {
+      await completeSimple("on:\n  |", ["public", "pull_request", "push"]);
+    });
+
+    it("sequence", async () => {
+      await completeSimple("on:\n  - |", ["pull_request", "push"]);
+    });
+  });
+
+  describe("jobs", () => {
+    it("foo", async () => {
+      await completeSimple("jobs:\n  build:\n    |", ["runs-on", "steps"]);
+    });
   });
 });
