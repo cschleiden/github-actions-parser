@@ -1,3 +1,4 @@
+import { mergeDeep } from "../../deepMerge";
 import {
   MapNodeDesc,
   NodeDesc,
@@ -222,9 +223,10 @@ const tagBranchPathFilters: NodeDescMap = {
   },
 };
 
-export const eventMap: NodeDescMap = {
+export const eventMap: NodeDescMap = mergeDeep(
+  {},
   // Add all events to map
-  ..._events.reduce(
+  _events.reduce(
     (map, [event, description, types]) => ({
       ...map,
       [event]: {
@@ -249,52 +251,54 @@ export const eventMap: NodeDescMap = {
     {}
   ),
   // Override specific ones with special properties
-  push: {
-    type: "map",
-    keys: {
-      ...tagBranchPathFilters,
-    },
-  },
-  pull_request: {
-    type: "map",
-    keys: {
-      ...tagBranchPathFilters,
-    },
-  },
-  schedule: {
-    type: "map",
-    keys: {
-      cron: {
-        type: "value",
-        // TODO: Validate cron
-        customValidator: (node, x) => {},
+  {
+    push: {
+      type: "map",
+      keys: {
+        ...tagBranchPathFilters,
       },
     },
-  },
-  workflow_dispatch: {
-    type: "map",
-    description: "Event that can be manually triggered",
-    keys: {
-      inputs: {
-        type: "map",
-        itemDesc: {
+    pull_request: {
+      type: "map",
+      keys: {
+        ...tagBranchPathFilters,
+      },
+    },
+    schedule: {
+      type: "map",
+      keys: {
+        cron: {
+          type: "value",
+          // TODO: Validate cron
+          customValidator: (node, x) => {},
+        },
+      },
+    },
+    workflow_dispatch: {
+      type: "map",
+      description: "Event that can be manually triggered",
+      keys: {
+        inputs: {
           type: "map",
-          keys: {
-            required: {
-              type: "value",
-            },
-            description: {
-              type: "value",
-            },
-            default: {
-              type: "value",
+          itemDesc: {
+            type: "map",
+            keys: {
+              required: {
+                type: "value",
+              },
+              description: {
+                type: "value",
+              },
+              default: {
+                type: "value",
+              },
             },
           },
         },
       },
     },
-  },
-};
+  }
+);
 
 const env: MapNodeDesc = {
   type: "map",

@@ -36,7 +36,14 @@ describe("Completion", () => {
   describe("on", () => {
     it("value", async () => {
       await completeSimple(
-        "on: |",
+        "on: |\n\n",
+        events.map((x) => x.value)
+      );
+    });
+
+    it("value with other keys", async () => {
+      await completeSimple(
+        "on: |\n\njobs:",
         events.map((x) => x.value)
       );
     });
@@ -81,6 +88,18 @@ describe("Completion", () => {
         "unlabeled",
         "unlocked",
         "unpinned",
+      ]);
+    });
+
+    it("event keys", async () => {
+      await completeSimple("on:\n  pull_request:\n    |\n", [
+        "branches",
+        "branches-ignore",
+        "paths",
+        "paths-ignore",
+        "tags",
+        "tags-ignore",
+        "types",
       ]);
     });
   });

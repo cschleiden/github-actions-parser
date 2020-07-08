@@ -330,7 +330,7 @@ export async function complete(
       desc,
       input,
       partialInput,
-      pos,
+      newPos,
       newDoc
     );
     completionOptions = completionOptions || [];
