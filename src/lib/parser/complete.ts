@@ -117,7 +117,7 @@ async function doComplete(
     throw new Error("no node");
   }
 
-  console.log(desc);
+  // console.log(desc);
 
   switch (desc.type) {
     case "value": {
@@ -290,7 +290,7 @@ export function _transform(
       pos = pos + 1;
     } else {
       // Add `:` to end of line
-      lines[posLine] = line.trim() + ":";
+      lines[posLine] = line + ":";
     }
 
     if (trimmedLine.startsWith("-")) {
