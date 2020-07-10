@@ -1,6 +1,12 @@
 import { complete } from "./complete";
 import { parse } from "./parser";
-import { events, WorkflowSchema } from "./workflowSchema";
+import { events, getSchema } from "./workflowSchema";
+
+const WorkflowSchema = getSchema({
+  client: null,
+  owner: "owner",
+  repository: "repository",
+});
 
 describe("Completion", () => {
   /** | in string denotes cursor position */

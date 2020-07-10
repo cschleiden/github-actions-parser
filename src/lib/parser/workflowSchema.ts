@@ -1,11 +1,11 @@
+import { Octokit } from "@octokit/rest";
 import { mergeDeep } from "../../deepMerge";
-import {
-  MapNodeDesc,
-  NodeDesc,
-  NodeDescMap,
-  ValueDesc,
-  ValueNodeDesc,
-} from "./schema";
+import { MapNodeDesc, NodeDesc, NodeDescMap, ValueDesc } from "./schema";
+
+const value = (description?: string): NodeDesc => ({
+  type: "value",
+  description,
+});
 
 const _events: [string, string, ([string, string] | string)[]][] = [
   [
@@ -307,83 +307,107 @@ const env: MapNodeDesc = {
   },
 };
 
-const runsOn: ValueNodeDesc = {
+const runsOn = (context: Context): NodeDesc => ({
   type: "value",
-  allowedValues: [
-    { value: "ubuntu-latest" },
-    { value: "windows-latest" },
-    { value: "macos-latest" },
-  ],
-};
+  description:
+    "The type of machine to run the job on. The machine can be either a GitHub-hosted runner, or a self-hosted runner.",
 
-export const WorkflowSchema: NodeDesc = {
-  type: "map",
-  keys: {
-    name: {
-      type: "value",
-      description: `Name of the workflow`,
-    },
-    env,
-    on: {
-      type: "oneOf",
-      oneOf: [
-        // Can be one of the events
-        {
-          type: "value",
-          allowedValues: events,
-        },
-        // Can be an array of events
-        {
-          type: "sequence",
-          itemDesc: {
+  customSuggester: async (_, input, existingItems) => {
+    return [
+      { value: "ubuntu-latest" },
+      { value: "windows-latest" },
+      { value: "macos-latest" },
+      { value: "self-hosted" },
+    ];
+  },
+});
+
+export interface Context {
+  client: Octokit;
+  owner: string;
+  repository: string;
+}
+
+export function getSchema(context: Context): NodeDesc {
+  return {
+    type: "map",
+    keys: {
+      name: {
+        type: "value",
+        description: `Name of the workflow`,
+      },
+      env,
+      on: {
+        type: "oneOf",
+        oneOf: [
+          // Can be one of the events
+          {
             type: "value",
             allowedValues: events,
           },
-        },
-        // Can be a map of events
-        {
-          type: "map",
-          keys: eventMap,
-        },
-      ],
-    },
-    jobs: {
-      type: "map",
-      itemDesc: {
-        type: "map",
-        keys: {
-          env,
-          "runs-on": {
-            type: "oneOf",
-            oneOf: [
-              runsOn,
-              {
-                type: "sequence",
-                itemDesc: runsOn,
-              },
-            ],
-          },
-          steps: {
+          // Can be an array of events
+          {
             type: "sequence",
             itemDesc: {
-              type: "map",
-              keys: {
-                name: {
-                  type: "value",
+              type: "value",
+              allowedValues: events,
+            },
+          },
+          // Can be a map of events
+          {
+            type: "map",
+            keys: eventMap,
+          },
+        ],
+      },
+      jobs: {
+        type: "map",
+        itemDesc: {
+          type: "map",
+          keys: {
+            env,
+            "runs-on": {
+              type: "oneOf",
+              oneOf: [
+                runsOn(context),
+                {
+                  type: "sequence",
+                  itemDesc: runsOn(context),
                 },
-                runs: {
-                  type: "value",
+              ],
+            },
+            steps: {
+              type: "sequence",
+              itemDesc: {
+                type: "map",
+                keys: {
+                  id: value(
+                    "A unique identifier for the step. You can use the id to reference the step in contexts. For more information, see https://help.github.com/en/articles/contexts-and-expression-syntax-for-github-actions."
+                  ),
+                  if: value(),
+                  name: {
+                    type: "value",
+                  },
+                  uses: value(),
+                  run: value(),
+                  "working-directory": value(),
+                  shell: value(),
+                  with: {
+                    type: "map",
+                  },
+                  env,
+                  "continue-on-error": value(),
+                  "timeout-minutes": value(),
                 },
-                env,
               },
             },
           },
-        },
 
-        required: ["runs-on", "steps"],
+          required: ["runs-on", "steps"],
+        },
       },
     },
-  },
 
-  required: ["on", "jobs"],
-};
+    required: ["on", "jobs"],
+  };
+}
