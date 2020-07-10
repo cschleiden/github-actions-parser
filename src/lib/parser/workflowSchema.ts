@@ -310,10 +310,9 @@ const env: MapNodeDesc = {
 const runsOn: ValueNodeDesc = {
   type: "value",
   allowedValues: [
-    {
-      value: "ubuntu-latest",
-    },
+    { value: "ubuntu-latest" },
     { value: "windows-latest" },
+    { value: "macos-latest" },
   ],
 };
 

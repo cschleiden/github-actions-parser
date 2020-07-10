@@ -59,6 +59,12 @@ const schema: NodeDesc = {
           foo: {
             type: "value",
           },
+          bar: {
+            type: "value",
+          },
+          baz: {
+            type: "map",
+          },
         },
       },
     },
@@ -238,8 +244,18 @@ describe("Completion", () => {
       });
 
       describe("completes map items", () => {
-        it("with space", () => completeSimple("arrayMap:\n- |", ["foo"]));
-        it("without space", () => completeSimple("arrayMap:\n-|", ["foo"]));
+        it("with space", () =>
+          completeSimple("arrayMap:\n- |", ["bar", "baz", "foo"]));
+        it("without space", () =>
+          completeSimple("arrayMap:\n-|", ["bar", "baz", "foo"]));
+
+        it("with partial input", () =>
+          completeSimple("arrayMap:\n- f|", ["foo"]));
+
+        it("with existing key", () =>
+          completeSimple("arrayMap:\n- foo: test\n  |", ["bar", "baz"]));
+        it("with existing key and partial input", () =>
+          completeSimple("arrayMap:\n- baz: test\n  ba|", ["bar"]));
       });
     });
   });
@@ -416,6 +432,7 @@ const dynamicSchema: NodeDesc = {
       itemDesc: {
         type: "value",
         customSuggester: async (desc, input, existingValues) => {
+          console.log(desc, input, existingValues);
           return [{ value: "foo" }, { value: "bar" }]
             .filter((x) => !input || x.value.startsWith(input))
             .filter(
@@ -451,13 +468,17 @@ describe("Async custom completion", () => {
     await completeSimple("dynamic: ba|", ["bar"]);
   });
 
-  it("Dynamically completes sequence", async () => {
-    await completeSimple("dynSeq: [ | ]", ["bar", "foo"]);
-    await completeSimple("dynSeq: [ bar, | ]", ["foo"]);
-
-    await completeSimple("dynSeq:\n- |", ["bar", "foo"]);
-    await completeSimple("dynSeq:\n- bar\n- |", ["foo"]);
-    await completeSimple("dynSeq:\n- |\n- bar", ["foo"]);
-    await completeSimple("dynSeq:\n- fo|", ["foo"]);
+  describe("Dynamically completes sequence", () => {
+    it("empty sequence, [", () =>
+      completeSimple("dynSeq: [ | ]", ["bar", "foo"]));
+    it("existing value, [", () =>
+      completeSimple("dynSeq: [ bar, | ]", ["foo"]));
+    it("empty sequence, -", () =>
+      completeSimple("dynSeq:\n- |", ["bar", "foo"]));
+    it("existing value before, -", () =>
+      completeSimple("dynSeq:\n- bar\n- |", ["foo"]));
+    it("existing value after, -", () =>
+      completeSimple("dynSeq:\n- |\n- bar", ["foo"]));
+    it("partial input, -", () => completeSimple("dynSeq:\n- fo|", ["foo"]));
   });
 });

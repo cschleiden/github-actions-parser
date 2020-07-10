@@ -66,6 +66,9 @@ function findNode(node: YAMLNode, pos: number): YAMLNode {
             // If the child is a plain value, return the sequence node
             return n;
           }
+
+          // Otherwise return the found node
+          return itemNode;
         }
       }
 
@@ -280,11 +283,12 @@ export function _transform(
     if (trimmedLine === "" || trimmedLine === "-") {
       // Node in sequence or empty line
       let spacer = "";
-      if (trimmedLine === "-" && !trimmedLine.endsWith(" ")) {
+      if (trimmedLine === "-" && !line.endsWith(" ")) {
         spacer = " ";
       }
 
-      lines[posLine] = line + spacer + "dummy:";
+      lines[posLine] =
+        line + spacer + "dummy" + (trimmedLine === "-" ? "" : ":");
 
       // Adjust pos by one to prevent a sequence node being marked as active
       pos = pos + 1;
