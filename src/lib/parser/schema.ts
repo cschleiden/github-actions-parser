@@ -41,6 +41,9 @@ export type ValueNodeDesc = {
 
   /** Allowed values */
   allowedValues?: ValueDesc[];
+
+  /** If the node allows omitting ${{ }} to enter an expression */
+  isExpression?: boolean;
 };
 
 export type NodeDesc = (

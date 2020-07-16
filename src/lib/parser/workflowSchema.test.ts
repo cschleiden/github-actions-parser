@@ -114,6 +114,7 @@ describe("Completion", () => {
     it("completes top-level keys", async () => {
       await completeSimple("jobs:\n  build:\n    |", [
         "env",
+        "if",
         "runs-on",
         "steps",
       ]);
@@ -122,14 +123,25 @@ describe("Completion", () => {
     it("completes top-level keys with existing", async () => {
       await completeSimple(
         "jobs:\n  build:\n    runs-on: ubuntu-latest\n    |",
-        ["env", "steps"]
+        ["env", "if", "steps"]
       );
     });
   });
 
   describe("expressions", () => {
-    it("test", async () => {
+    it("context", async () => {
       await completeSimple("jobs:\n  build:\n    name: ${{ g|", ["github"]);
+      await completeSimple("jobs:\n  build:\n    name: ${{ g| == 1", [
+        "github",
+      ]);
+      await completeSimple("jobs:\n  build:\n    name: ${{ 1 == git|", [
+        "github",
+      ]);
+    });
+
+    it("if", async () => {
+      // `if` is always an expression
+      await completeSimple("jobs:\n  build:\n    if: g|", ["github"]);
     });
   });
 });

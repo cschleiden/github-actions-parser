@@ -167,6 +167,11 @@ async function doComplete(
             (x) => !existingValues || existingValues.indexOf(x.value) === -1
           );
       }
+
+      if (desc.isExpression) {
+        return expressionComplete(node, pos, true);
+      }
+
       break;
     }
 
@@ -265,6 +270,38 @@ function getCurrentLine(pos: number, input: string): [string, number] {
   return [input.substring(s, pos + 1).trim(), pos - s];
 }
 
+function expressionComplete(
+  node: YNode,
+  pos: number,
+  delimiterOptional = false
+) {
+  const line = node.value;
+  const linePos = pos - node.startPosition;
+
+  const startPos = line.indexOf("${{");
+  const endPos = line.indexOf("}}");
+  if (
+    delimiterOptional ||
+    (startPos !== -1 &&
+      startPos < linePos &&
+      (endPos === -1 || endPos > linePos))
+  ) {
+    const line2 = line.replace(/\$\{\{(.*)(\}\})?/, "$1");
+    const linePos2 = linePos - line.indexOf(line2);
+
+    // console.log(line2, linePos2);
+
+    const expressionCompletions = completeExpression(
+      line2,
+      linePos2,
+      {} as IExpressionContext
+    );
+    return expressionCompletions.map((x) => ({
+      value: x,
+    }));
+  }
+}
+
 export function _transform(
   input: string,
   pos: number
@@ -348,31 +385,7 @@ export async function complete(
 
   // No desc found, check if we are in a scalar node with an expression?
   if (node.kind === Kind.SCALAR) {
-    // const [line, linePos] = getCurrentLine(pos, input);
-    const line = node.value;
-    const linePos = pos - node.startPosition;
-
-    const startPos = line.indexOf("${{");
-    const endPos = line.indexOf("}}");
-    if (
-      startPos !== -1 &&
-      startPos < linePos &&
-      (endPos === -1 || endPos > linePos)
-    ) {
-      const line2 = line.replace(/\$\{\{(.*)(\}\})?/, "$1");
-      const linePos2 = linePos - line.indexOf(line2);
-
-      // console.log(line2, linePos2);
-
-      const expressionCompletions = completeExpression(
-        line2,
-        linePos2,
-        {} as IExpressionContext
-      );
-      return expressionCompletions.map((x) => ({
-        value: x,
-      }));
-    }
+    return expressionComplete(node, pos);
   }
 
   console.log(node);

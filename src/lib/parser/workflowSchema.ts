@@ -366,6 +366,10 @@ export function getSchema(context: Context): NodeDesc {
           type: "map",
           keys: {
             env,
+            if: {
+              type: "value",
+              isExpression: true,
+            },
             "runs-on": {
               type: "oneOf",
               oneOf: [
