@@ -265,11 +265,11 @@ function getCurrentLine(pos: number, input: string): [string, number] {
   return [input.substring(s, pos + 1).trim(), pos - s];
 }
 
-function expressionComplete(
+async function expressionComplete(
   node: YNode,
   pos: number,
   delimiterOptional = false
-): CompletionOption[] {
+): Promise<CompletionOption[]> {
   const line = node.value;
   const linePos = pos - node.startPosition;
 

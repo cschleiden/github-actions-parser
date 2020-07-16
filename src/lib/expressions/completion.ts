@@ -12,11 +12,11 @@ import {
   parser,
 } from "./parser";
 
-export function completeExpression(
+export async function completeExpression(
   input: string,
   pos: number,
   context: IExpressionContext
-): CompletionOption[] {
+): Promise<CompletionOption[]> {
   input = input.substring(0, pos + 1);
   // console.log(input);
 
