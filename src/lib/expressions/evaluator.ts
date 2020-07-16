@@ -3,18 +3,14 @@ import * as Functions from "./functions";
 import {
   And,
   BaseCstVisitor,
-  contains,
-  endsWith,
+  Contexts,
   Eq,
   GT,
   GTE,
-  join,
   LT,
   LTE,
   NEq,
   Or,
-  startsWith,
-  toJson,
 } from "./parser";
 
 export interface RuntimeContexts {
@@ -119,7 +115,14 @@ class ExpressionEvaluator extends BaseCstVisitor {
   }
 
   contextAccess(ctx: any, context: IExpressionContext) {
-    const contextObject = context.contexts[ctx.Context[0].image];
+    const contextName = Contexts.map((c) => (c.PATTERN as RegExp).source).find(
+      (c) => !!ctx[`Context${c}`]
+    );
+    if (!contextName) {
+      throw new Error("Unknown context: " + contextName);
+    }
+
+    const contextObject = context.contexts[contextName];
 
     let result = contextObject;
 
@@ -171,22 +174,25 @@ class ExpressionEvaluator extends BaseCstVisitor {
   functionCall(ctx: any, context: IExpressionContext) {
     const parameters = ctx.expression.map((p) => this.visit(p, context));
 
-    const f = ctx.Function[0];
     switch (true) {
-      case !!tokenMatcher(f, contains):
+      case !!ctx.contains:
         return Functions.contains(parameters[0], parameters[1]);
 
-      case !!tokenMatcher(f, startsWith):
+      case !!ctx.startsWith:
         return Functions.startsWith(parameters[0], parameters[1]);
 
-      case !!tokenMatcher(f, endsWith):
+      case !!ctx.endsWith:
         return Functions.endsWith(parameters[0], parameters[1]);
 
-      case !!tokenMatcher(f, join):
+      case !!ctx.join:
         return Functions.join(parameters[0], parameters[1]);
 
-      case !!tokenMatcher(f, toJson):
+      case !!ctx.toJson:
         return Functions.toJson(parameters[0]);
+
+      // TODO: Implement other functions
+      // case !!tokenMatcher(f, fromJson):
+      //   return Functions.fromJson(parameters[0]);
     }
   }
 

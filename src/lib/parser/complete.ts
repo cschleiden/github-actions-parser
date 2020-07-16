@@ -1,4 +1,6 @@
 import { Kind, YAMLNode, YNode } from "../../types";
+import { IExpressionContext } from "../expressions";
+import { completeExpression } from "../expressions/completion";
 import { parse, WorkflowDocument } from "./parser";
 import { MapNodeDesc, NodeDesc } from "./schema";
 import { Position } from "./types";
@@ -233,7 +235,7 @@ function getValidOneOfTypes(node: YNode, pos: number, input: string) {
     //   break;
 
     case Kind.MAPPING: {
-      const line = getCurrentLine(pos, input);
+      const [line] = getCurrentLine(pos, input);
       if (line.indexOf(":") >= 0) {
         validTypes.add("value");
       }
@@ -249,7 +251,7 @@ function getValidOneOfTypes(node: YNode, pos: number, input: string) {
   return validTypes;
 }
 
-function getCurrentLine(pos: number, input: string) {
+function getCurrentLine(pos: number, input: string): [string, number] {
   let s = pos;
   while (s > 0 && input[s] !== "\n") {
     --s;
@@ -260,7 +262,7 @@ function getCurrentLine(pos: number, input: string) {
     }
   }
 
-  return input.substring(s, pos + 1).trim();
+  return [input.substring(s, pos + 1).trim(), pos - s];
 }
 
 export function _transform(
@@ -321,8 +323,10 @@ export async function complete(
     return [];
   }
 
-  // Need to parse again with fixed text
+  // Fix the input to work around YAML parsing issues
   const [newInput, newPos, partialInput] = _transform(input, pos);
+
+  // Need to parse again with fixed text
   const newDoc = parse(newInput, doc.schema);
 
   const node = findNode(newDoc.workflowST, newPos) as YNode;
@@ -342,5 +346,35 @@ export async function complete(
     return completionOptions;
   }
 
+  // No desc found, check if we are in a scalar node with an expression?
+  if (node.kind === Kind.SCALAR) {
+    // const [line, linePos] = getCurrentLine(pos, input);
+    const line = node.value;
+    const linePos = pos - node.startPosition;
+
+    const startPos = line.indexOf("${{");
+    const endPos = line.indexOf("}}");
+    if (
+      startPos !== -1 &&
+      startPos < linePos &&
+      (endPos === -1 || endPos > linePos)
+    ) {
+      const line2 = line.replace(/\$\{\{(.*)(\}\})?/, "$1");
+      const linePos2 = linePos - line.indexOf(line2);
+
+      // console.log(line2, linePos2);
+
+      const expressionCompletions = completeExpression(
+        line2,
+        linePos2,
+        {} as IExpressionContext
+      );
+      return expressionCompletions.map((x) => ({
+        value: x,
+      }));
+    }
+  }
+
+  console.log(node);
   throw new Error("Could not find schema for node");
 }

@@ -19,8 +19,26 @@ const Comma = chevrotain.createToken({ name: "Comma", pattern: /,/ });
  */
 export const Context = chevrotain.createToken({
   name: "Context",
-  pattern: /github|env|job|steps|runner|secrets|strategy|matrix|needs/,
+  //pattern: /github|env|job|steps|runner|secrets|strategy|matrix|needs/,
+  pattern: chevrotain.Lexer.NA,
 });
+export const Contexts = [
+  "github",
+  "env",
+  "job",
+  "steps",
+  "runner",
+  "secrets",
+  "strategy",
+  "matrix",
+  "needs",
+].map((c) =>
+  chevrotain.createToken({
+    name: `Context${c}`,
+    pattern: new RegExp(`${c}`),
+    categories: Context,
+  })
+);
 export const Dot = chevrotain.createToken({ name: "Dot", pattern: /\./ });
 export const ContextMember = chevrotain.createToken({
   name: "ContextMember",
@@ -113,6 +131,55 @@ export const toJson = chevrotain.createToken({
   pattern: /toJson/,
   categories: Function,
 });
+export const fromJson = chevrotain.createToken({
+  name: "fromJson",
+  pattern: /fromJson/,
+  categories: Function,
+});
+export const hashFiles = chevrotain.createToken({
+  name: "hashFiles",
+  pattern: /hashFiles/,
+  categories: Function,
+});
+export const success = chevrotain.createToken({
+  name: "success",
+  pattern: /success/,
+  categories: Function,
+});
+export const always = chevrotain.createToken({
+  name: "always",
+  pattern: /always/,
+  categories: Function,
+});
+export const failure = chevrotain.createToken({
+  name: "failure",
+  pattern: /failure/,
+  categories: Function,
+});
+export const format = chevrotain.createToken({
+  name: "format",
+  pattern: /format/,
+  categories: Function,
+});
+export const cancelled = chevrotain.createToken({
+  name: "cancelled",
+  pattern: /cancelled/,
+  categories: Function,
+});
+const Functions = [
+  contains,
+  startsWith,
+  endsWith,
+  join,
+  toJson,
+  fromJson,
+  hashFiles,
+  success,
+  always,
+  failure,
+  format,
+  cancelled,
+];
 
 export const StringLiteral = chevrotain.createToken({
   name: "StringLiteral",
@@ -133,19 +200,20 @@ const allTokens = [
   WhiteSpace,
   NumberLiteral,
 
+  // Built-in functions
   Function,
   contains,
   startsWith,
-  // format
+  format,
   endsWith,
   join,
   toJson,
-  // fromJson,
-  // hashFiles,
-  // success
-  // always
-  // cancelled
-  // failure
+  fromJson,
+  hashFiles,
+  success,
+  always,
+  cancelled,
+  failure,
 
   StringLiteral,
   LParens,
@@ -154,6 +222,7 @@ const allTokens = [
   RSquare,
   Comma,
 
+  // Operators
   Operator,
   And,
   Or,
@@ -165,11 +234,14 @@ const allTokens = [
   GT,
   Not,
 
+  // Literals
   True,
   False,
   Null,
 
+  // Contexts (github, env, etc.)
   Context,
+  ...Contexts,
   Dot,
   ContextMember,
 ];
@@ -202,7 +274,12 @@ class ExpressionParser extends chevrotain.CstParser {
   });
 
   contextAccess = this.RULE("contextAccess", () => {
-    this.CONSUME(Context);
+    this.OR(
+      Contexts.map((f) => ({
+        ALT: () => this.CONSUME(f),
+      }))
+    );
+
     this.MANY(() => {
       this.SUBRULE(this.contextMember);
     });
@@ -244,7 +321,12 @@ class ExpressionParser extends chevrotain.CstParser {
   });
 
   functionCall = this.RULE("functionCall", () => {
-    this.CONSUME(Function);
+    // Consume one of the functions
+    this.OR(
+      Functions.map((f) => ({
+        ALT: () => this.CONSUME(f),
+      }))
+    );
 
     // Parse parameters
     this.CONSUME(LParens);

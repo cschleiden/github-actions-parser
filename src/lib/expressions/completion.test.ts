@@ -1,4 +1,4 @@
-import { doComplete } from "./completion";
+import { completeExpression } from "./completion";
 import { IExpressionContext } from "./evaluator";
 
 const testContext: IExpressionContext = {
@@ -13,25 +13,43 @@ const testContext: IExpressionContext = {
   },
 } as any;
 
-describe("auto-complete", () => {
-  describe("for contexts", () => {
-    it("provides suggestions for env", () => {
-      expect(doComplete("env.X", testContext)).toEqual([]);
-      expect(doComplete("1 == env.F", testContext)).toEqual(["FOO"]);
-      expect(doComplete("env.", testContext)).toEqual(["FOO", "BAR_TEST"]);
-      expect(doComplete("env.FOO", testContext)).toEqual([]);
-    });
+const testComplete = (input: string) => {
+  const pos = input.indexOf("|");
+  input = input.replace("|", "");
+  // const doc = parse(input, WorkflowSchema);
+  // return await complete(doc, pos, input);
+  return completeExpression(
+    input,
+    pos >= 0 ? pos : input.length - 1,
+    testContext
+  );
+};
 
-    it("provides suggestions for secrets", () => {
-      expect(doComplete("secrets.A", testContext)).toEqual(["AWS_TOKEN"]);
-      expect(doComplete("1 == secrets.F", testContext)).toEqual([]);
-      expect(doComplete("toJson(secrets.", testContext)).toEqual(["AWS_TOKEN"]);
+describe("auto-complete", () => {
+  describe("functions", () => {
+    it("toJson", () => {
+      expect(testComplete("toJs")).toEqual(["toJson"]);
+      expect(testComplete("1 == toJs")).toEqual(["toJson"]);
+      expect(testComplete("toJs| == 1")).toEqual(["toJson"]);
     });
   });
 
-  // describe("for functions", () => {
-  //   it("toJson", () => {
-  //     expect(doComplete("toJ", testContext)).toEqual(["toJson"]);
-  //   });
-  // });
+  describe("for contexts", () => {
+    it("provides suggestions for github", () => {
+      expect(testComplete("g|")).toEqual(["github"]);
+    });
+
+    it("provides suggestions for env", () => {
+      expect(testComplete("env.X")).toEqual([]);
+      expect(testComplete("1 == env.F")).toEqual(["FOO"]);
+      expect(testComplete("env.")).toEqual(["FOO", "BAR_TEST"]);
+      expect(testComplete("env.FOO")).toEqual([]);
+    });
+
+    it("provides suggestions for secrets", () => {
+      expect(testComplete("secrets.A")).toEqual(["AWS_TOKEN"]);
+      expect(testComplete("1 == secrets.F")).toEqual([]);
+      expect(testComplete("toJson(secrets.")).toEqual(["AWS_TOKEN"]);
+    });
+  });
 });

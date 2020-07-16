@@ -37,10 +37,10 @@ describe("expression parser", () => {
   });
 
   it("array", () => {
-    expect(ev("[]")).toStrictEqual([]);
-    expect(ev("[1,2,3]")).toStrictEqual([1, 2, 3]);
-    expect(ev("['a', 'b']")).toStrictEqual(["a", "b"]);
-    expect(ev("['a', 1]")).toStrictEqual(["a", 1]);
+    expect(ev("[]")).toEqual([]);
+    expect(ev("[1,2,3]")).toEqual([1, 2, 3]);
+    expect(ev("['a', 'b']")).toEqual(["a", "b"]);
+    expect(ev("['a', 1]")).toEqual(["a", 1]);
   });
 
   describe("operators", () => {

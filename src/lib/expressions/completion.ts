@@ -6,23 +6,33 @@ import {
   defaultRule,
   Dot,
   ExpressionLexer,
+  Function,
   parser,
 } from "./parser";
 
-export function doComplete(input: string, context: IExpressionContext): any[] {
+export function completeExpression(
+  input: string,
+  pos: number,
+  context: IExpressionContext
+): any[] {
+  input = input.substring(0, pos + 1);
+  // console.log(input);
+
+  let partialSuggestionMode = false;
+
   const lexResult = ExpressionLexer.tokenize(input);
   if (lexResult.errors.length > 0) {
     throw new Error("sad sad panda, lexing errors detected");
   }
-  const partialTokenVector = lexResult.tokens;
+  let partialTokenVector = lexResult.tokens;
   if (!partialTokenVector || partialTokenVector.length === 0) {
-    // Nothing to suggest
+    // Nothing to suggest in this case, abort
     return [];
   }
 
-  // console.log(partialTokenVector);
-
   const lastInputToken = partialTokenVector[partialTokenVector.length - 1];
+
+  // Check if we are auto-completing a context access
   if (
     tokenMatcher(lastInputToken, ContextMember) ||
     (tokenMatcher(lastInputToken, Dot) &&
@@ -37,6 +47,7 @@ export function doComplete(input: string, context: IExpressionContext): any[] {
       ? partialTokenVector[partialTokenVector.length - 2]
       : partialTokenVector[partialTokenVector.length - 3];
     if (
+      contextToken &&
       tokenMatcher(contextToken, Context) &&
       context.contexts[contextToken.image]
     ) {
@@ -48,28 +59,25 @@ export function doComplete(input: string, context: IExpressionContext): any[] {
     }
   }
 
-  console.log(partialTokenVector);
+  // Check for auto-completing a context or a function
+  if (lastInputToken !== undefined) {
+    partialTokenVector = partialTokenVector.slice(0, -1);
+    const syntacticSuggestions = parser.computeContentAssist(
+      defaultRule,
+      partialTokenVector
+    );
 
-  const syntacticSuggestions = parser.computeContentAssist(
-    defaultRule,
-    partialTokenVector
-  );
+    const searchTerm = lastInputToken.image;
+    return syntacticSuggestions
+      .filter((x) => {
+        return (
+          Function.categoryMatchesMap[x.nextTokenType.tokenTypeIdx] ||
+          Context.categoryMatchesMap[x.nextTokenType.tokenTypeIdx]
+        );
+      })
+      .map((x) => (x.nextTokenType.PATTERN as RegExp).source)
+      .filter((x) => !searchTerm || x.startsWith(searchTerm));
+  }
 
-  console.log(syntacticSuggestions);
-
-  const tokenTypesSuggestions = syntacticSuggestions.map(
-    (suggestion) => suggestion.nextTokenType
-  );
-
-  console.log(tokenTypesSuggestions);
-
-  // Transform token type suggestions?
-  return tokenTypesSuggestions.map((x) => {
-    if (x.name === "ContextMember") {
-    }
-  });
-
-  return tokenTypesSuggestions;
+  return [];
 }
-
-function provideEnvCompletion(input: string, context: IExpressionContext) {}

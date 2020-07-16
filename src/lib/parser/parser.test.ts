@@ -432,7 +432,7 @@ const dynamicSchema: NodeDesc = {
       itemDesc: {
         type: "value",
         customSuggester: async (desc, input, existingValues) => {
-          console.log(desc, input, existingValues);
+          // console.log(desc, input, existingValues);
           return [{ value: "foo" }, { value: "bar" }]
             .filter((x) => !input || x.value.startsWith(input))
             .filter(

@@ -126,4 +126,10 @@ describe("Completion", () => {
       );
     });
   });
+
+  describe("expressions", () => {
+    it("test", async () => {
+      await completeSimple("jobs:\n  build:\n    name: ${{ g|", ["github"]);
+    });
+  });
 });
