@@ -1,3 +1,12 @@
+const funcDescription = {
+  toJson:
+    "Returns a pretty-print JSON representation of `value`. You can use this function to debug the information provided in contexts.",
+};
+
+export function getFunctionDescription(f: string): string | undefined {
+  return funcDescription[f];
+}
+
 export function contains<S extends T[] | string, T>(
   haystack: S,
   needle: T

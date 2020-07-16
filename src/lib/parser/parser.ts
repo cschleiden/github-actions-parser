@@ -2,7 +2,6 @@ import { Kind, safeLoad, YAMLNode } from "yaml-ast-parser";
 import { NodeDesc } from "./schema";
 import { Position } from "./types";
 import { validate } from "./validator";
-import { WorkflowSchema } from "./workflowSchema";
 
 export interface Workflow {
   name?: string;
@@ -49,10 +48,7 @@ function walk(node: YAMLNode, desc: NodeDesc) {
   // for (const child of node.mappings)
 }
 
-export function parse(
-  input: string,
-  schema = WorkflowSchema
-): WorkflowDocument {
+export function parse(input: string, schema: NodeDesc): WorkflowDocument {
   const diagnostics: Diagnostic[] = [];
 
   const yamlRoot = safeLoad(input);
@@ -64,21 +60,6 @@ export function parse(
       pos,
     }))
   );
-
-  // Parsing:
-  // - Parse into yaml AST
-  //  -> Return any errors that prevent successful parsing
-  // - Transform into workflow AST
-  // - Validate with schema
-  // - Transform into workflow structure and return.
-
-  // Suggest completion items:
-  // - Parse into yaml AST
-  // - Transform into workflow AST
-  // - Find node for current input position
-  // - Suggest values using schema, based on tree
-  //  - Future: do we need the runtime model for anything? Env, secrets, labels?
-  //  - Somehow tie in expressions..., maybe separate auto-complete logic?
 
   return {
     workflow: {},

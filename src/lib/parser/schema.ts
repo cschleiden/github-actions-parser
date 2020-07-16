@@ -1,5 +1,5 @@
 import { YAMLNode } from "yaml-ast-parser";
-import { CompletionOption } from "./complete";
+import { CompletionOption } from "./types";
 
 export type NodeDescMap = { [key: string]: NodeDesc };
 

@@ -1,5 +1,7 @@
 import { tokenMatcher } from "chevrotain";
+import { CompletionOption } from "../parser/types";
 import { IExpressionContext } from "./evaluator";
+import { getFunctionDescription } from "./functions";
 import {
   Context,
   ContextMember,
@@ -14,7 +16,7 @@ export function completeExpression(
   input: string,
   pos: number,
   context: IExpressionContext
-): any[] {
+): CompletionOption[] {
   input = input.substring(0, pos + 1);
   // console.log(input);
 
@@ -52,10 +54,12 @@ export function completeExpression(
       context.contexts[contextToken.image]
     ) {
       const properties = Object.keys(context.contexts[contextToken.image]);
-      return properties.filter(
-        (x) =>
-          searchTerm === "" || (x.startsWith(searchTerm) && x !== searchTerm)
-      );
+      return properties
+        .filter(
+          (x) =>
+            searchTerm === "" || (x.startsWith(searchTerm) && x !== searchTerm)
+        )
+        .map((x) => ({ value: x }));
     }
   }
 
@@ -76,7 +80,11 @@ export function completeExpression(
         );
       })
       .map((x) => (x.nextTokenType.PATTERN as RegExp).source)
-      .filter((x) => !searchTerm || x.startsWith(searchTerm));
+      .filter((x) => !searchTerm || x.startsWith(searchTerm))
+      .map((x) => ({
+        value: x,
+        description: getFunctionDescription(x),
+      }));
   }
 
   return [];

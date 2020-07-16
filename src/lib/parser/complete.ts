@@ -3,12 +3,7 @@ import { IExpressionContext } from "../expressions";
 import { completeExpression } from "../expressions/completion";
 import { parse, WorkflowDocument } from "./parser";
 import { MapNodeDesc, NodeDesc } from "./schema";
-import { Position } from "./types";
-
-export interface CompletionOption {
-  value: string;
-  description?: string;
-}
+import { CompletionOption, Position } from "./types";
 
 function inPos(position: Position, pos: number): boolean {
   return position[0] <= pos && pos <= position[1];
@@ -274,7 +269,7 @@ function expressionComplete(
   node: YNode,
   pos: number,
   delimiterOptional = false
-) {
+): CompletionOption[] {
   const line = node.value;
   const linePos = pos - node.startPosition;
 
@@ -291,15 +286,10 @@ function expressionComplete(
 
     // console.log(line2, linePos2);
 
-    const expressionCompletions = completeExpression(
-      line2,
-      linePos2,
-      {} as IExpressionContext
-    );
-    return expressionCompletions.map((x) => ({
-      value: x,
-    }));
+    return completeExpression(line2, linePos2, {} as IExpressionContext);
   }
+
+  return [];
 }
 
 export function _transform(

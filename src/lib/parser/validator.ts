@@ -1,6 +1,6 @@
 import {
   Kind,
-  YAMLMap,
+  YamlMap,
   YAMLMapping,
   YAMLNode,
   YAMLScalar,
@@ -87,7 +87,7 @@ function validateNode(
         reportTypeMismatch("map", n.kind);
       }
 
-      const mapNode = node as YAMLMap;
+      const mapNode = node as YamlMap;
 
       nodeToDesc.set(node, nodeDesc);
 
