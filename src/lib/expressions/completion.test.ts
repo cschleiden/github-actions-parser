@@ -22,7 +22,7 @@ const testComplete = (input: string) => {
     input,
     pos >= 0 ? pos : input.length - 1,
     testContext
-  );
+  ).map((x) => x.value);
 };
 
 describe("auto-complete", () => {
