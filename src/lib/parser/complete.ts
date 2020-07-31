@@ -2,7 +2,7 @@ import { Kind, YAMLNode, YNode } from "../../types";
 import { ExpressionContext } from "../expressions";
 import { completeExpression } from "../expressions/completion";
 import { parse, WorkflowDocument } from "./parser";
-import { MapNodeDesc, NodeDesc } from "./schema";
+import { MapNodeDesc, NodeDesc, PropertyPath } from "./schema";
 import { CompletionOption, Position } from "./types";
 
 function inPos(position: Position, pos: number): boolean {
@@ -84,14 +84,25 @@ function findNode(node: YAMLNode, pos: number): YAMLNode {
 }
 
 async function completeMapKeys(
+  doc: WorkflowDocument,
   node: YNode | null,
   mapDesc: MapNodeDesc,
   line: string,
   partialInput: string
 ): Promise<CompletionOption[]> {
-  const existingKeys = new Set(
+  const existingKeys = new Set<string>(
     node?.mappings?.filter((x) => !!x.key).map((x) => x.key.value) || []
   );
+
+  if ((mapDesc as NodeDesc).customSuggester) {
+    return (mapDesc as NodeDesc).customSuggester(
+      mapDesc,
+      doc,
+      getPathFromNode(node),
+      partialInput,
+      Array.from(existingKeys.values())
+    );
+  }
 
   const completionOptions = Object.keys(mapDesc.keys)
     .filter((x) => !existingKeys.has(x))
@@ -102,6 +113,50 @@ async function completeMapKeys(
     }));
   completionOptions.sort((a, b) => a.value.localeCompare(b.value));
   return completionOptions;
+}
+
+function getPathFromNode(node: YNode): PropertyPath {
+  // Build up node path
+  const nodePath: YNode[] = [];
+  let x = node;
+  while (x) {
+    // Add in reverse
+    nodePath.unshift(x);
+    x = x.parent as YNode;
+  }
+
+  const path: PropertyPath = ["$"];
+  while (nodePath.length) {
+    const x = nodePath.shift();
+
+    switch (x.kind) {
+      case Kind.SCALAR:
+        path.push(x.value);
+        break;
+
+      case Kind.MAPPING:
+        if (x.key) {
+          path.push(x.key.value);
+        }
+
+        if (x.value) {
+          nodePath.unshift(x.value as YNode);
+        }
+        break;
+
+      case Kind.SEQ:
+        // Check next node to determine index
+        if (nodePath.length && x.items) {
+          const idx = x.items.indexOf(nodePath[0]);
+          if (idx !== -1) {
+            path[path.length - 1] = `${path[path.length - 1]}[${idx}]`;
+          }
+        }
+        break;
+    }
+  }
+
+  return path;
 }
 
 async function doComplete(
@@ -152,7 +207,13 @@ async function doComplete(
       }
 
       if (desc.customSuggester) {
-        return desc.customSuggester(desc, searchInput, existingValues);
+        return desc.customSuggester(
+          desc,
+          doc,
+          getPathFromNode(node),
+          searchInput,
+          existingValues
+        );
       }
 
       if (desc.allowedValues) {
@@ -201,7 +262,7 @@ async function doComplete(
         }
       }
 
-      return completeMapKeys(node, desc, input, partialInput);
+      return completeMapKeys(doc, node, desc, input, partialInput);
     }
 
     case "oneOf": {
@@ -314,13 +375,14 @@ export function _transform(
       let spacer = "";
       if (trimmedLine === "-" && !line.endsWith(" ")) {
         spacer = " ";
+        pos++;
       }
 
       lines[posLine] =
         line + spacer + "dummy" + (trimmedLine === "-" ? "" : ":");
 
       // Adjust pos by one to prevent a sequence node being marked as active
-      pos = pos + 1;
+      pos++;
     } else {
       // Add `:` to end of line
       lines[posLine] = line + ":";
@@ -350,10 +412,10 @@ export async function complete(
   const [newInput, newPos, partialInput] = _transform(input, pos);
 
   // Need to parse again with fixed text
-  const newDoc = parse(newInput, schema);
+  const doc = parse(newInput, schema);
 
-  const node = findNode(newDoc.workflowST, newPos) as YNode;
-  const desc = newDoc.nodeToDesc.get(node);
+  const node = findNode(doc.workflowST, newPos) as YNode;
+  const desc = doc.nodeToDesc.get(node);
   if (desc) {
     // Complete using original position
     let completionOptions = await doComplete(
@@ -362,7 +424,7 @@ export async function complete(
       input,
       partialInput,
       newPos,
-      newDoc
+      doc
     );
     completionOptions = completionOptions || [];
     completionOptions.sort((a, b) => a.value.localeCompare(b.value));

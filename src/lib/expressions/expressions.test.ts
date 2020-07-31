@@ -13,6 +13,7 @@ const ctx: ExpressionContext = {
     secrets: {
       getValue: (key: string) => Promise.resolve({ FOO: "Bar" }[key]),
       getKeys: () => Promise.resolve(["FOO"]),
+      getRaw: () => [],
     },
   },
 };

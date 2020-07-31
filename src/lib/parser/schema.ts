@@ -1,7 +1,10 @@
 import { YAMLNode } from "yaml-ast-parser";
+import { WorkflowDocument } from "./parser";
 import { CompletionOption } from "./types";
 
 export type NodeDescMap = { [key: string]: NodeDesc };
+
+export type PropertyPath = string[];
 
 type OneOfNodeDesc = {
   type: "oneOf";
@@ -55,8 +58,19 @@ export type NodeDesc = (
   /** Description for this node, can contain markdown */
   description?: string;
 
+  /**
+   * Custom suggester
+   *
+   * @param desc
+   * @param doc
+   * @param path
+   * @param input
+   * @param existingItems
+   */
   customSuggester?: (
     desc: NodeDesc,
+    doc: WorkflowDocument,
+    path: PropertyPath,
     input?: string,
     existingItems?: string[]
   ) => Promise<CompletionOption[]>;

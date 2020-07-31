@@ -412,6 +412,14 @@ describe("OneOf", () => {
   });
 });
 
+const pathSuggester = async (input, doc, path) => {
+  return [
+    {
+      value: path.join("."),
+    },
+  ];
+};
+
 const dynamicSchema: NodeDesc = {
   type: "map",
   keys: {
@@ -420,17 +428,40 @@ const dynamicSchema: NodeDesc = {
     },
     dynamic: {
       type: "value",
-      customSuggester: async (desc, input) => {
+      customSuggester: async (_, doc, path, input) => {
         return [{ value: "foo" }, { value: "bar" }].filter(
           (x) => !input || x.value.startsWith(input)
         );
+      },
+    },
+    path: {
+      type: "map",
+      keys: {
+        value: {
+          type: "value",
+          customSuggester: pathSuggester,
+        },
+        seq: {
+          type: "sequence",
+          itemDesc: {
+            type: "map",
+            keys: {
+              foo: {
+                type: "value",
+                customSuggester: pathSuggester,
+              },
+            },
+            customSuggester: pathSuggester,
+          },
+          customSuggester: pathSuggester,
+        },
       },
     },
     dynSeq: {
       type: "sequence",
       itemDesc: {
         type: "value",
-        customSuggester: async (desc, input, existingValues) => {
+        customSuggester: async (desc, doc, path, input, existingValues) => {
           // console.log(desc, input, existingValues);
           return [{ value: "foo" }, { value: "bar" }]
             .filter((x) => !input || x.value.startsWith(input))
@@ -478,5 +509,17 @@ describe("Async custom completion", () => {
     it("existing value after, -", () =>
       completeSimple("dynSeq:\n- |\n- bar", ["foo"]));
     it("partial input, -", () => completeSimple("dynSeq:\n- fo|", ["foo"]));
+  });
+
+  describe("Path based completion", () => {
+    it("map", () => completeSimple("path:\n  value: |", ["$.path.value"]));
+
+    it("sequence", () =>
+      completeSimple("path:\n  seq:\n    - test\n    - |", ["$.path.seq"]));
+
+    it("map in sequence", () =>
+      completeSimple("path:\n  seq:\n    - test\n    - foo: |", [
+        "$.path.seq[1].foo",
+      ]));
   });
 });

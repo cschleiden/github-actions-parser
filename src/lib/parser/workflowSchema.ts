@@ -304,6 +304,14 @@ const env: MapNodeDesc = {
   type: "map",
   itemDesc: {
     type: "value",
+
+    customSuggester: async (desc, input, existingItems) => {
+      // Find out which env block we are in
+      // Recursively check env blocks..
+      // Except when we are in a step, then check the previous ones..
+
+      return [];
+    },
   },
 };
 
@@ -323,8 +331,13 @@ const runsOn = (context: Context): NodeDesc => ({
 });
 
 export interface Context {
+  /** Octokit client to use for dynamic auto completion */
   client: Octokit;
+
+  /** Repository owner */
   owner: string;
+
+  /** Repository name */
   repository: string;
 }
 

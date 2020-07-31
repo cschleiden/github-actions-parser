@@ -11,12 +11,16 @@ export interface WorkflowDocument {
   /** Normalized workflow */
   workflow?: Workflow;
 
-  workflowST: YAMLNode;
-
-  nodeToDesc: Map<YAMLNode, NodeDesc>;
-
+  /** Errors and warnings found during parsing */
   diagnostics: Diagnostic[];
 
+  /** Workflow AST */
+  workflowST: YAMLNode;
+
+  /** Mapping of AST nodes to mapped schema descriptions */
+  nodeToDesc: Map<YAMLNode, NodeDesc>;
+
+  /** Schema used for parsing and validation */
   schema: NodeDesc;
 }
 
