@@ -1,12 +1,12 @@
-import { IExpressionContext } from "../expressions/evaluator";
-import { RuntimeStep, StepType } from "../runtimeModel";
+import { ExpressionContext } from "../expressions/evaluator";
 import { Step } from "../workflow";
 import { mergeEnv } from "./context";
 import { _ev, _evIf, _evMap } from "./expressions";
+import { RuntimeStep, StepType } from "./runtimeModel";
 
 export function _executeSteps(
   steps: Step[],
-  jobCtx: IExpressionContext
+  jobCtx: ExpressionContext
 ): RuntimeStep[] {
   return steps.map((stepDef) => {
     const stepCtx = mergeEnv(jobCtx, stepDef.env);

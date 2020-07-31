@@ -1,7 +1,7 @@
 import { completeExpression } from "./completion";
-import { IExpressionContext } from "./evaluator";
+import { ExpressionContext } from "./evaluator";
 
-const testContext: IExpressionContext = {
+const testContext: ExpressionContext = {
   contexts: {
     env: {
       FOO: 42,

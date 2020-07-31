@@ -1,11 +1,11 @@
 import { evaluateExpression, replaceExpressions } from "../expressions";
-import { IExpressionContext } from "../expressions/evaluator";
+import { ExpressionContext } from "../expressions/evaluator";
 import { EnvMap } from "../workflow";
 
 /** Evaluate a single `if` expression */
 export function _evIf(
   input: string | undefined,
-  ctx: IExpressionContext
+  ctx: ExpressionContext
 ): boolean | undefined {
   if (!input) {
     return undefined;
@@ -17,7 +17,7 @@ export function _evIf(
 /** Evaluate a generic expression */
 export function _ev(
   input: string | undefined,
-  ctx: IExpressionContext
+  ctx: ExpressionContext
 ): string | undefined {
   if (!input) {
     return input;
@@ -26,7 +26,7 @@ export function _ev(
   return replaceExpressions(input, ctx);
 }
 
-export function _evMap(env: EnvMap, ctx: IExpressionContext): EnvMap {
+export function _evMap(env: EnvMap, ctx: ExpressionContext): EnvMap {
   return Object.keys(env || {}).reduce((t, key) => {
     t[key] =
       typeof env[key] === "string" ? _ev(env[key] as string, ctx) : env[key];

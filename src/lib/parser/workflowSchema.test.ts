@@ -1,5 +1,4 @@
 import { complete } from "./complete";
-import { parse } from "./parser";
 import { events, getSchema } from "./workflowSchema";
 
 const WorkflowSchema = getSchema({
@@ -13,8 +12,7 @@ describe("Completion", () => {
   const testComplete = async (input: string) => {
     const pos = input.indexOf("|");
     input = input.replace("|", "");
-    const doc = parse(input, WorkflowSchema);
-    return await complete(doc, pos, input);
+    return await complete(input, pos, WorkflowSchema);
   };
 
   /** | in string denotes cursor position */

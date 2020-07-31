@@ -1,8 +1,8 @@
 import { ILexingError, IRecognitionException } from "chevrotain";
-import { evaluator, IExpressionContext, RuntimeContexts } from "./evaluator";
+import { evaluator, ExpressionContext, RuntimeContexts } from "./evaluator";
 import { ExpressionLexer, parser } from "./parser";
 
-export type { IExpressionContext, RuntimeContexts };
+export type { ExpressionContext, RuntimeContexts };
 
 export class ExpressionError extends Error {
   constructor(
@@ -34,7 +34,7 @@ export function parseExpression(expression: string) {
  */
 export function evaluateExpression(
   expression: string,
-  context: IExpressionContext
+  context: ExpressionContext
 ) {
   // This expects a single expression in the form of "<expr>" or "${{ <expr> }}". Remove the
   // ${{ }} markers
@@ -66,7 +66,7 @@ export function evaluateExpression(
  */
 export function replaceExpressions(
   input: string,
-  context: IExpressionContext
+  context: ExpressionContext
 ): string {
   return input.replace(expr, (_, g) => {
     return evaluateExpression(g, context);

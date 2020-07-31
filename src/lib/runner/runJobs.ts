@@ -1,15 +1,15 @@
-import { IExpressionContext } from "../expressions/evaluator";
-import { Conclusion, RuntimeJob, State } from "../runtimeModel";
+import { ExpressionContext } from "../expressions/evaluator";
 import { Job } from "../workflow";
 import { _ev, _evIf, _evMap } from "./expressions";
 import { _executeSteps } from "./runSteps";
+import { Conclusion, RuntimeJob, State } from "./runtimeModel";
 import { arr } from "./shared";
 
 function _executeJob(
   jobId: string,
   jobDef: Job,
   level: number,
-  jobCtx: IExpressionContext
+  jobCtx: ExpressionContext
 ): RuntimeJob {
   let conclusion = Conclusion.Success;
 
@@ -37,7 +37,7 @@ export function executeJob(
   jobId: string,
   jobDef: Job,
   level: number,
-  jobCtx: IExpressionContext
+  jobCtx: ExpressionContext
 ): RuntimeJob {
   if (!jobDef.strategy?.matrix) {
     // Simple job

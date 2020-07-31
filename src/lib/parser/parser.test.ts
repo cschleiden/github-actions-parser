@@ -6,8 +6,7 @@ import { NodeDesc } from "./schema";
 const _testComplete = async (input: string, schema: NodeDesc) => {
   const pos = input.indexOf("|");
   input = input.replace("|", "");
-  const doc = parse(input, schema);
-  return await complete(doc, pos, input);
+  return await complete(input, pos, schema);
 };
 
 /** | in string denotes cursor position */
@@ -452,8 +451,7 @@ describe("Async custom completion", () => {
   const testComplete = async (input: string) => {
     const pos = input.indexOf("|");
     input = input.replace("|", "");
-    const doc = parse(input, dynamicSchema);
-    return await complete(doc, pos, input);
+    return await complete(input, pos, dynamicSchema);
   };
 
   /** | in string denotes cursor position */

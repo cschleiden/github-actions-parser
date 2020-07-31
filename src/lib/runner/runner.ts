@@ -1,10 +1,10 @@
-import { IExpressionContext, RuntimeContexts } from "../expressions/evaluator";
-import { Event, RuntimeModel } from "../runtimeModel";
+import { ExpressionContext, RuntimeContexts } from "../expressions/evaluator";
 import { Job, JobMap, On, Workflow } from "../workflow";
 import { getBaseContext, mergeEnv } from "./context";
 import { _ev } from "./expressions";
 import { filterBranch, filterPaths } from "./glob/glob";
 import { executeJob } from "./runJobs";
+import { Event, RuntimeModel } from "./runtimeModel";
 
 export class RunError extends Error {}
 
@@ -14,7 +14,7 @@ export function run(
   workflow: Workflow,
   additionalContexts?: Partial<RuntimeContexts>
 ): RuntimeModel {
-  const ctx: IExpressionContext = getBaseContext(
+  const ctx: ExpressionContext = getBaseContext(
     workflowFilename,
     event,
     workflow.env,

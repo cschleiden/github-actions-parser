@@ -1,6 +1,7 @@
 import { evaluateExpression, replaceExpressions } from ".";
+import { ExpressionContext } from "./evaluator";
 
-const ctx = {
+const ctx: ExpressionContext = {
   contexts: {
     github: {
       ref: "refs/heads/master",
@@ -10,7 +11,8 @@ const ctx = {
       },
     },
     secrets: {
-      FOO: "Bar",
+      getValue: (key: string) => Promise.resolve({ FOO: "Bar" }[key]),
+      getKeys: () => Promise.resolve(["FOO"]),
     },
   },
 };

@@ -1,5 +1,5 @@
-import { IssueActivities, PullRequestActivities } from "./events/activities";
-import { EnvMap } from "./workflow";
+import { IssueActivities, PullRequestActivities } from "../events/activities";
+import { EnvMap } from "../workflow";
 
 //
 // Events

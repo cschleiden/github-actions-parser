@@ -1,5 +1,5 @@
 import { Kind, YAMLNode, YNode } from "../../types";
-import { IExpressionContext } from "../expressions";
+import { ExpressionContext } from "../expressions";
 import { completeExpression } from "../expressions/completion";
 import { parse, WorkflowDocument } from "./parser";
 import { MapNodeDesc, NodeDesc } from "./schema";
@@ -286,7 +286,7 @@ async function expressionComplete(
 
     // console.log(line2, linePos2);
 
-    return completeExpression(line2, linePos2, {} as IExpressionContext);
+    return completeExpression(line2, linePos2, {} as ExpressionContext);
   }
 
   return [];
@@ -342,19 +342,15 @@ export function _transform(
 }
 
 export async function complete(
-  doc: WorkflowDocument,
+  input: string,
   pos: number,
-  input: string
+  schema: NodeDesc
 ): Promise<CompletionOption[]> {
-  if (!doc.workflow) {
-    return [];
-  }
-
   // Fix the input to work around YAML parsing issues
   const [newInput, newPos, partialInput] = _transform(input, pos);
 
   // Need to parse again with fixed text
-  const newDoc = parse(newInput, doc.schema);
+  const newDoc = parse(newInput, schema);
 
   const node = findNode(newDoc.workflowST, newPos) as YNode;
   const desc = newDoc.nodeToDesc.get(node);

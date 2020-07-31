@@ -1,6 +1,6 @@
 import { tokenMatcher } from "chevrotain";
 import { CompletionOption } from "../parser/types";
-import { IExpressionContext } from "./evaluator";
+import { ExpressionContext } from "./evaluator";
 import { getFunctionDescription } from "./functions";
 import {
   Context,
@@ -15,7 +15,7 @@ import {
 export async function completeExpression(
   input: string,
   pos: number,
-  context: IExpressionContext
+  context: ExpressionContext
 ): Promise<CompletionOption[]> {
   input = input.substring(0, pos + 1);
   // console.log(input);

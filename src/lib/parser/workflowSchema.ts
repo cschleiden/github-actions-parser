@@ -1,5 +1,5 @@
 import { Octokit } from "@octokit/rest";
-import { mergeDeep } from "../../deepMerge";
+import { mergeDeep } from "../utils/deepMerge";
 import { MapNodeDesc, NodeDesc, NodeDescMap, ValueDesc } from "./schema";
 
 const value = (description?: string): NodeDesc => ({

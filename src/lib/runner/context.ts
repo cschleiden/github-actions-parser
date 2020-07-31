@@ -1,14 +1,14 @@
 import { getEventPayload } from "../events/eventPayload";
-import { IExpressionContext, RuntimeContexts } from "../expressions/evaluator";
-import { Event } from "../runtimeModel";
+import { ExpressionContext, RuntimeContexts } from "../expressions/evaluator";
 import { EnvMap } from "../workflow";
+import { Event } from "./runtimeModel";
 
 export function getBaseContext(
   workflow: string,
   event: Event,
   env: EnvMap,
   additionalContexts?: Partial<RuntimeContexts>
-): IExpressionContext {
+): ExpressionContext {
   return {
     contexts: {
       github: {
@@ -34,9 +34,9 @@ export function getBaseContext(
 }
 
 export function mergeEnv(
-  ctx: IExpressionContext,
+  ctx: ExpressionContext,
   env?: EnvMap
-): IExpressionContext {
+): ExpressionContext {
   return {
     ...ctx,
     contexts: {

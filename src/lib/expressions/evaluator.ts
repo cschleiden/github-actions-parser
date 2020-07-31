@@ -13,6 +13,14 @@ import {
   Or,
 } from "./parser";
 
+export interface RuntimeContext {
+  getValue(key: string): Promise<string | number | boolean>;
+
+  getKeys(): Promise<string[]>;
+
+  getRaw(): any;
+}
+
 export interface RuntimeContexts {
   github: any;
   // TODO: Document and define when these are set
@@ -20,13 +28,13 @@ export interface RuntimeContexts {
   job?: any;
   steps?: any;
   runner?: any;
-  secrets?: { [key: string]: string };
+  secrets?: RuntimeContext;
   strategy?: any;
   matrix?: any;
   needs?: any;
 }
 
-export interface IExpressionContext {
+export interface ExpressionContext {
   contexts: RuntimeContexts;
 }
 
@@ -34,7 +42,7 @@ export interface IExpressionContext {
  * This evaluates an expression by operation on the CST produced by the parser.
  */
 class ExpressionEvaluator extends BaseCstVisitor {
-  expression(ctx: any, context: IExpressionContext) {
+  expression(ctx: any, context: ExpressionContext) {
     let result = this.visit(ctx.lhs, context);
 
     if (ctx.rhs) {
@@ -95,7 +103,7 @@ class ExpressionEvaluator extends BaseCstVisitor {
     return result;
   }
 
-  subExpression(ctx: any, context: IExpressionContext) {
+  subExpression(ctx: any, context: ExpressionContext) {
     switch (true) {
       case !!ctx.value:
         return this.visit(ctx.value, context);
@@ -114,7 +122,7 @@ class ExpressionEvaluator extends BaseCstVisitor {
     }
   }
 
-  contextAccess(ctx: any, context: IExpressionContext) {
+  contextAccess(ctx: any, context: ExpressionContext) {
     const contextName = Contexts.map((c) => (c.PATTERN as RegExp).source).find(
       (c) => !!ctx[`Context${c}`]
     );
@@ -171,7 +179,7 @@ class ExpressionEvaluator extends BaseCstVisitor {
     return result;
   }
 
-  functionCall(ctx: any, context: IExpressionContext) {
+  functionCall(ctx: any, context: ExpressionContext) {
     const parameters = ctx.expression.map((p) => this.visit(p, context));
 
     switch (true) {

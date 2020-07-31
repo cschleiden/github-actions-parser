@@ -1,6 +1,6 @@
-import { Conclusion, RuntimeStep, StepType } from "../runtimeModel";
 import { Job, RunStep } from "../workflow";
 import { run } from "./runner";
+import { Conclusion, RuntimeStep, StepType } from "./runtimeModel";
 
 const defaultJob: Job = {
   "runs-on": "ubuntu-latest",
