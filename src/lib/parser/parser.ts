@@ -1,3 +1,4 @@
+import { safeLoad as jsYamlSafeLoad } from "js-yaml";
 import { Kind, safeLoad, YAMLNode } from "yaml-ast-parser";
 import { NodeDesc } from "./schema";
 import { Position } from "./types";
@@ -65,8 +66,16 @@ export function parse(input: string, schema: NodeDesc): WorkflowDocument {
     }))
   );
 
+  // TODO: CS: Get this from the AST
+  let workflow = {};
+  try {
+    workflow = jsYamlSafeLoad(input);
+  } catch {
+    // Ignore..
+  }
+
   return {
-    workflow: {},
+    workflow,
     workflowST: yamlRoot,
     nodeToDesc: validationResult.nodeToDesc,
     diagnostics,

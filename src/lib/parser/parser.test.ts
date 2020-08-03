@@ -1,12 +1,24 @@
+import { ExpressionContextCompletion } from "../expressions/completion";
 import { complete } from "./complete";
-import { Diagnostic, DiagnosticKind, parse } from "./parser";
-import { NodeDesc } from "./schema";
+import { Diagnostic, DiagnosticKind, parse, WorkflowDocument } from "./parser";
+import { NodeDesc, PropertyPath } from "./schema";
+
+const NullCompletion: ExpressionContextCompletion = {
+  completeContext: (
+    context: string,
+    doc: WorkflowDocument,
+    path: PropertyPath,
+    input?: string
+  ) => {
+    return [];
+  },
+};
 
 /** | in string denotes cursor position */
 const _testComplete = async (input: string, schema: NodeDesc) => {
   const pos = input.indexOf("|");
   input = input.replace("|", "");
-  return await complete(input, pos, schema);
+  return await complete(input, pos, schema, NullCompletion);
 };
 
 /** | in string denotes cursor position */
@@ -482,7 +494,7 @@ describe("Async custom completion", () => {
   const testComplete = async (input: string) => {
     const pos = input.indexOf("|");
     input = input.replace("|", "");
-    return await complete(input, pos, dynamicSchema);
+    return await complete(input, pos, dynamicSchema, NullCompletion);
   };
 
   /** | in string denotes cursor position */
@@ -519,7 +531,7 @@ describe("Async custom completion", () => {
 
     it("map in sequence", () =>
       completeSimple("path:\n  seq:\n    - test\n    - foo: |", [
-        "$.path.seq[1].foo",
+        "$.path.seq,1.foo",
       ]));
   });
 });

@@ -1,17 +1,36 @@
-import { completeExpression } from "./completion";
-import { ExpressionContext } from "./evaluator";
+import { WorkflowDocument } from "../parser/parser";
+import { completeExpression, ExpressionContextCompletion } from "./completion";
 
-const testContext: ExpressionContext = {
-  contexts: {
-    env: {
-      FOO: 42,
-      BAR_TEST: "hello",
-    },
-    secrets: {
-      AWS_TOKEN: "12",
-    },
+const expressionCompletion: ExpressionContextCompletion = {
+  completeContext: (context, doc, path, input) => {
+    switch (context) {
+      case "env": {
+        return [
+          {
+            value: "FOO",
+          },
+          {
+            value: "BAR_TEST",
+          },
+        ].filter(
+          (x) => !input || (x.value.startsWith(input) && x.value !== input)
+        );
+      }
+
+      case "secrets": {
+        return [
+          {
+            value: "AWS_TOKEN",
+          },
+        ].filter(
+          (x) => !input || (x.value.startsWith(input) && x.value !== input)
+        );
+      }
+    }
+
+    return [];
   },
-} as any;
+};
 
 const testComplete = async (input: string, expected: string[]) => {
   const pos = input.indexOf("|");
@@ -22,7 +41,9 @@ const testComplete = async (input: string, expected: string[]) => {
     await completeExpression(
       input,
       pos >= 0 ? pos : input.length - 1,
-      testContext
+      {} as WorkflowDocument,
+      [],
+      expressionCompletion
     )
   ).map((x) => x.value);
 
@@ -50,10 +71,10 @@ describe("auto-complete", () => {
       await testComplete("env.FOO", []);
     });
 
-    it("provides suggestions for secrets", () => {
-      testComplete("secrets.A", ["AWS_TOKEN"]);
-      testComplete("1 == secrets.F", []);
-      testComplete("toJson(secrets.", ["AWS_TOKEN"]);
+    it("provides suggestions for secrets", async () => {
+      await testComplete("secrets.A", ["AWS_TOKEN"]);
+      await testComplete("1 == secrets.F", []);
+      await testComplete("toJson(secrets.", ["AWS_TOKEN"]);
     });
   });
 });

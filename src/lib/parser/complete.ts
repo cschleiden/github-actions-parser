@@ -1,6 +1,9 @@
 import { Kind, YAMLNode, YNode } from "../../types";
-import { ExpressionContext } from "../expressions";
-import { completeExpression } from "../expressions/completion";
+import {
+  completeExpression,
+  ExpressionContextCompletion,
+  inExpression,
+} from "../expressions/completion";
 import { parse, WorkflowDocument } from "./parser";
 import { MapNodeDesc, NodeDesc, PropertyPath } from "./schema";
 import { CompletionOption, Position } from "./types";
@@ -59,7 +62,7 @@ function findNode(node: YAMLNode, pos: number): YAMLNode {
 
         if (inPos([item.startPosition, item.endPosition], pos)) {
           const itemNode = findNode(item, pos);
-          if (itemNode.kind === Kind.SCALAR) {
+          if (itemNode.parent === n && itemNode.kind === Kind.SCALAR) {
             // If the child is a plain value, return the sequence node
             return n;
           }
@@ -130,10 +133,6 @@ function getPathFromNode(node: YNode): PropertyPath {
     const x = nodePath.shift();
 
     switch (x.kind) {
-      case Kind.SCALAR:
-        path.push(x.value);
-        break;
-
       case Kind.MAPPING:
         if (x.key) {
           path.push(x.key.value);
@@ -149,7 +148,10 @@ function getPathFromNode(node: YNode): PropertyPath {
         if (nodePath.length && x.items) {
           const idx = x.items.indexOf(nodePath[0]);
           if (idx !== -1) {
-            path[path.length - 1] = `${path[path.length - 1]}[${idx}]`;
+            // Previous entry has to be a property. Note: this might be problematic with nested sequences,
+            // but that's not currently supported.
+            const propertyName: string = path[path.length - 1] as string;
+            path[path.length - 1] = [propertyName, idx];
           }
         }
         break;
@@ -165,7 +167,8 @@ async function doComplete(
   input: string,
   partialInput: string,
   pos: number,
-  doc: WorkflowDocument
+  doc: WorkflowDocument,
+  expressionCompletion: ExpressionContextCompletion
 ): Promise<CompletionOption[]> {
   if (!node) {
     console.error(desc);
@@ -224,8 +227,18 @@ async function doComplete(
           );
       }
 
-      if (desc.isExpression) {
-        return expressionComplete(node, pos, true);
+      if (
+        desc.isExpression ||
+        inExpression(node.value, pos - node.startPosition)
+      ) {
+        return expressionComplete(
+          node,
+          pos,
+          getPathFromNode(node),
+          doc,
+          expressionCompletion,
+          true
+        );
       }
 
       break;
@@ -233,7 +246,15 @@ async function doComplete(
 
     case "sequence": {
       if (desc.itemDesc) {
-        return doComplete(node, desc.itemDesc, input, partialInput, pos, doc);
+        return doComplete(
+          node,
+          desc.itemDesc,
+          input,
+          partialInput,
+          pos,
+          doc,
+          expressionCompletion
+        );
       }
 
       break;
@@ -257,7 +278,8 @@ async function doComplete(
             input,
             partialInput,
             pos,
-            doc
+            doc,
+            expressionCompletion
           );
         }
       }
@@ -266,13 +288,20 @@ async function doComplete(
     }
 
     case "oneOf": {
-      // Generate
       const validTypes = getValidOneOfTypes(node, pos, input);
 
       const result = [];
 
       for (const one of desc.oneOf.filter((one) => validTypes.has(one.type))) {
-        const c = await doComplete(node, one, input, partialInput, pos, doc);
+        const c = await doComplete(
+          node,
+          one,
+          input,
+          partialInput,
+          pos,
+          doc,
+          expressionCompletion
+        );
         result.push(...c);
       }
 
@@ -329,6 +358,9 @@ function getCurrentLine(pos: number, input: string): [string, number] {
 async function expressionComplete(
   node: YNode,
   pos: number,
+  path: PropertyPath,
+  doc: WorkflowDocument,
+  expressionCompletion: ExpressionContextCompletion,
   delimiterOptional = false
 ): Promise<CompletionOption[]> {
   const line = node.value;
@@ -342,12 +374,16 @@ async function expressionComplete(
       startPos < linePos &&
       (endPos === -1 || endPos > linePos))
   ) {
-    const line2 = line.replace(/\$\{\{(.*)(\}\})?/, "$1");
-    const linePos2 = linePos - line.indexOf(line2);
+    const expressionLine = line.replace(/\$\{\{(.*)(\}\})?/, "$1");
+    const expressionPos = linePos - line.indexOf(expressionLine);
 
-    // console.log(line2, linePos2);
-
-    return completeExpression(line2, linePos2, {} as ExpressionContext);
+    return completeExpression(
+      expressionLine,
+      expressionPos,
+      doc,
+      path,
+      expressionCompletion
+    );
   }
 
   return [];
@@ -406,7 +442,8 @@ export function _transform(
 export async function complete(
   input: string,
   pos: number,
-  schema: NodeDesc
+  schema: NodeDesc,
+  expressionCompletion: ExpressionContextCompletion
 ): Promise<CompletionOption[]> {
   // Fix the input to work around YAML parsing issues
   const [newInput, newPos, partialInput] = _transform(input, pos);
@@ -424,7 +461,8 @@ export async function complete(
       input,
       partialInput,
       newPos,
-      doc
+      doc,
+      expressionCompletion
     );
     completionOptions = completionOptions || [];
     completionOptions.sort((a, b) => a.value.localeCompare(b.value));
@@ -433,7 +471,13 @@ export async function complete(
 
   // No desc found, check if we are in a scalar node with an expression?
   if (node.kind === Kind.SCALAR) {
-    return expressionComplete(node, pos);
+    return expressionComplete(
+      node,
+      pos,
+      getPathFromNode(node),
+      doc,
+      expressionCompletion
+    );
   }
 
   console.log(node);

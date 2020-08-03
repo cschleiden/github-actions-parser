@@ -4,7 +4,7 @@ import { CompletionOption } from "./types";
 
 export type NodeDescMap = { [key: string]: NodeDesc };
 
-export type PropertyPath = string[];
+export type PropertyPath = (string | [string, number])[];
 
 type OneOfNodeDesc = {
   type: "oneOf";

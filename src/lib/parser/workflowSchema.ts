@@ -1,6 +1,16 @@
 import { Octokit } from "@octokit/rest";
+import { ExpressionContextCompletion } from "../expressions/completion";
 import { mergeDeep } from "../utils/deepMerge";
-import { MapNodeDesc, NodeDesc, NodeDescMap, ValueDesc } from "./schema";
+import { complete as genericComplete } from "./complete";
+import { parse as genericParse, WorkflowDocument } from "./parser";
+import {
+  MapNodeDesc,
+  NodeDesc,
+  NodeDescMap,
+  PropertyPath,
+  ValueDesc,
+} from "./schema";
+import { CompletionOption } from "./types";
 
 const value = (description?: string): NodeDesc => ({
   type: "value",
@@ -304,14 +314,6 @@ const env: MapNodeDesc = {
   type: "map",
   itemDesc: {
     type: "value",
-
-    customSuggester: async (desc, input, existingItems) => {
-      // Find out which env block we are in
-      // Recursively check env blocks..
-      // Except when we are in a step, then check the previous ones..
-
-      return [];
-    },
   },
 };
 
@@ -340,6 +342,48 @@ export interface Context {
   /** Repository name */
   repository: string;
 }
+
+export const WorkflowExpressionCompletion: ExpressionContextCompletion = {
+  completeContext: (
+    context: string,
+    doc: WorkflowDocument,
+    path: PropertyPath,
+    input?: string
+  ) => {
+    switch (context) {
+      case "env": {
+        const options: string[] = [];
+
+        if (doc.workflow) {
+          // console.log(path);
+          // console.log(JSON.stringify(doc.workflow, undefined, 2));
+
+          let n = doc.workflow;
+
+          for (const p of path) {
+            if (p == "$") continue;
+            if (!n) break;
+
+            if (n["env"]) {
+              options.push(...Object.keys(n["env"]));
+            }
+
+            if (typeof p === "string") {
+              n = n[p];
+            } else {
+              // Sequence
+              n = n[p[0]][p[1]];
+            }
+          }
+        }
+
+        return options.sort().map((value) => ({ value }));
+      }
+    }
+
+    return [];
+  },
+};
 
 export function getSchema(context: Context): NodeDesc {
   return {
@@ -401,10 +445,11 @@ export function getSchema(context: Context): NodeDesc {
                   id: value(
                     "A unique identifier for the step. You can use the id to reference the step in contexts. For more information, see https://help.github.com/en/articles/contexts-and-expression-syntax-for-github-actions."
                   ),
-                  if: value(),
-                  name: {
+                  if: {
                     type: "value",
+                    isExpression: true,
                   },
+                  name: value(),
                   uses: value(),
                   run: value(),
                   "working-directory": value(),
@@ -427,4 +472,21 @@ export function getSchema(context: Context): NodeDesc {
 
     required: ["on", "jobs"],
   };
+}
+
+export function parse(context: Context, input: string): WorkflowDocument {
+  return genericParse(input, getSchema(context));
+}
+
+export function complete(
+  context: Context,
+  input: string,
+  pos: number
+): Promise<CompletionOption[]> {
+  return genericComplete(
+    input,
+    pos,
+    getSchema(context),
+    WorkflowExpressionCompletion
+  );
 }

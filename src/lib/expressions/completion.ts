@@ -1,6 +1,7 @@
 import { tokenMatcher } from "chevrotain";
+import { WorkflowDocument } from "../parser/parser";
+import { PropertyPath } from "../parser/schema";
 import { CompletionOption } from "../parser/types";
-import { ExpressionContext } from "./evaluator";
 import { getFunctionDescription } from "./functions";
 import {
   Context,
@@ -12,15 +13,28 @@ import {
   parser,
 } from "./parser";
 
+export interface ExpressionContextCompletion {
+  completeContext(
+    context: string,
+    doc: WorkflowDocument,
+    path: PropertyPath,
+    input?: string
+  ): CompletionOption[];
+}
+
+export function inExpression(input: string, pos: number) {
+  return input.substring(0, pos).indexOf("${{") !== -1;
+}
+
 export async function completeExpression(
   input: string,
   pos: number,
-  context: ExpressionContext
+  doc: WorkflowDocument,
+  path: PropertyPath,
+  completer: ExpressionContextCompletion
 ): Promise<CompletionOption[]> {
   input = input.substring(0, pos + 1);
   // console.log(input);
-
-  let partialSuggestionMode = false;
 
   const lexResult = ExpressionLexer.tokenize(input);
   if (lexResult.errors.length > 0) {
@@ -48,18 +62,13 @@ export async function completeExpression(
     const contextToken = tokenMatcher(lastInputToken, Dot)
       ? partialTokenVector[partialTokenVector.length - 2]
       : partialTokenVector[partialTokenVector.length - 3];
-    if (
-      contextToken &&
-      tokenMatcher(contextToken, Context) &&
-      context.contexts[contextToken.image]
-    ) {
-      const properties = Object.keys(context.contexts[contextToken.image]);
-      return properties
-        .filter(
-          (x) =>
-            searchTerm === "" || (x.startsWith(searchTerm) && x !== searchTerm)
-        )
-        .map((x) => ({ value: x }));
+    if (contextToken && tokenMatcher(contextToken, Context)) {
+      return completer.completeContext(
+        contextToken.image,
+        doc,
+        path,
+        searchTerm
+      );
     }
   }
 

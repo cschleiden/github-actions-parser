@@ -1,5 +1,9 @@
 import { complete } from "./complete";
-import { events, getSchema } from "./workflowSchema";
+import {
+  events,
+  getSchema,
+  WorkflowExpressionCompletion,
+} from "./workflowSchema";
 
 const WorkflowSchema = getSchema({
   client: null,
@@ -12,7 +16,12 @@ describe("Completion", () => {
   const testComplete = async (input: string) => {
     const pos = input.indexOf("|");
     input = input.replace("|", "");
-    return await complete(input, pos, WorkflowSchema);
+    return await complete(
+      input,
+      pos,
+      WorkflowSchema,
+      WorkflowExpressionCompletion
+    );
   };
 
   /** | in string denotes cursor position */
@@ -140,6 +149,34 @@ describe("Completion", () => {
     it("if", async () => {
       // `if` is always an expression
       await completeSimple("jobs:\n  build:\n    if: g|", ["github"]);
+    });
+
+    describe("context", () => {
+      describe("env", () => {
+        // it("job", async () => {
+        //   await completeSimple(
+        //     "env:\n  foo: 42\njobs:\n  build:\n    env:\n      bar: 23\n    name: ${{ env.|",
+        //     ["bar", "foo"]
+        //   );
+        // });
+
+        it("env in step", async () => {
+          await completeSimple(
+            `env:
+  foo: 42
+jobs:
+  build:
+    env:
+      bar: 23
+    steps:
+    - run: echo "hello"
+      name: \${{ env.|  }}
+      env:
+        step: 65`,
+            ["bar", "foo", "step"]
+          );
+        });
+      });
     });
   });
 });
