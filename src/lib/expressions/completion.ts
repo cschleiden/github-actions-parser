@@ -1,7 +1,7 @@
 import { tokenMatcher } from "chevrotain";
 import { WorkflowDocument } from "../parser/parser";
-import { PropertyPath } from "../parser/schema";
 import { CompletionOption } from "../parser/types";
+import { PropertyPath } from "../utils/path";
 import { getFunctionDescription } from "./functions";
 import {
   Context,

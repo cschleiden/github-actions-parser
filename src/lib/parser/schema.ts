@@ -1,10 +1,9 @@
 import { YAMLNode } from "yaml-ast-parser";
+import { PropertyPath } from "../utils/path";
 import { WorkflowDocument } from "./parser";
 import { CompletionOption } from "./types";
 
 export type NodeDescMap = { [key: string]: NodeDesc };
-
-export type PropertyPath = (string | [string, number])[];
 
 type OneOfNodeDesc = {
   type: "oneOf";
@@ -79,32 +78,3 @@ export type NodeDesc = (
     reportError: (message: string) => void
   ) => void;
 };
-
-// export function suggestValue(
-//   node: Node,
-//   desc: NodeDesc,
-//   input?: string
-// ): string[] {
-//   if (desc.customSuggester) {
-//     return desc.customSuggester(node, input);
-//   }
-
-//   switch (desc.type) {
-//     case "sequence": {
-//       if (desc.type !== node.type) {
-//         throw new Error();
-//       }
-
-//       if (desc.allowedValues) {
-//         const existingItems = new Set(node.items?.map(x => x.value) || []);
-//         return desc.allowedValues.filter(x => !existingItems.has(x)).filter((x) => (!input || x.startsWith(input)) && );
-//       }
-
-//       return [];
-//     }
-
-//     case "map": {
-//       // Delegate to node if oneof?
-//     }
-//   }
-// }

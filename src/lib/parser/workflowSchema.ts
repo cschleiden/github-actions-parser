@@ -1,15 +1,10 @@
 import { Octokit } from "@octokit/rest";
 import { ExpressionContextCompletion } from "../expressions/completion";
 import { mergeDeep } from "../utils/deepMerge";
+import { iteratePath, PropertyPath } from "../utils/path";
 import { complete as genericComplete } from "./complete";
 import { parse as genericParse, WorkflowDocument } from "./parser";
-import {
-  MapNodeDesc,
-  NodeDesc,
-  NodeDescMap,
-  PropertyPath,
-  ValueDesc,
-} from "./schema";
+import { MapNodeDesc, NodeDesc, NodeDescMap, ValueDesc } from "./schema";
 import { CompletionOption } from "./types";
 
 const value = (description?: string): NodeDesc => ({
@@ -343,49 +338,41 @@ export interface Context {
   repository: string;
 }
 
-export const WorkflowExpressionCompletion: ExpressionContextCompletion = {
-  completeContext: (
-    context: string,
-    doc: WorkflowDocument,
-    path: PropertyPath,
-    input?: string
-  ) => {
-    switch (context) {
-      case "env": {
-        const options: string[] = [];
+export function _getExpressionCompleter(
+  context: Context
+): ExpressionContextCompletion {
+  return {
+    completeContext: (
+      context: string,
+      doc: WorkflowDocument,
+      path: PropertyPath,
+      input?: string
+    ) => {
+      switch (context) {
+        case "env": {
+          const options: string[] = [];
 
-        if (doc.workflow) {
-          // console.log(path);
-          // console.log(JSON.stringify(doc.workflow, undefined, 2));
+          if (doc.workflow) {
+            // console.log(path);
+            // console.log(JSON.stringify(doc.workflow, undefined, 2));
 
-          let n = doc.workflow;
-
-          for (const p of path) {
-            if (p == "$") continue;
-            if (!n) break;
-
-            if (n["env"]) {
-              options.push(...Object.keys(n["env"]));
-            }
-
-            if (typeof p === "string") {
-              n = n[p];
-            } else {
-              // Sequence
-              n = n[p[0]][p[1]];
-            }
+            iteratePath(path, doc.workflow, (x) => {
+              if (x["env"]) {
+                options.push(...Object.keys(x["env"]));
+              }
+            });
           }
+
+          return options.sort().map((value) => ({ value }));
         }
-
-        return options.sort().map((value) => ({ value }));
       }
-    }
 
-    return [];
-  },
-};
+      return [];
+    },
+  };
+}
 
-export function getSchema(context: Context): NodeDesc {
+export function _getSchema(context: Context): NodeDesc {
   return {
     type: "map",
     keys: {
@@ -475,7 +462,7 @@ export function getSchema(context: Context): NodeDesc {
 }
 
 export function parse(context: Context, input: string): WorkflowDocument {
-  return genericParse(input, getSchema(context));
+  return genericParse(input, _getSchema(context));
 }
 
 export function complete(
@@ -486,7 +473,7 @@ export function complete(
   return genericComplete(
     input,
     pos,
-    getSchema(context),
-    WorkflowExpressionCompletion
+    _getSchema(context),
+    _getExpressionCompleter(context)
   );
 }

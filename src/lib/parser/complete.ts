@@ -4,8 +4,9 @@ import {
   ExpressionContextCompletion,
   inExpression,
 } from "../expressions/completion";
+import { PropertyPath } from "../utils/path";
 import { parse, WorkflowDocument } from "./parser";
-import { MapNodeDesc, NodeDesc, PropertyPath } from "./schema";
+import { MapNodeDesc, NodeDesc } from "./schema";
 import { CompletionOption, Position } from "./types";
 
 function inPos(position: Position, pos: number): boolean {

@@ -1,15 +1,18 @@
 import { complete } from "./complete";
 import {
+  Context,
   events,
-  getSchema,
-  WorkflowExpressionCompletion,
+  _getExpressionCompleter,
+  _getSchema,
 } from "./workflowSchema";
 
-const WorkflowSchema = getSchema({
+const context: Context = {
   client: null,
   owner: "owner",
   repository: "repository",
-});
+};
+const WorkflowSchema = _getSchema(context);
+const WorkflowExpressionCompletion = _getExpressionCompleter(context);
 
 describe("Completion", () => {
   /** | in string denotes cursor position */

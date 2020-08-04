@@ -1,7 +1,8 @@
 import { ExpressionContextCompletion } from "../expressions/completion";
+import { PropertyPath } from "../utils/path";
 import { complete } from "./complete";
 import { Diagnostic, DiagnosticKind, parse, WorkflowDocument } from "./parser";
-import { NodeDesc, PropertyPath } from "./schema";
+import { NodeDesc } from "./schema";
 
 const NullCompletion: ExpressionContextCompletion = {
   completeContext: (
