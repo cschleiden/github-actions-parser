@@ -30,6 +30,10 @@ function kindToString(kind: Kind): string {
   }
 }
 
+function validateExpressions(input: string, errors: ValidationError[]) {
+  // parseExpression();
+}
+
 function validateNode(
   node: YAMLNode,
   nodeDesc: NodeDesc,
@@ -47,7 +51,6 @@ function validateNode(
       pos: [n.startPosition, n.endPosition],
       message: `Expected ${expectedType}, found ${kindToString(actualKind)}`,
     });
-    return false;
   };
 
   switch (nodeDesc.type) {
@@ -70,6 +73,8 @@ function validateNode(
           message: `'${node.value}' is not in the list of allowed values`,
         });
       }
+
+      validateExpressions(scalarNode.value, errors);
 
       break;
     }
@@ -148,6 +153,11 @@ function validateNode(
 
         if (nodeDesc.itemDesc) {
           for (const item of n.items) {
+            // Record the itemdesc as the desired desc for the item. This might fail in the validateNode call,
+            // but is required for auto-complete (e.g., type doesn't match yet, but we still want to be able to
+            // suggest values)
+            nodeToDesc.set(item, nodeDesc.itemDesc);
+
             validateNode(item, nodeDesc.itemDesc, nodeToDesc, errors);
           }
         }

@@ -17,7 +17,7 @@ export class ExpressionError extends Error {
   }
 }
 
-const expr = /\$\{\{(.*?)\}\}/gm;
+const expressionMarker = /\$\{\{(.*?)\}\}/gm;
 
 export function parseExpression(expression: string) {
   const lexResult = ExpressionLexer.tokenize(expression);
@@ -38,7 +38,7 @@ export function evaluateExpression(
 ) {
   // This expects a single expression in the form of "<expr>" or "${{ <expr> }}". Remove the
   // ${{ }} markers
-  expression = expression.replace(expr, (_, g) => g);
+  expression = expression.replace(expressionMarker, (_, g) => g);
 
   const lexResult = ExpressionLexer.tokenize(expression);
 
@@ -68,7 +68,7 @@ export function replaceExpressions(
   input: string,
   context: ExpressionContext
 ): string {
-  return input.replace(expr, (_, g) => {
+  return input.replace(expressionMarker, (_, g) => {
     return evaluateExpression(g, context);
   });
 }

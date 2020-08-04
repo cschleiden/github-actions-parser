@@ -8,9 +8,18 @@ const NullCompletion: ExpressionContextCompletion = {
   completeContext: async (
     context: string,
     doc: WorkflowDocument,
-    path: PropertyPath,
-    input?: string
+    path: PropertyPath
   ) => {
+    switch (context) {
+      case "secrets": {
+        return [
+          {
+            value: "AZURE_KEY",
+          },
+        ];
+      }
+    }
+
     return [];
   },
 };
@@ -99,6 +108,9 @@ const schema: NodeDesc = {
         },
       },
     },
+    expr: {
+      type: "value",
+    },
   },
 
   required: ["name"],
@@ -180,6 +192,17 @@ describe("Validation", () => {
       },
     ]);
   });
+
+  // TODO: CS:
+  // it("Unknown secret", () => {
+  //   testValidation("expr: ${{ secrets.UNKNOWN }}", [
+  //     {
+  //       kind: DiagnosticKind.Error,
+  //       pos: [19, 23],
+  //       message: "Expected value, found map",
+  //     },
+  //   ]);
+  // });
 });
 
 describe("Completion", () => {
@@ -189,13 +212,21 @@ describe("Completion", () => {
   describe("map", () => {
     describe("completes top level keys", () => {
       it("empty file", () =>
-        completeSimple("|", ["array", "arrayMap", "level", "name", "type"]));
+        completeSimple("|", [
+          "array",
+          "arrayMap",
+          "expr",
+          "level",
+          "name",
+          "type",
+        ]));
 
       it("partial match in empty file", () => completeSimple("n|", ["name"]));
       it("one other key", () =>
         completeSimple("name: test\n|", [
           "array",
           "arrayMap",
+          "expr",
           "level",
           "type",
         ]));
@@ -205,6 +236,7 @@ describe("Completion", () => {
         completeSimple("name: test\n\n|\nlevel:\n  steps: 1", [
           "array",
           "arrayMap",
+          "expr",
           "type",
         ]));
     });
@@ -236,15 +268,15 @@ describe("Completion", () => {
   });
 
   describe("sequence", () => {
-    describe("square", () => {
-      it("completes value items", async () => {
-        await completeSimple("array: [ | ]", ["bar", "foo"]);
-        await completeSimple("array: [ b| ]", ["bar"]);
+    // describe("square", () => {
+    //   it("completes value items", async () => {
+    //     await completeSimple("array: [ | ]", ["bar", "foo"]);
+    //     await completeSimple("array: [ b| ]", ["bar"]);
 
-        await completeSimple("array: [ foo, b| ]", ["bar"]);
-        await completeSimple("array: [ foo, | ]", ["bar"]);
-      });
-    });
+    //     await completeSimple("array: [ foo, b| ]", ["bar"]);
+    //     await completeSimple("array: [ foo, | ]", ["bar"]);
+    //   });
+    // });
 
     describe("dash", () => {
       it("completes value items", async () => {
@@ -416,7 +448,7 @@ describe("OneOf", () => {
     });
 
     it("oneOf as inline sequence", () => {
-      return completeSimple("on: [ |", ["123", "foo", "var"]);
+      return completeSimple("on: [ | ]", ["123", "foo", "var"]);
     });
 
     it("oneOf as inline sequence with other values", () => {

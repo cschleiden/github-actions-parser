@@ -1,91 +1,15 @@
-import { Kind, YAMLNode, YNode } from "../../types";
+import { YAMLNode } from "yaml-ast-parser";
+import { Kind, YNode } from "../../types";
 import {
   completeExpression,
   ExpressionContextCompletion,
   inExpression,
 } from "../expressions/completion";
 import { PropertyPath } from "../utils/path";
+import { findNode } from "./ast";
 import { parse, WorkflowDocument } from "./parser";
 import { MapNodeDesc, NodeDesc } from "./schema";
-import { CompletionOption, Position } from "./types";
-
-function inPos(position: Position, pos: number): boolean {
-  return position[0] <= pos && pos <= position[1];
-}
-
-function findNode(node: YAMLNode, pos: number): YAMLNode {
-  if (!inPos([node.startPosition, node.endPosition], pos)) {
-    return null;
-  }
-
-  const n: YNode = node as YNode;
-  switch (n.kind) {
-    case Kind.MAP: {
-      for (const mapping of n.mappings) {
-        if (inPos([mapping.startPosition, mapping.endPosition], pos)) {
-          return findNode(mapping, pos);
-        }
-      }
-
-      break;
-    }
-
-    case Kind.MAPPING: {
-      // If the position is within the value, return that, otherwise the mapping node
-      const r = node.value && findNode(n.value, pos);
-      if (r) {
-        return r;
-      }
-
-      // TODO: What to do here..
-      if (node.key) {
-        if (
-          inPos([n.key.startPosition, n.key.endPosition], pos) ||
-          node.key.value === "dummy"
-        ) {
-          return node.parent;
-        }
-      }
-
-      break;
-    }
-
-    case Kind.SEQ: {
-      for (const item of n.items) {
-        if (typeof item !== "object") {
-          return n;
-        }
-
-        if (item === null) {
-          // New item like `- |` is inserted
-          return n;
-        }
-
-        if (inPos([item.startPosition, item.endPosition], pos)) {
-          const itemNode = findNode(item, pos);
-          if (itemNode.parent === n && itemNode.kind === Kind.SCALAR) {
-            // If the child is a plain value, return the sequence node
-            return n;
-          }
-
-          // Otherwise return the found node
-          return itemNode;
-        }
-      }
-
-      break;
-    }
-
-    case Kind.SCALAR: {
-      return n;
-    }
-
-    default:
-      throw new Error("unknown");
-  }
-
-  return node;
-}
+import { CompletionOption } from "./types";
 
 async function completeMapKeys(
   doc: WorkflowDocument,
@@ -180,36 +104,27 @@ async function doComplete(
 
   switch (desc.type) {
     case "value": {
-      let p = pos;
-      // TODO: We can't do that.. do it in the seq/map case?
-      // TODO: urgs this is ugly. maybe get the line first? Would prevent this from running across the whole
-      // document
-      while (
-        p >= 0 &&
-        input[p] !== ":" &&
-        input[p] !== "-" &&
-        input[p] !== "[" &&
-        input[p] !== ","
-      ) {
-        --p;
-      }
+      let searchInput = node.value || "";
+      searchInput = searchInput !== "dummy" ? searchInput : "";
 
-      if (p < 0) {
-        // Reset for array case
-        p = pos;
-      }
-
-      const searchInput = input.substring(p + 1, pos + 1).trim();
-      // console.log("searchInput", searchInput);
+      const parent = node.parent as YNode;
 
       // Are there any existing items?
       let existingValues: string[] | undefined;
-      if (node.kind === Kind.SEQ) {
-        existingValues = node.items
-          .filter((x) => !!x && x.kind === Kind.SCALAR)
-          .map((x) => x.value);
-      }
 
+      // Are we in a sequence?
+      let existingItems: YAMLNode[] = [];
+      if (parent.kind === Kind.SEQ) {
+        existingItems = parent.items;
+      } else if (node.kind === Kind.SEQ) {
+        // Is the current node a sequence? Could happen if we are trying to auto-complete and have an empty input
+        existingItems = node.items;
+      }
+      existingValues = existingItems
+        .filter((x) => !!x && x.kind === Kind.SCALAR)
+        .map((x) => x.value);
+
+      // Does the value node has auto-complete information?
       if (desc.customSuggester) {
         return desc.customSuggester(
           desc,
@@ -218,17 +133,13 @@ async function doComplete(
           searchInput,
           existingValues
         );
-      }
-
-      if (desc.allowedValues) {
+      } else if (desc.allowedValues) {
         return desc.allowedValues
           .filter((x) => !searchInput || x.value.startsWith(searchInput))
           .filter(
             (x) => !existingValues || existingValues.indexOf(x.value) === -1
           );
-      }
-
-      if (
+      } else if (
         desc.isExpression ||
         inExpression(node.value, pos - node.startPosition)
       ) {
@@ -390,10 +301,7 @@ async function expressionComplete(
   return [];
 }
 
-export function _transform(
-  input: string,
-  pos: number
-): [string, number, string] {
+function _transform(input: string, pos: number): [string, number, string] {
   // TODO: Optimize this...
   const lines = input.split("\n");
   const posLine = input
@@ -420,7 +328,7 @@ export function _transform(
 
       // Adjust pos by one to prevent a sequence node being marked as active
       pos++;
-    } else {
+    } else if (!trimmedLine.startsWith("-")) {
       // Add `:` to end of line
       lines[posLine] = line + ":";
     }
@@ -481,6 +389,5 @@ export async function complete(
     );
   }
 
-  console.log(node);
   throw new Error("Could not find schema for node");
 }

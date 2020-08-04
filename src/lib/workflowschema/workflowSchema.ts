@@ -1,5 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import { complete as genericComplete } from "../parser/complete";
+import { hover as genericHover } from "../parser/hover";
 import { parse as genericParse, WorkflowDocument } from "../parser/parser";
 import {
   MapNodeDesc,
@@ -7,7 +8,7 @@ import {
   NodeDescMap,
   ValueDesc,
 } from "../parser/schema";
-import { CompletionOption } from "../parser/types";
+import { CompletionOption, Hover } from "../parser/types";
 import { mergeDeep } from "../utils/deepMerge";
 import { _getExpressionCompleter } from "./contextCompletion";
 
@@ -449,4 +450,12 @@ export function complete(
     _getSchema(context),
     _getExpressionCompleter(context)
   );
+}
+
+export function hover(
+  context: Context,
+  input: string,
+  pos: number
+): Promise<Hover | undefined> {
+  return genericHover(input, pos, _getSchema(context));
 }
