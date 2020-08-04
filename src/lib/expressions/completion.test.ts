@@ -2,7 +2,7 @@ import { WorkflowDocument } from "../parser/parser";
 import { completeExpression, ExpressionContextCompletion } from "./completion";
 
 const expressionCompletion: ExpressionContextCompletion = {
-  completeContext: (context, doc, path, input) => {
+  completeContext: async (context, doc, path, input) => {
     switch (context) {
       case "env": {
         return [

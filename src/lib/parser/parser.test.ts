@@ -5,7 +5,7 @@ import { Diagnostic, DiagnosticKind, parse, WorkflowDocument } from "./parser";
 import { NodeDesc } from "./schema";
 
 const NullCompletion: ExpressionContextCompletion = {
-  completeContext: (
+  completeContext: async (
     context: string,
     doc: WorkflowDocument,
     path: PropertyPath,

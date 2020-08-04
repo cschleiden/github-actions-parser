@@ -19,7 +19,7 @@ export interface ExpressionContextCompletion {
     doc: WorkflowDocument,
     path: PropertyPath,
     input?: string
-  ): CompletionOption[];
+  ): Promise<CompletionOption[]>;
 }
 
 export function inExpression(input: string, pos: number) {

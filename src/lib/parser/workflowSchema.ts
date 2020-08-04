@@ -339,23 +339,20 @@ export interface Context {
 }
 
 export function _getExpressionCompleter(
-  context: Context
+  ctx: Context
 ): ExpressionContextCompletion {
   return {
-    completeContext: (
+    completeContext: async (
       context: string,
       doc: WorkflowDocument,
       path: PropertyPath,
       input?: string
-    ) => {
+    ): Promise<CompletionOption[]> => {
       switch (context) {
         case "env": {
           const options: string[] = [];
 
           if (doc.workflow) {
-            // console.log(path);
-            // console.log(JSON.stringify(doc.workflow, undefined, 2));
-
             iteratePath(path, doc.workflow, (x) => {
               if (x["env"]) {
                 options.push(...Object.keys(x["env"]));
@@ -364,6 +361,13 @@ export function _getExpressionCompleter(
           }
 
           return options.sort().map((value) => ({ value }));
+        }
+
+        case "secrets": {
+          // Get repo secrets
+          ctx.client.actions.getOrgSecret;
+
+          break;
         }
       }
 
