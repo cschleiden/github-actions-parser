@@ -29,7 +29,7 @@ export function _getExpressionCompleter(
         }
 
         case "secrets": {
-          const result: CompletionOption[] = [];
+          const secrets = new Set<string>();
 
           // Get repo secrets
           const repoSecretsResponse = await ctx.client.actions.listRepoSecrets({
@@ -37,11 +37,7 @@ export function _getExpressionCompleter(
             repo: ctx.repository,
           });
 
-          result.push(
-            ...repoSecretsResponse.data.secrets.map((s) => ({
-              value: s.name,
-            }))
-          );
+          repoSecretsResponse.data.secrets.forEach((x) => secrets.add(x.name));
 
           // Get org secrets
           if (ctx.ownerIsOrg) {
@@ -50,14 +46,10 @@ export function _getExpressionCompleter(
               repo: ctx.repository,
             });
 
-            result.push(
-              ...orgSecretsResponse.data.secrets.map((s) => ({
-                value: s.name,
-              }))
-            );
+            orgSecretsResponse.data.secrets.forEach((x) => secrets.add(x.name));
           }
 
-          return result;
+          return Array.from(secrets.values()).map((x) => ({ value: x }));
         }
       }
 
