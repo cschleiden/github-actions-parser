@@ -17,8 +17,7 @@ export interface ExpressionContextCompletion {
   completeContext(
     context: string,
     doc: WorkflowDocument,
-    path: PropertyPath,
-    input?: string
+    path: PropertyPath
   ): Promise<CompletionOption[]>;
 }
 
@@ -63,11 +62,18 @@ export async function completeExpression(
       ? partialTokenVector[partialTokenVector.length - 2]
       : partialTokenVector[partialTokenVector.length - 3];
     if (contextToken && tokenMatcher(contextToken, Context)) {
-      return completer.completeContext(
+      const options = await completer.completeContext(
         contextToken.image,
         doc,
-        path,
-        searchTerm
+        path
+      );
+
+      options.sort((a, b) => a.value.localeCompare(b.value));
+
+      return options.filter(
+        (x) =>
+          !searchTerm ||
+          (x.value.startsWith(searchTerm) && x.value !== searchTerm)
       );
     }
   }

@@ -1,11 +1,15 @@
 import { Octokit } from "@octokit/rest";
-import { ExpressionContextCompletion } from "../expressions/completion";
+import { complete as genericComplete } from "../parser/complete";
+import { parse as genericParse, WorkflowDocument } from "../parser/parser";
+import {
+  MapNodeDesc,
+  NodeDesc,
+  NodeDescMap,
+  ValueDesc,
+} from "../parser/schema";
+import { CompletionOption } from "../parser/types";
 import { mergeDeep } from "../utils/deepMerge";
-import { iteratePath, PropertyPath } from "../utils/path";
-import { complete as genericComplete } from "./complete";
-import { parse as genericParse, WorkflowDocument } from "./parser";
-import { MapNodeDesc, NodeDesc, NodeDescMap, ValueDesc } from "./schema";
-import { CompletionOption } from "./types";
+import { _getExpressionCompleter } from "./contextCompletion";
 
 const value = (description?: string): NodeDesc => ({
   type: "value",
@@ -336,44 +340,9 @@ export interface Context {
 
   /** Repository name */
   repository: string;
-}
 
-export function _getExpressionCompleter(
-  ctx: Context
-): ExpressionContextCompletion {
-  return {
-    completeContext: async (
-      context: string,
-      doc: WorkflowDocument,
-      path: PropertyPath,
-      input?: string
-    ): Promise<CompletionOption[]> => {
-      switch (context) {
-        case "env": {
-          const options: string[] = [];
-
-          if (doc.workflow) {
-            iteratePath(path, doc.workflow, (x) => {
-              if (x["env"]) {
-                options.push(...Object.keys(x["env"]));
-              }
-            });
-          }
-
-          return options.sort().map((value) => ({ value }));
-        }
-
-        case "secrets": {
-          // Get repo secrets
-          ctx.client.actions.getOrgSecret;
-
-          break;
-        }
-      }
-
-      return [];
-    },
-  };
+  /** Is the repository owned by an organization? */
+  ownerIsOrg?: boolean;
 }
 
 export function _getSchema(context: Context): NodeDesc {

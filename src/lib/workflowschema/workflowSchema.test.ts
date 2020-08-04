@@ -1,10 +1,6 @@
-import { complete } from "./complete";
-import {
-  Context,
-  events,
-  _getExpressionCompleter,
-  _getSchema,
-} from "./workflowSchema";
+import { complete } from "../parser/complete";
+import { _getExpressionCompleter } from "./contextCompletion";
+import { Context, events, _getSchema } from "./workflowSchema";
 
 const context: Context = {
   client: null,

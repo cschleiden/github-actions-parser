@@ -2,7 +2,7 @@ import { WorkflowDocument } from "../parser/parser";
 import { completeExpression, ExpressionContextCompletion } from "./completion";
 
 const expressionCompletion: ExpressionContextCompletion = {
-  completeContext: async (context, doc, path, input) => {
+  completeContext: async (context, doc, path) => {
     switch (context) {
       case "env": {
         return [
@@ -12,9 +12,7 @@ const expressionCompletion: ExpressionContextCompletion = {
           {
             value: "BAR_TEST",
           },
-        ].filter(
-          (x) => !input || (x.value.startsWith(input) && x.value !== input)
-        );
+        ];
       }
 
       case "secrets": {
@@ -22,9 +20,7 @@ const expressionCompletion: ExpressionContextCompletion = {
           {
             value: "AWS_TOKEN",
           },
-        ].filter(
-          (x) => !input || (x.value.startsWith(input) && x.value !== input)
-        );
+        ];
       }
     }
 
@@ -35,8 +31,7 @@ const expressionCompletion: ExpressionContextCompletion = {
 const testComplete = async (input: string, expected: string[]) => {
   const pos = input.indexOf("|");
   input = input.replace("|", "");
-  // const doc = parse(input, WorkflowSchema);
-  // return await complete(doc, pos, input);
+
   const results = (
     await completeExpression(
       input,
@@ -67,7 +62,7 @@ describe("auto-complete", () => {
     it("provides suggestions for env", async () => {
       await testComplete("env.X", []);
       await testComplete("1 == env.F", ["FOO"]);
-      await testComplete("env.", ["FOO", "BAR_TEST"]);
+      await testComplete("env.", ["BAR_TEST", "FOO"]);
       await testComplete("env.FOO", []);
     });
 

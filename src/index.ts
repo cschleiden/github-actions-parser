@@ -1,1 +1,1 @@
-export { complete, parse } from "./lib/parser/workflowSchema";
+export { complete, parse } from "./lib/workflowschema/workflowSchema";
