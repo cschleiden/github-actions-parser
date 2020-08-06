@@ -11,6 +11,18 @@ export interface ContextProviderFactory {
   get(workflow: Workflow, path: PropertyPath): Promise<ContextProvider>;
 }
 
+function filterAndSortCompletionOptions(
+  partialInput: string,
+  options: CompletionOption[],
+  existingValues?: Set<string>
+) {
+  options = options
+    .filter((x) => !existingValues || !existingValues.has(x.value))
+    .filter((x) => !partialInput || x.value.startsWith(partialInput));
+  options.sort((a, b) => a.value.localeCompare(b.value));
+  return options;
+}
+
 async function completeMapKeys(
   doc: WorkflowDocument,
   node: YNode | null,
@@ -22,25 +34,26 @@ async function completeMapKeys(
     node?.mappings?.filter((x) => !!x.key).map((x) => x.key.value) || []
   );
 
-  if ((mapDesc as NodeDesc).customSuggester) {
-    return (mapDesc as NodeDesc).customSuggester(
-      mapDesc,
-      doc.workflow,
-      getPathFromNode(node),
-      partialInput,
-      Array.from(existingKeys.values())
+  let options: CompletionOption[] = [];
+
+  if ((mapDesc as NodeDesc).customValueProvider) {
+    options.push(
+      ...(await (mapDesc as NodeDesc).customValueProvider(
+        mapDesc,
+        doc.workflow,
+        getPathFromNode(node)
+      ))
     );
   }
 
-  const completionOptions = Object.keys(mapDesc.keys)
-    .filter((x) => !existingKeys.has(x))
-    .filter((x) => !partialInput || x.startsWith(partialInput))
-    .map((key) => ({
+  options.push(
+    ...Object.keys(mapDesc.keys).map((key) => ({
       value: key,
       description: mapDesc.keys[key].description,
-    }));
-  completionOptions.sort((a, b) => a.value.localeCompare(b.value));
-  return completionOptions;
+    }))
+  );
+
+  return filterAndSortCompletionOptions(partialInput, options, existingKeys);
 }
 
 async function doComplete(
@@ -66,9 +79,6 @@ async function doComplete(
 
       const parent = node.parent as YNode;
 
-      // Are there any existing items?
-      let existingValues: string[] | undefined;
-
       // Are we in a sequence?
       let existingItems: YAMLNode[] = [];
       if (parent.kind === Kind.SEQ) {
@@ -77,25 +87,29 @@ async function doComplete(
         // Is the current node a sequence? Could happen if we are trying to auto-complete and have an empty input
         existingItems = node.items;
       }
-      existingValues = existingItems
-        .filter((x) => !!x && x.kind === Kind.SCALAR)
-        .map((x) => x.value);
+      const existingValues = new Set<string>(
+        existingItems
+          .filter((x) => !!x && x.kind === Kind.SCALAR)
+          .map((x) => x.value)
+      );
 
       // Does the value node has auto-complete information?
-      if (desc.customSuggester) {
-        return desc.customSuggester(
-          desc,
-          doc.workflow,
-          getPathFromNode(node),
+      if (desc.customValueProvider) {
+        return filterAndSortCompletionOptions(
           searchInput,
-          existingValues
+          await desc.customValueProvider(
+            desc,
+            doc.workflow,
+            getPathFromNode(node)
+          ),
+          new Set<string>(existingValues)
         );
       } else if (desc.allowedValues) {
-        return desc.allowedValues
-          .filter((x) => !searchInput || x.value.startsWith(searchInput))
-          .filter(
-            (x) => !existingValues || existingValues.indexOf(x.value) === -1
-          );
+        return filterAndSortCompletionOptions(
+          searchInput,
+          desc.allowedValues,
+          existingValues
+        );
       } else if (
         desc.isExpression ||
         inExpression(node.value, pos - node.startPosition)

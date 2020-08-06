@@ -322,13 +322,29 @@ const runsOn = (context: Context): NodeDesc => ({
   description:
     "The type of machine to run the job on. The machine can be either a GitHub-hosted runner, or a self-hosted runner.",
 
-  customSuggester: async (_, input, existingItems) => {
-    return [
-      { value: "ubuntu-latest" },
-      { value: "windows-latest" },
-      { value: "macos-latest" },
-      { value: "self-hosted" },
-    ];
+  customValueProvider: async () => {
+    const labels = new Set<string>();
+    labels.add("ubuntu-latest");
+    labels.add("windows-latest");
+    labels.add("macos-latest");
+    labels.add("self-hosted");
+
+    const runnersResp = await context.client.actions.listSelfHostedRunnersForRepo(
+      {
+        owner: context.owner,
+        repo: context.repository,
+      }
+    );
+
+    if (runnersResp && runnersResp.data.runners) {
+      runnersResp.data.runners.forEach((r) =>
+        (r as any)?.labels?.forEach((l: { name: string }) => labels.add(l.name))
+      );
+    }
+
+    return Array.from(labels.values()).map((x) => ({
+      value: x,
+    }));
   },
 });
 

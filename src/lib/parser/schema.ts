@@ -1,5 +1,3 @@
-import { YAMLNode } from "yaml-ast-parser";
-import { CompletionOption } from "../../types";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "./parser";
 
@@ -58,23 +56,15 @@ export type NodeDesc = (
   description?: string;
 
   /**
-   * Custom suggester
+   * Custom value provider, used for auto-complete and validation
    *
-   * @param desc
-   * @param workflow
-   * @param path
-   * @param input
-   * @param existingItems
+   * @param desc Description for node to provide value for
+   * @param workflow Workflow if it could be parsed
+   * @param path Path in the workflow
    */
-  customSuggester?: (
+  customValueProvider?: (
     desc: NodeDesc,
     workflow: Workflow | undefined,
-    path: PropertyPath,
-    input?: string,
-    existingItems?: string[]
-  ) => Promise<CompletionOption[]>;
-  customValidator?: (
-    node: YAMLNode,
-    reportError: (message: string) => void
-  ) => void;
+    path: PropertyPath
+  ) => Promise<ValueDesc[]>;
 };

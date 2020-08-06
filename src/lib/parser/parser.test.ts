@@ -111,8 +111,12 @@ const schema: NodeDesc = {
 };
 
 describe("Validation", () => {
-  const testValidation = async (input: string, expected: Diagnostic[]) => {
-    const doc = await parse(input, schema, NullCompletion);
+  const testValidation = async (
+    input: string,
+    expected: Diagnostic[],
+    s = schema
+  ) => {
+    const doc = await parse(input, s, NullCompletion);
 
     expect(doc.diagnostics).toEqual(expected);
   };
@@ -190,6 +194,33 @@ describe("Validation", () => {
   //     },
   //   ]);
   // });
+
+  describe("dynamic", () => {
+    const dynamicSchema: NodeDesc = {
+      type: "map",
+      keys: {
+        "runs-on": {
+          type: "value",
+          customValueProvider: async () => {
+            return [
+              {
+                value: "foo",
+              },
+              {
+                value: "bar",
+              },
+            ];
+          },
+        },
+      },
+    };
+
+    it("Valid dynamic value", () =>
+      testValidation("runs-on: foo", [], dynamicSchema));
+
+    it("Invalid dynamic value", () =>
+      testValidation("runs-on: foo2", [], dynamicSchema));
+  });
 });
 
 describe("Completion", () => {
@@ -444,7 +475,7 @@ describe("OneOf", () => {
   });
 });
 
-const pathSuggester = async (input, doc, path) => {
+const pathSuggester = async (_, workflow, path) => {
   return [
     {
       value: path.join("."),
@@ -460,10 +491,8 @@ const dynamicSchema: NodeDesc = {
     },
     dynamic: {
       type: "value",
-      customSuggester: async (_, doc, path, input) => {
-        return [{ value: "foo" }, { value: "bar" }].filter(
-          (x) => !input || x.value.startsWith(input)
-        );
+      customValueProvider: async () => {
+        return [{ value: "foo" }, { value: "bar" }];
       },
     },
     path: {
@@ -471,7 +500,7 @@ const dynamicSchema: NodeDesc = {
       keys: {
         value: {
           type: "value",
-          customSuggester: pathSuggester,
+          customValueProvider: pathSuggester,
         },
         seq: {
           type: "sequence",
@@ -480,12 +509,12 @@ const dynamicSchema: NodeDesc = {
             keys: {
               foo: {
                 type: "value",
-                customSuggester: pathSuggester,
+                customValueProvider: pathSuggester,
               },
             },
-            customSuggester: pathSuggester,
+            customValueProvider: pathSuggester,
           },
-          customSuggester: pathSuggester,
+          customValueProvider: pathSuggester,
         },
       },
     },
@@ -493,16 +522,8 @@ const dynamicSchema: NodeDesc = {
       type: "sequence",
       itemDesc: {
         type: "value",
-        customSuggester: async (desc, doc, path, input, existingValues) => {
-          // console.log(desc, input, existingValues);
-          return [{ value: "foo" }, { value: "bar" }]
-            .filter((x) => !input || x.value.startsWith(input))
-            .filter(
-              (x) =>
-                !existingValues ||
-                existingValues.length === 0 ||
-                existingValues.indexOf(x.value) === -1
-            );
+        customValueProvider: async (desc, doc, path) => {
+          return [{ value: "foo" }, { value: "bar" }];
         },
       },
     },
@@ -547,7 +568,10 @@ describe("Async custom completion", () => {
     it("map", () => completeSimple("path:\n  value: |", ["$.path.value"]));
 
     it("sequence", () =>
-      completeSimple("path:\n  seq:\n    - test\n    - |", ["$.path.seq"]));
+      completeSimple("path:\n  seq:\n    - test\n    - |", [
+        "$.path.seq",
+        "foo",
+      ]));
 
     it("map in sequence", () =>
       completeSimple("path:\n  seq:\n    - test\n    - foo: |", [
