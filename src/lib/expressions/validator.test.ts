@@ -23,7 +23,7 @@ const contextProvider: ContextProvider = {
 
 const testValidation = async (input: string, expected: string[]) => {
   const errors: ValidationError[] = [];
-  validateExpression(input, errors, contextProvider);
+  validateExpression(input, 0, errors, contextProvider);
   expect(errors.map((x) => x.message)).toEqual(expected);
 };
 

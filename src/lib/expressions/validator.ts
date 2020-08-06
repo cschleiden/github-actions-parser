@@ -1,4 +1,4 @@
-import { ExpressionContext } from ".";
+import { ExpressionContext, removeExpressionMarker } from ".";
 import { Position } from "../../types";
 import { ValidationError } from "../parser/validator";
 import { iteratePath, PropertyPath } from "../utils/path";
@@ -31,16 +31,21 @@ class ExpressionValidator extends ExpressionEvaluator {
 
 export function validateExpression(
   input: string,
+  posOffset: number,
   errors: ValidationError[],
   contextProvider: ContextProvider
 ) {
+  const expressionPosition: Position = [posOffset, posOffset + input.length];
+
+  input = removeExpressionMarker(input);
+
   // Check for parser errors
   const lexResult = ExpressionLexer.tokenize(input);
   parser.input = lexResult.tokens;
   if (lexResult.errors.length > 0 || parser.errors.length > 0) {
     errors.push({
       message: "Invalid expression",
-      pos: [0, input.length],
+      pos: expressionPosition,
     });
 
     return;
@@ -49,21 +54,22 @@ export function validateExpression(
   const cst = parser.expression();
 
   try {
-    const result = new ExpressionValidator(contextProvider, errors, [
-      0,
-      input.length,
-    ]).visit(cst, {} as ExpressionContext);
+    const result = new ExpressionValidator(
+      contextProvider,
+      errors,
+      expressionPosition
+    ).visit(cst, {} as ExpressionContext);
 
-    if (!result) {
+    if (result === undefined) {
       errors.push({
         message: "Invalid expression",
-        pos: [0, input.length],
+        pos: expressionPosition,
       });
     }
   } catch {
     errors.push({
       message: "Error evaluating expression",
-      pos: [0, input.length],
+      pos: expressionPosition,
     });
   }
 }

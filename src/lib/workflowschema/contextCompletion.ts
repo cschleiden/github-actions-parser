@@ -8,7 +8,8 @@ import { Context } from "./workflowSchema";
 export function _getContextProviderFactory(
   context: Context
 ): ContextProviderFactory {
-  const cache = new TTLCache<string[]>(500);
+  // TODO: CS: Need to figure out
+  const cache = new TTLCache<string[]>(5 * 60 * 1000);
 
   return {
     get: async (workflow: Workflow, path: PropertyPath) =>
@@ -30,7 +31,7 @@ export function _getContextProviderFactory(
           repoSecretsResponse.data.secrets.forEach((x) => secrets.add(x.name));
 
           // Get org secrets
-          if (this.context.ownerIsOrg) {
+          if (context.ownerIsOrg) {
             const orgSecretsResponse = await context.client.actions.listOrgSecrets(
               {
                 org: context.owner,

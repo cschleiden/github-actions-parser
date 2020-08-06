@@ -48,7 +48,10 @@ export class EditContextProvider implements ContextProvider {
         return env;
 
       case "secrets":
-        return this.secrets;
+        return this.secrets.reduce((s, name) => {
+          s[name] = true;
+          return s;
+        }, {});
     }
   }
 }

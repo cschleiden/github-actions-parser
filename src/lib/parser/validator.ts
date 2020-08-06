@@ -37,10 +37,11 @@ function kindToString(kind: Kind): string {
 
 function validateExpressions(
   input: string,
+  posOffset: number,
   errors: ValidationError[],
   contextProvider: ContextProvider
 ) {
-  validateExpression(input, errors, contextProvider);
+  validateExpression(input, posOffset, errors, contextProvider);
 }
 
 async function validateNode(
@@ -92,6 +93,7 @@ async function validateNode(
         const path = getPathFromNode(n);
         validateExpressions(
           scalarNode.value,
+          n.startPosition,
           errors,
           await contextProviderFactory.get(workflow, path)
         );

@@ -23,6 +23,10 @@ export function isExpression(input: string): boolean {
   return expressionMarker.test(input);
 }
 
+export function removeExpressionMarker(input: string): string {
+  return input.replace(expressionMarker, (_, g) => g);
+}
+
 export function parseExpression(expression: string) {
   const lexResult = ExpressionLexer.tokenize(expression);
   parser.input = lexResult.tokens;
