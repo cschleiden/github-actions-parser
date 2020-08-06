@@ -1,26 +1,18 @@
-import { WorkflowDocument } from "../parser/parser";
-import { completeExpression, ExpressionContextCompletion } from "./completion";
+import { completeExpression } from "./completion";
+import { ContextProvider } from "./types";
 
-const expressionCompletion: ExpressionContextCompletion = {
-  completeContext: async (context, doc, path) => {
+const contextProvider: ContextProvider = {
+  get: (context) => {
     switch (context) {
       case "env": {
-        return [
-          {
-            value: "FOO",
-          },
-          {
-            value: "BAR_TEST",
-          },
-        ];
+        return {
+          FOO: "",
+          BAR_TEST: "",
+        };
       }
 
       case "secrets": {
-        return [
-          {
-            value: "AWS_TOKEN",
-          },
-        ];
+        return { AWS_TOKEN: true };
       }
     }
 
@@ -36,9 +28,7 @@ const testComplete = async (input: string, expected: string[]) => {
     await completeExpression(
       input,
       pos >= 0 ? pos : input.length - 1,
-      {} as WorkflowDocument,
-      [],
-      expressionCompletion
+      contextProvider
     )
   ).map((x) => x.value);
 

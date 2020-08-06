@@ -1,5 +1,5 @@
+import { ContextProviderFactory } from "../parser/complete";
 import { hover } from "../parser/hover";
-import { _getExpressionCompleter } from "./contextCompletion";
 import { Context, _getSchema } from "./workflowSchema";
 
 const context: Context = {
@@ -8,14 +8,29 @@ const context: Context = {
   repository: "repository",
 };
 const WorkflowSchema = _getSchema(context);
-const WorkflowExpressionCompletion = _getExpressionCompleter(context);
+
+const NullCompletion: ContextProviderFactory = {
+  get: async () => ({
+    get: async (context: string) => {
+      switch (context) {
+        case "secrets": {
+          return {
+            AZURE_KEY: "",
+          };
+        }
+      }
+
+      return {};
+    },
+  }),
+};
 
 describe("Hover", () => {
   /** | in string denotes cursor position */
   const testHover = async (input: string) => {
     const pos = input.indexOf("|");
     input = input.replace("|", "");
-    return await hover(input, pos, WorkflowSchema);
+    return await hover(input, pos, WorkflowSchema, NullCompletion);
   };
 
   /** | in string denotes cursor position */

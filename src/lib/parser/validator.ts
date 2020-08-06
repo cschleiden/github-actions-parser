@@ -5,9 +5,14 @@ import {
   YAMLNode,
   YAMLScalar,
 } from "yaml-ast-parser";
-import { YNode } from "../../types";
+import { Position, YNode } from "../../types";
+import { isExpression } from "../expressions";
+import { ContextProvider } from "../expressions/types";
+import { validateExpression } from "../expressions/validator";
+import { getPathFromNode } from "./ast";
+import { ContextProviderFactory } from "./complete";
+import { Workflow } from "./parser";
 import { NodeDesc } from "./schema";
-import { Position } from "./types";
 
 export interface ValidationError {
   pos: Position;
@@ -30,16 +35,22 @@ function kindToString(kind: Kind): string {
   }
 }
 
-function validateExpressions(input: string, errors: ValidationError[]) {
-  // parseExpression();
+function validateExpressions(
+  input: string,
+  errors: ValidationError[],
+  contextProvider: ContextProvider
+) {
+  validateExpression(input, errors, contextProvider);
 }
 
-function validateNode(
+async function validateNode(
   node: YAMLNode,
   nodeDesc: NodeDesc,
   nodeToDesc: Map<YAMLNode, NodeDesc>,
+  workflow: Workflow,
+  contextProviderFactory: ContextProviderFactory,
   errors: ValidationError[]
-): boolean {
+): Promise<boolean> {
   if (!node) {
     return true;
   }
@@ -74,7 +85,17 @@ function validateNode(
         });
       }
 
-      validateExpressions(scalarNode.value, errors);
+      const input = scalarNode.value;
+      if (nodeDesc.isExpression || isExpression(input)) {
+        // Validate scalar value as expression if it looks like one, or if we always expect one
+        // here.
+        const path = getPathFromNode(n);
+        validateExpressions(
+          scalarNode.value,
+          errors,
+          await contextProviderFactory.get(workflow, path)
+        );
+      }
 
       break;
     }
@@ -112,10 +133,24 @@ function validateNode(
 
             // Add mapping desc for later lookup (e.g., to complete keys)
             nodeToDesc.set(mapping, mappingDesc);
-            validateNode(mapping.value, mappingDesc, nodeToDesc, errors);
+            await validateNode(
+              mapping.value,
+              mappingDesc,
+              nodeToDesc,
+              workflow,
+              contextProviderFactory,
+              errors
+            );
           }
         } else if (nodeDesc.itemDesc) {
-          validateNode(mapping.value, nodeDesc.itemDesc, nodeToDesc, errors);
+          await validateNode(
+            mapping.value,
+            nodeDesc.itemDesc,
+            nodeToDesc,
+            workflow,
+            contextProviderFactory,
+            errors
+          );
         }
       }
 
@@ -158,7 +193,14 @@ function validateNode(
             // suggest values)
             nodeToDesc.set(item, nodeDesc.itemDesc);
 
-            validateNode(item, nodeDesc.itemDesc, nodeToDesc, errors);
+            await validateNode(
+              item,
+              nodeDesc.itemDesc,
+              nodeToDesc,
+              workflow,
+              contextProviderFactory,
+              errors
+            );
           }
         }
       }
@@ -173,21 +215,42 @@ function validateNode(
         switch (nDesc.type) {
           case "value":
             if (node.kind === Kind.SCALAR) {
-              validateNode(node, nDesc, nodeToDesc, errors);
+              await validateNode(
+                node,
+                nDesc,
+                nodeToDesc,
+                workflow,
+                contextProviderFactory,
+                errors
+              );
               foundMatchingNode = true;
             }
             break;
 
           case "map":
             if (node.kind === Kind.MAP) {
-              validateNode(node, nDesc, nodeToDesc, errors);
+              await validateNode(
+                node,
+                nDesc,
+                nodeToDesc,
+                workflow,
+                contextProviderFactory,
+                errors
+              );
               foundMatchingNode = true;
             }
             break;
 
           case "sequence":
             if (node.kind === Kind.SEQ) {
-              validateNode(node, nDesc, nodeToDesc, errors);
+              await validateNode(
+                node,
+                nDesc,
+                nodeToDesc,
+                workflow,
+                contextProviderFactory,
+                errors
+              );
               foundMatchingNode = true;
             }
             break;
@@ -212,12 +275,24 @@ export interface ValidationResult {
   nodeToDesc: Map<YAMLNode, NodeDesc>;
 }
 
-export function validate(root: YAMLNode, schema: NodeDesc): ValidationResult {
+export async function validate(
+  root: YAMLNode,
+  schema: NodeDesc,
+  workflow: Workflow,
+  contextProviderFactory: ContextProviderFactory
+): Promise<ValidationResult> {
   const errors: ValidationError[] = [];
   const nodeToDesc = new Map<YAMLNode, NodeDesc>();
   nodeToDesc.set(null, schema);
 
-  validateNode(root, schema, nodeToDesc, errors);
+  await validateNode(
+    root,
+    schema,
+    nodeToDesc,
+    workflow,
+    contextProviderFactory,
+    errors
+  );
 
   return {
     errors,

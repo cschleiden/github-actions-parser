@@ -1,7 +1,7 @@
 import { YAMLNode } from "yaml-ast-parser";
+import { CompletionOption } from "../../types";
 import { PropertyPath } from "../utils/path";
-import { WorkflowDocument } from "./parser";
-import { CompletionOption } from "./types";
+import { Workflow } from "./parser";
 
 export type NodeDescMap = { [key: string]: NodeDesc };
 
@@ -61,14 +61,14 @@ export type NodeDesc = (
    * Custom suggester
    *
    * @param desc
-   * @param doc
+   * @param workflow
    * @param path
    * @param input
    * @param existingItems
    */
   customSuggester?: (
     desc: NodeDesc,
-    doc: WorkflowDocument,
+    workflow: Workflow | undefined,
     path: PropertyPath,
     input?: string,
     existingItems?: string[]

@@ -1,4 +1,5 @@
 import { tokenMatcher } from "chevrotain";
+import { iteratePath, PropertyPath } from "../utils/path";
 import * as Functions from "./functions";
 import {
   And,
@@ -41,7 +42,7 @@ export interface ExpressionContext {
 /**
  * This evaluates an expression by operation on the CST produced by the parser.
  */
-class ExpressionEvaluator extends BaseCstVisitor {
+export class ExpressionEvaluator extends BaseCstVisitor {
   expression(ctx: any, context: ExpressionContext) {
     let result = this.visit(ctx.lhs, context);
 
@@ -130,39 +131,47 @@ class ExpressionEvaluator extends BaseCstVisitor {
       throw new Error("Unknown context: " + contextName);
     }
 
-    const contextObject = context.contexts[contextName];
-
-    let result = contextObject;
-
+    // Aggregate path
+    const p: PropertyPath = [];
     if (!!ctx.contextMember) {
-      result = (ctx.contextMember as any[]).reduce(
-        (previousResult, contextMember) =>
-          this.visit(contextMember, previousResult),
-        contextObject
-      );
+      for (const cM of ctx.contextMember as any[]) {
+        this.visit(cM, p);
+      }
     }
+
+    const r = this.getContextValue(contextName, p, context);
+    return r;
+  }
+
+  protected getContextValue(
+    contextName: string,
+    path: PropertyPath,
+    context: ExpressionContext
+  ) {
+    const contextObject = context.contexts[contextName];
+    const result = iteratePath(path, contextObject);
 
     return result || "";
   }
 
-  contextMember(ctx: any, contextObject: any) {
+  contextMember(ctx: any, path: PropertyPath) {
     switch (true) {
       case !!ctx.contextDotMember:
-        return this.visit(ctx.contextDotMember, contextObject);
+        return this.visit(ctx.contextDotMember, path);
 
       case !!ctx.contextBoxMember:
-        return this.visit(ctx.contextBoxMember, contextObject);
+        return this.visit(ctx.contextBoxMember, path);
     }
   }
 
-  contextDotMember(ctx: any, contextObject: any) {
-    const path = ctx.ContextMember[0].image;
-    return contextObject[path];
+  contextDotMember(ctx: any, path: PropertyPath) {
+    const p = ctx.ContextMember[0].image;
+    path.push(p);
   }
 
-  contextBoxMember(ctx: any, contextObject: any) {
-    const path = this._removeQuotes(ctx.StringLiteral[0].image);
-    return contextObject[path];
+  contextBoxMember(ctx: any, path: PropertyPath) {
+    const p = this._removeQuotes(ctx.StringLiteral[0].image);
+    path.push(p);
   }
 
   logicalGrouping(ctx: any) {

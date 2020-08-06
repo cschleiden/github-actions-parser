@@ -1,4 +1,5 @@
 import { Octokit } from "@octokit/rest";
+import { CompletionOption, Hover } from "../../types";
 import { complete as genericComplete } from "../parser/complete";
 import { hover as genericHover } from "../parser/hover";
 import { parse as genericParse, WorkflowDocument } from "../parser/parser";
@@ -8,9 +9,8 @@ import {
   NodeDescMap,
   ValueDesc,
 } from "../parser/schema";
-import { CompletionOption, Hover } from "../parser/types";
 import { mergeDeep } from "../utils/deepMerge";
-import { _getExpressionCompleter } from "./contextCompletion";
+import { _getContextProviderFactory } from "./contextCompletion";
 
 const value = (description?: string): NodeDesc => ({
   type: "value",
@@ -435,11 +435,18 @@ export function _getSchema(context: Context): NodeDesc {
   };
 }
 
-export function parse(context: Context, input: string): WorkflowDocument {
-  return genericParse(input, _getSchema(context));
+export async function parse(
+  context: Context,
+  input: string
+): Promise<WorkflowDocument> {
+  return genericParse(
+    input,
+    _getSchema(context),
+    _getContextProviderFactory(context)
+  );
 }
 
-export function complete(
+export async function complete(
   context: Context,
   input: string,
   pos: number
@@ -448,14 +455,19 @@ export function complete(
     input,
     pos,
     _getSchema(context),
-    _getExpressionCompleter(context)
+    _getContextProviderFactory(context)
   );
 }
 
-export function hover(
+export async function hover(
   context: Context,
   input: string,
   pos: number
 ): Promise<Hover | undefined> {
-  return genericHover(input, pos, _getSchema(context));
+  return genericHover(
+    input,
+    pos,
+    _getSchema(context),
+    _getContextProviderFactory(context)
+  );
 }

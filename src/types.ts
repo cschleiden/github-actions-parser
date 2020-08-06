@@ -1,5 +1,9 @@
 import { YAMLException } from "yaml-ast-parser";
 
+//
+// Improved YAML AST types
+//
+
 export enum Kind {
   SCALAR = 0,
   MAPPING = 1,
@@ -64,3 +68,22 @@ export interface YAMLMap extends YAMLNode {
 }
 
 export type YNode = YAMLMap | YAMLMapping | YAMLSequence | YAMLScalar;
+
+//
+// Custom types
+//
+
+export type Position = [number, number];
+
+export interface CompletionOption {
+  /** Auto complete value */
+  value: string;
+
+  /** Optional description for this completion option */
+  description?: string;
+}
+
+export interface Hover {
+  /** Description for the hover, might be formatted with markdown */
+  description: string;
+}

@@ -3,13 +3,13 @@ export type PropertyPath = (string | [string, number])[];
 export function iteratePath(
   path: PropertyPath,
   obj: unknown,
-  f: (x: unknown) => void
+  f?: (x: unknown) => void
 ) {
   for (const p of path) {
     if (p == "$") continue;
     if (!obj) break;
 
-    f(obj);
+    f && f(obj);
 
     if (typeof p === "string") {
       obj = obj[p];
@@ -18,4 +18,6 @@ export function iteratePath(
       obj = obj[p[0]][p[1]];
     }
   }
+
+  return obj;
 }

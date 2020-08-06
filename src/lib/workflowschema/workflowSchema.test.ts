@@ -1,5 +1,7 @@
-import { complete } from "../parser/complete";
-import { _getExpressionCompleter } from "./contextCompletion";
+import { complete, ContextProviderFactory } from "../parser/complete";
+import { Workflow } from "../parser/parser";
+import { PropertyPath } from "../utils/path";
+import { EditContextProvider } from "./contextProvider";
 import { Context, events, _getSchema } from "./workflowSchema";
 
 const context: Context = {
@@ -8,7 +10,10 @@ const context: Context = {
   repository: "repository",
 };
 const WorkflowSchema = _getSchema(context);
-const WorkflowExpressionCompletion = _getExpressionCompleter(context);
+const ExpressionContextProviderFactory: ContextProviderFactory = {
+  get: async (workflow: Workflow, path: PropertyPath) =>
+    new EditContextProvider(workflow, path, []),
+};
 
 describe("Completion", () => {
   /** | in string denotes cursor position */
@@ -19,7 +24,7 @@ describe("Completion", () => {
       input,
       pos,
       WorkflowSchema,
-      WorkflowExpressionCompletion
+      ExpressionContextProviderFactory
     );
   };
 
@@ -151,6 +156,11 @@ describe("Completion", () => {
     });
 
     describe("context", () => {
+      describe("multi-level", () => {
+        it("github.event.action", () =>
+          completeSimple(`name: \${{ github.event.| }}`, ["action"]));
+      });
+
       describe("env", () => {
         // it("job", async () => {
         //   await completeSimple(

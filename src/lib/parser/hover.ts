@@ -1,8 +1,8 @@
-import { Kind, YNode } from "../../types";
+import { Hover, Kind, YNode } from "../../types";
 import { findNode } from "./ast";
+import { ContextProviderFactory } from "./complete";
 import { parse } from "./parser";
 import { NodeDesc } from "./schema";
-import { Hover } from "./types";
 
 function doHover(node: YNode, desc: NodeDesc): Hover | undefined {
   switch (desc.type) {
@@ -38,9 +38,10 @@ function doHover(node: YNode, desc: NodeDesc): Hover | undefined {
 export async function hover(
   input: string,
   pos: number,
-  schema: NodeDesc
+  schema: NodeDesc,
+  contextProviderFactory: ContextProviderFactory
 ): Promise<Hover | undefined> {
-  const doc = parse(input, schema);
+  const doc = await parse(input, schema, contextProviderFactory);
 
   const node = findNode(doc.workflowST, pos) as YNode;
   const desc = doc.nodeToDesc.get(node);

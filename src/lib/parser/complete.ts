@@ -1,15 +1,15 @@
 import { YAMLNode } from "yaml-ast-parser";
-import { Kind, YNode } from "../../types";
-import {
-  completeExpression,
-  ExpressionContextCompletion,
-  inExpression,
-} from "../expressions/completion";
+import { CompletionOption, Kind, YNode } from "../../types";
+import { completeExpression, inExpression } from "../expressions/completion";
+import { ContextProvider } from "../expressions/types";
 import { PropertyPath } from "../utils/path";
-import { findNode } from "./ast";
-import { parse, WorkflowDocument } from "./parser";
+import { findNode, getPathFromNode } from "./ast";
+import { parse, Workflow, WorkflowDocument } from "./parser";
 import { MapNodeDesc, NodeDesc } from "./schema";
-import { CompletionOption } from "./types";
+
+export interface ContextProviderFactory {
+  get(workflow: Workflow, path: PropertyPath): Promise<ContextProvider>;
+}
 
 async function completeMapKeys(
   doc: WorkflowDocument,
@@ -25,7 +25,7 @@ async function completeMapKeys(
   if ((mapDesc as NodeDesc).customSuggester) {
     return (mapDesc as NodeDesc).customSuggester(
       mapDesc,
-      doc,
+      doc.workflow,
       getPathFromNode(node),
       partialInput,
       Array.from(existingKeys.values())
@@ -43,49 +43,6 @@ async function completeMapKeys(
   return completionOptions;
 }
 
-function getPathFromNode(node: YNode): PropertyPath {
-  // Build up node path
-  const nodePath: YNode[] = [];
-  let x = node;
-  while (x) {
-    // Add in reverse
-    nodePath.unshift(x);
-    x = x.parent as YNode;
-  }
-
-  const path: PropertyPath = ["$"];
-  while (nodePath.length) {
-    const x = nodePath.shift();
-
-    switch (x.kind) {
-      case Kind.MAPPING:
-        if (x.key) {
-          path.push(x.key.value);
-        }
-
-        if (x.value) {
-          nodePath.unshift(x.value as YNode);
-        }
-        break;
-
-      case Kind.SEQ:
-        // Check next node to determine index
-        if (nodePath.length && x.items) {
-          const idx = x.items.indexOf(nodePath[0]);
-          if (idx !== -1) {
-            // Previous entry has to be a property. Note: this might be problematic with nested sequences,
-            // but that's not currently supported.
-            const propertyName: string = path[path.length - 1] as string;
-            path[path.length - 1] = [propertyName, idx];
-          }
-        }
-        break;
-    }
-  }
-
-  return path;
-}
-
 async function doComplete(
   node: YNode,
   desc: NodeDesc,
@@ -93,7 +50,7 @@ async function doComplete(
   partialInput: string,
   pos: number,
   doc: WorkflowDocument,
-  expressionCompletion: ExpressionContextCompletion
+  contextProviderFactory: ContextProviderFactory
 ): Promise<CompletionOption[]> {
   if (!node) {
     console.error(desc);
@@ -128,7 +85,7 @@ async function doComplete(
       if (desc.customSuggester) {
         return desc.customSuggester(
           desc,
-          doc,
+          doc.workflow,
           getPathFromNode(node),
           searchInput,
           existingValues
@@ -147,8 +104,8 @@ async function doComplete(
           node,
           pos,
           getPathFromNode(node),
-          doc,
-          expressionCompletion,
+          doc.workflow,
+          contextProviderFactory,
           true
         );
       }
@@ -165,7 +122,7 @@ async function doComplete(
           partialInput,
           pos,
           doc,
-          expressionCompletion
+          contextProviderFactory
         );
       }
 
@@ -191,7 +148,7 @@ async function doComplete(
             partialInput,
             pos,
             doc,
-            expressionCompletion
+            contextProviderFactory
           );
         }
       }
@@ -212,7 +169,7 @@ async function doComplete(
           partialInput,
           pos,
           doc,
-          expressionCompletion
+          contextProviderFactory
         );
         result.push(...c);
       }
@@ -271,8 +228,8 @@ async function expressionComplete(
   node: YNode,
   pos: number,
   path: PropertyPath,
-  doc: WorkflowDocument,
-  expressionCompletion: ExpressionContextCompletion,
+  workflow: Workflow,
+  contextProviderFactory: ContextProviderFactory,
   delimiterOptional = false
 ): Promise<CompletionOption[]> {
   const line = node.value;
@@ -289,13 +246,8 @@ async function expressionComplete(
     const expressionLine = line.replace(/\$\{\{(.*)(\}\})?/, "$1");
     const expressionPos = linePos - line.indexOf(expressionLine);
 
-    return completeExpression(
-      expressionLine,
-      expressionPos,
-      doc,
-      path,
-      expressionCompletion
-    );
+    const contextProvider = await contextProviderFactory.get(workflow, path);
+    return completeExpression(expressionLine, expressionPos, contextProvider);
   }
 
   return [];
@@ -352,13 +304,13 @@ export async function complete(
   input: string,
   pos: number,
   schema: NodeDesc,
-  expressionCompletion: ExpressionContextCompletion
+  contextProviderFactory: ContextProviderFactory
 ): Promise<CompletionOption[]> {
   // Fix the input to work around YAML parsing issues
   const [newInput, newPos, partialInput] = _transform(input, pos);
 
   // Need to parse again with fixed text
-  const doc = parse(newInput, schema);
+  const doc = await parse(newInput, schema, contextProviderFactory);
 
   const node = findNode(doc.workflowST, newPos) as YNode;
   const desc = doc.nodeToDesc.get(node);
@@ -371,7 +323,7 @@ export async function complete(
       partialInput,
       newPos,
       doc,
-      expressionCompletion
+      contextProviderFactory
     );
     completionOptions = completionOptions || [];
     completionOptions.sort((a, b) => a.value.localeCompare(b.value));
@@ -384,8 +336,8 @@ export async function complete(
       node,
       pos,
       getPathFromNode(node),
-      doc,
-      expressionCompletion
+      doc.workflow,
+      contextProviderFactory
     );
   }
 

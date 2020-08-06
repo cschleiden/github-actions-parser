@@ -1,7 +1,8 @@
 import { safeLoad as jsYamlSafeLoad } from "js-yaml";
 import { Kind, safeLoad, YAMLNode } from "yaml-ast-parser";
+import { Position } from "../../types";
+import { ContextProviderFactory } from "./complete";
 import { NodeDesc } from "./schema";
-import { Position } from "./types";
 import { validate } from "./validator";
 
 export interface Workflow {
@@ -53,11 +54,28 @@ function walk(node: YAMLNode, desc: NodeDesc) {
   // for (const child of node.mappings)
 }
 
-export function parse(input: string, schema: NodeDesc): WorkflowDocument {
+export async function parse(
+  input: string,
+  schema: NodeDesc,
+  contextProviderFactory: ContextProviderFactory
+): Promise<WorkflowDocument> {
   const diagnostics: Diagnostic[] = [];
 
+  // TODO: CS: Get this from the AST
+  let workflow = {} as Workflow;
+  try {
+    workflow = jsYamlSafeLoad(input);
+  } catch {
+    // Ignore..
+  }
+
   const yamlRoot = safeLoad(input);
-  const validationResult = validate(yamlRoot, schema);
+  const validationResult = await validate(
+    yamlRoot,
+    schema,
+    workflow,
+    contextProviderFactory
+  );
   diagnostics.push(
     ...validationResult.errors.map(({ pos, message }) => ({
       kind: DiagnosticKind.Error,
@@ -65,14 +83,6 @@ export function parse(input: string, schema: NodeDesc): WorkflowDocument {
       pos,
     }))
   );
-
-  // TODO: CS: Get this from the AST
-  let workflow = {};
-  try {
-    workflow = jsYamlSafeLoad(input);
-  } catch {
-    // Ignore..
-  }
 
   return {
     workflow,

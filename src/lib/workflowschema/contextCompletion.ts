@@ -1,73 +1,48 @@
-import { ExpressionContextCompletion } from "../expressions/completion";
-import { WorkflowDocument } from "../parser/parser";
-import { CompletionOption } from "../parser/types";
+import { ContextProviderFactory } from "../parser/complete";
+import { Workflow } from "../parser/parser";
 import { TTLCache } from "../utils/cache";
-import { iteratePath, PropertyPath } from "../utils/path";
+import { PropertyPath } from "../utils/path";
+import { EditContextProvider } from "./contextProvider";
 import { Context } from "./workflowSchema";
 
-export function _getExpressionCompleter(
-  ctx: Context
-): ExpressionContextCompletion {
-  const cache = new TTLCache<CompletionOption[]>(500);
+export function _getContextProviderFactory(
+  context: Context
+): ContextProviderFactory {
+  const cache = new TTLCache<string[]>(500);
 
   return {
-    completeContext: async (
-      context: string,
-      doc: WorkflowDocument,
-      path: PropertyPath
-    ): Promise<CompletionOption[]> => {
-      switch (context) {
-        case "env": {
-          const options: string[] = [];
+    get: async (workflow: Workflow, path: PropertyPath) =>
+      new EditContextProvider(
+        workflow,
+        path,
+        await cache.get("secrets", async () => {
+          // Use a set to dedupe repo and org secrets
+          const secrets = new Set<string>(["GITHUB_TOKEN"]);
 
-          if (doc.workflow) {
-            iteratePath(path, doc.workflow, (x) => {
-              if (x["env"]) {
-                options.push(...Object.keys(x["env"]));
+          // Get repo secrets
+          const repoSecretsResponse = await context.client.actions.listRepoSecrets(
+            {
+              owner: context.owner,
+              repo: context.repository,
+            }
+          );
+
+          repoSecretsResponse.data.secrets.forEach((x) => secrets.add(x.name));
+
+          // Get org secrets
+          if (this.context.ownerIsOrg) {
+            const orgSecretsResponse = await context.client.actions.listOrgSecrets(
+              {
+                org: context.owner,
+                repo: context.repository,
               }
-            });
+            );
+
+            orgSecretsResponse.data.secrets.forEach((x) => secrets.add(x.name));
           }
 
-          return options.map((value) => ({ value }));
-        }
-
-        case "secrets": {
-          return cache.get("secrets", async () => {
-            // Use a set to dedupe repo and org secrets
-            const secrets = new Set<string>(["GITHUB_TOKEN"]);
-
-            // Get repo secrets
-            const repoSecretsResponse = await ctx.client.actions.listRepoSecrets(
-              {
-                owner: ctx.owner,
-                repo: ctx.repository,
-              }
-            );
-
-            repoSecretsResponse.data.secrets.forEach((x) =>
-              secrets.add(x.name)
-            );
-
-            // Get org secrets
-            if (ctx.ownerIsOrg) {
-              const orgSecretsResponse = await ctx.client.actions.listOrgSecrets(
-                {
-                  org: ctx.owner,
-                  repo: ctx.repository,
-                }
-              );
-
-              orgSecretsResponse.data.secrets.forEach((x) =>
-                secrets.add(x.name)
-              );
-            }
-
-            return Array.from(secrets.values()).map((x) => ({ value: x }));
-          });
-        }
-      }
-
-      return [];
-    },
+          return Array.from(secrets.values());
+        })
+      ),
   };
 }

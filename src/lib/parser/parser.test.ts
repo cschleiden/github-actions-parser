@@ -1,27 +1,21 @@
-import { ExpressionContextCompletion } from "../expressions/completion";
-import { PropertyPath } from "../utils/path";
-import { complete } from "./complete";
-import { Diagnostic, DiagnosticKind, parse, WorkflowDocument } from "./parser";
+import { complete, ContextProviderFactory } from "./complete";
+import { Diagnostic, DiagnosticKind, parse } from "./parser";
 import { NodeDesc } from "./schema";
 
-const NullCompletion: ExpressionContextCompletion = {
-  completeContext: async (
-    context: string,
-    doc: WorkflowDocument,
-    path: PropertyPath
-  ) => {
-    switch (context) {
-      case "secrets": {
-        return [
-          {
-            value: "AZURE_KEY",
-          },
-        ];
+const NullCompletion: ContextProviderFactory = {
+  get: async () => ({
+    get: async (context: string) => {
+      switch (context) {
+        case "secrets": {
+          return {
+            AZURE_KEY: "",
+          };
+        }
       }
-    }
 
-    return [];
-  },
+      return {};
+    },
+  }),
 };
 
 /** | in string denotes cursor position */
@@ -117,81 +111,74 @@ const schema: NodeDesc = {
 };
 
 describe("Validation", () => {
-  const testValidation = (input: string, expected: Diagnostic[]) => {
-    const doc = parse(input, schema);
+  const testValidation = async (input: string, expected: Diagnostic[]) => {
+    const doc = await parse(input, schema, NullCompletion);
 
     expect(doc.diagnostics).toEqual(expected);
   };
 
-  it("Unknown top-level key", () => {
+  it("Unknown top-level key", () =>
     testValidation(`t`, [
       {
         kind: DiagnosticKind.Error,
         pos: [0, 1],
         message: "Unknown key 't'",
       },
-    ]);
-  });
+    ]));
 
-  it("Reports missing keys", () => {
+  it("Reports missing keys", () =>
     testValidation(`type: push`, [
       {
         kind: DiagnosticKind.Error,
         pos: [0, 10],
         message: "Missing required key 'name'",
       },
-    ]);
-  });
+    ]));
 
-  it("Reports wrong value", () => {
+  it("Reports wrong value", () =>
     testValidation(`name: push`, [
       {
         kind: DiagnosticKind.Error,
         pos: [6, 10],
         message: "'push' is not in the list of allowed values",
       },
-    ]);
-  });
+    ]));
 
-  it("Expected sequence got mapping", () => {
+  it("Expected sequence got mapping", () =>
     testValidation("name: test\narray:\n  foo:", [
       {
         kind: DiagnosticKind.Error,
         pos: [20, 24],
         message: "Expected sequence, found map",
       },
-    ]);
-  });
+    ]));
 
-  it("Incorrect value in sequence", () => {
+  it("Incorrect value in sequence", () =>
     testValidation("name: test\narray: [ foo2 ]", [
       {
         kind: DiagnosticKind.Error,
         pos: [20, 24],
         message: "'foo2' is not in the list of allowed values",
       },
-    ]);
-  });
+    ]));
 
-  it("Incorrect value in sequence using -", () => {
+  it("Incorrect value in sequence using -", () =>
     testValidation("name: test\narray:\n- foo2", [
       {
         kind: DiagnosticKind.Error,
         pos: [20, 24],
         message: "'foo2' is not in the list of allowed values",
       },
-    ]);
-  });
+    ]));
 
-  it("Expected value got mapping", () => {
+  it("Expected value got mapping", () =>
     testValidation("name: test\ntype:\n  foo:", [
       {
         kind: DiagnosticKind.Error,
         pos: [19, 23],
         message: "Expected value, found map",
       },
-    ]);
-  });
+    ]));
 
   // TODO: CS:
   // it("Unknown secret", () => {
@@ -371,36 +358,36 @@ const oneOfSchema: NodeDesc = {
 };
 
 describe("OneOf", () => {
-  const testValidation = (input: string, expected: Diagnostic[]) => {
-    const doc = parse(input, oneOfSchema);
+  const testValidation = async (input: string, expected: Diagnostic[]) => {
+    const doc = await parse(input, oneOfSchema, NullCompletion);
 
     expect(doc.diagnostics).toEqual(expected);
   };
 
   describe("validation", () => {
-    it("Unknown keys", () => {
-      testValidation(`on: foo2`, [
+    it("Unknown keys", async () => {
+      await testValidation(`on: foo2`, [
         {
           kind: DiagnosticKind.Error,
           pos: [4, 8],
           message: `'foo2' is not in the list of allowed values`,
         },
       ]);
-      testValidation(`on:\n  foo2:\n`, [
+      await testValidation(`on:\n  foo2:\n`, [
         {
           kind: DiagnosticKind.Error,
           pos: [6, 11],
           message: `Key 'foo2' is not allowed`,
         },
       ]);
-      testValidation(`on: [ foo2 ]`, [
+      await testValidation(`on: [ foo2 ]`, [
         {
           kind: DiagnosticKind.Error,
           pos: [6, 10],
           message: `'foo2' is not in the list of allowed values`,
         },
       ]);
-      testValidation(`on:\n- foo2`, [
+      await testValidation(`on:\n- foo2`, [
         {
           kind: DiagnosticKind.Error,
           pos: [6, 10],

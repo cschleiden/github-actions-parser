@@ -1,7 +1,6 @@
 import { tokenMatcher } from "chevrotain";
-import { WorkflowDocument } from "../parser/parser";
-import { CompletionOption } from "../parser/types";
-import { PropertyPath } from "../utils/path";
+import { CompletionOption } from "../../types";
+import { iteratePath, PropertyPath } from "../utils/path";
 import { getFunctionDescription } from "./functions";
 import {
   Context,
@@ -12,14 +11,7 @@ import {
   Function,
   parser,
 } from "./parser";
-
-export interface ExpressionContextCompletion {
-  completeContext(
-    context: string,
-    doc: WorkflowDocument,
-    path: PropertyPath
-  ): Promise<CompletionOption[]>;
-}
+import { ContextProvider } from "./types";
 
 export function inExpression(input: string, pos: number) {
   return input.substring(0, pos).indexOf("${{") !== -1;
@@ -28,9 +20,7 @@ export function inExpression(input: string, pos: number) {
 export async function completeExpression(
   input: string,
   pos: number,
-  doc: WorkflowDocument,
-  path: PropertyPath,
-  completer: ExpressionContextCompletion
+  contextProvider: ContextProvider
 ): Promise<CompletionOption[]> {
   input = input.substring(0, pos + 1);
   // console.log(input);
@@ -51,25 +41,47 @@ export async function completeExpression(
   if (
     tokenMatcher(lastInputToken, ContextMember) ||
     (tokenMatcher(lastInputToken, Dot) &&
-      tokenMatcher(partialTokenVector[partialTokenVector.length - 2], Context))
+      (tokenMatcher(
+        partialTokenVector[partialTokenVector.length - 2],
+        Context
+      ) ||
+        tokenMatcher(
+          partialTokenVector[partialTokenVector.length - 2],
+          ContextMember
+        )))
   ) {
     // Determine previous context
     const searchTerm = tokenMatcher(lastInputToken, Dot)
       ? ""
       : lastInputToken.image;
 
-    const contextToken = tokenMatcher(lastInputToken, Dot)
-      ? partialTokenVector[partialTokenVector.length - 2]
-      : partialTokenVector[partialTokenVector.length - 3];
-    if (contextToken && tokenMatcher(contextToken, Context)) {
-      const options = await completer.completeContext(
-        contextToken.image,
-        doc,
-        path
+    // Get context access path
+    let contextName: string | undefined;
+    let path: PropertyPath = [];
+    for (let i = partialTokenVector.length - 1; i >= 0; --i) {
+      if (tokenMatcher(partialTokenVector[i], Dot)) {
+        // Ignore .
+      } else {
+        if (tokenMatcher(partialTokenVector[i], ContextMember)) {
+          path.push(partialTokenVector[i].image);
+        } else if (tokenMatcher(partialTokenVector[i], Context)) {
+          contextName = partialTokenVector[i].image;
+        } else {
+          break;
+        }
+      }
+    }
+
+    if (contextName) {
+      const context = contextProvider.get(contextName as any);
+      const obj = iteratePath(
+        path[path.length - 1] === searchTerm
+          ? path.slice(0, path.length - 1)
+          : path,
+        context
       );
-
+      const options = Object.keys(obj).map((x) => ({ value: x }));
       options.sort((a, b) => a.value.localeCompare(b.value));
-
       return options.filter(
         (x) =>
           !searchTerm ||
