@@ -77,13 +77,24 @@ async function validateNode(
 
       if (
         nodeDesc.allowedValues &&
-        typeof scalarNode.value === "string" &&
         !nodeDesc.allowedValues.find((x) => x.value === scalarNode.value)
       ) {
         errors.push({
           pos: [scalarNode.startPosition, scalarNode.endPosition],
           message: `'${node.value}' is not in the list of allowed values`,
         });
+      } else if (nodeDesc.customValueProvider) {
+        const customValues = await nodeDesc.customValueProvider(
+          nodeDesc,
+          workflow,
+          getPathFromNode(n)
+        );
+        if (!customValues.find((x) => x.value === scalarNode.value)) {
+          errors.push({
+            pos: [scalarNode.startPosition, scalarNode.endPosition],
+            message: `'${node.value}' is not in the list of allowed values`,
+          });
+        }
       }
 
       const input = scalarNode.value;

@@ -219,7 +219,17 @@ describe("Validation", () => {
       testValidation("runs-on: foo", [], dynamicSchema));
 
     it("Invalid dynamic value", () =>
-      testValidation("runs-on: foo2", [], dynamicSchema));
+      testValidation(
+        "runs-on: foo2",
+        [
+          {
+            kind: DiagnosticKind.Error,
+            message: "'foo2' is not in the list of allowed values",
+            pos: [9, 13],
+          },
+        ],
+        dynamicSchema
+      ));
   });
 });
 

@@ -329,17 +329,21 @@ const runsOn = (context: Context): NodeDesc => ({
     labels.add("macos-latest");
     labels.add("self-hosted");
 
-    const runnersResp = await context.client.actions.listSelfHostedRunnersForRepo(
-      {
-        owner: context.owner,
-        repo: context.repository,
-      }
-    );
-
-    if (runnersResp && runnersResp.data.runners) {
-      runnersResp.data.runners.forEach((r) =>
-        (r as any)?.labels?.forEach((l: { name: string }) => labels.add(l.name))
+    if (context?.client?.actions) {
+      const runnersResp = await context.client.actions.listSelfHostedRunnersForRepo(
+        {
+          owner: context.owner,
+          repo: context.repository,
+        }
       );
+
+      if (runnersResp && runnersResp.data.runners) {
+        runnersResp.data.runners.forEach((r) =>
+          (r as any)?.labels?.forEach((l: { name: string }) =>
+            labels.add(l.name)
+          )
+        );
+      }
     }
 
     return Array.from(labels.values()).map((x) => ({
