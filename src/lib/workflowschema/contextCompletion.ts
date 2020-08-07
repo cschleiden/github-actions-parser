@@ -6,11 +6,9 @@ import { EditContextProvider } from "./contextProvider";
 import { Context } from "./workflowSchema";
 
 export function _getContextProviderFactory(
-  context: Context
+  context: Context,
+  cache: TTLCache<any>
 ): ContextProviderFactory {
-  // TODO: CS: Need to figure out
-  const cache = new TTLCache<string[]>(5 * 60 * 1000);
-
   return {
     get: async (workflow: Workflow, path: PropertyPath) =>
       new EditContextProvider(

@@ -6,7 +6,7 @@ import {
   YAMLScalar,
 } from "yaml-ast-parser";
 import { Position, YNode } from "../../types";
-import { isExpression } from "../expressions";
+import { containsExpression } from "../expressions";
 import { ContextProvider } from "../expressions/types";
 import { validateExpression } from "../expressions/validator";
 import { getPathFromNode } from "./ast";
@@ -41,6 +41,7 @@ function validateExpressions(
   errors: ValidationError[],
   contextProvider: ContextProvider
 ) {
+  // TODO: CS: Need to find all expressions in input and then validate them separately
   validateExpression(input, posOffset, errors, contextProvider);
 }
 
@@ -98,7 +99,7 @@ async function validateNode(
       }
 
       const input = scalarNode.value;
-      if (nodeDesc.isExpression || isExpression(input)) {
+      if (nodeDesc.isExpression || containsExpression(input)) {
         // Validate scalar value as expression if it looks like one, or if we always expect one
         // here.
         const path = getPathFromNode(n);

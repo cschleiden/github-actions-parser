@@ -163,12 +163,12 @@ describe("Completion", () => {
       });
 
       describe("env", () => {
-        // it("job", async () => {
-        //   await completeSimple(
-        //     "env:\n  foo: 42\njobs:\n  build:\n    env:\n      bar: 23\n    name: ${{ env.|",
-        //     ["bar", "foo"]
-        //   );
-        // });
+        it("job", async () => {
+          await completeSimple(
+            "env:\n  foo: 42\njobs:\n  build:\n    env:\n      bar: 23\n      name: ${{ env.| }}",
+            ["bar", "foo", "name"]
+          );
+        });
 
         it("env in step", async () => {
           await completeSimple(

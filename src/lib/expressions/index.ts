@@ -20,7 +20,7 @@ export class ExpressionError extends Error {
 
 const expressionMarker = /\$\{\{(.*?)\}\}/gm;
 
-export function isExpression(input: string): boolean {
+export function containsExpression(input: string): boolean {
   return expressionMarker.test(input);
 }
 

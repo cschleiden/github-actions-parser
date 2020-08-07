@@ -323,7 +323,7 @@ export async function complete(
   // Fix the input to work around YAML parsing issues
   const [newInput, newPos, partialInput] = _transform(input, pos);
 
-  // Need to parse again with fixed text
+  // Parse with fixed text
   const doc = await parse(newInput, schema, contextProviderFactory);
 
   const node = findNode(doc.workflowST, newPos) as YNode;

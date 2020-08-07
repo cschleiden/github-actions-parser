@@ -1,4 +1,4 @@
-import { evaluateExpression, isExpression } from "../expressions";
+import { containsExpression, evaluateExpression } from "../expressions";
 import { ContextProvider } from "../expressions/types";
 import { Workflow } from "../parser/parser";
 import { iteratePath, PropertyPath } from "../utils/path";
@@ -45,16 +45,20 @@ export class EditContextProvider implements ContextProvider {
 
               for (const key of Object.keys(newEnv)) {
                 const value = newEnv[key];
-                if (isExpression(value)) {
-                  newEnv[key] = evaluateExpression(value, {
-                    get: (context) => {
-                      if (context === "env") {
-                        return env;
-                      }
+                if (containsExpression(value)) {
+                  try {
+                    newEnv[key] = evaluateExpression(value, {
+                      get: (context) => {
+                        if (context === "env") {
+                          return env;
+                        }
 
-                      return this.get(context);
-                    },
-                  });
+                        return this.get(context);
+                      },
+                    });
+                  } catch (e) {
+                    // This is best effort, leave the expression as value
+                  }
                 }
               }
 
