@@ -1,6 +1,6 @@
 {
-  "name": "github-actions-interpreter",
-  "version": "1.0.0",
+  "name": "github-actions-parser",
+  "version": "0.5.0",
   "author": "Christopher Schleiden <cschleiden@live.de>",
   "license": "MIT",
   "source": "src/index.ts",
@@ -13,8 +13,8 @@
     "url": "git+https://github.com/cschleiden/github-actions-hero.git"
   },
   "scripts": {
-    "dev": "microbundle watch --jsx React.createElement -f modern,umd,es,cjs --tsconfig ./tsconfig.json",
-    "build": "microbundle --jsx React.createElement -f modern,umd,es,cjs --tsconfig ./tsconfig.json",
+    "dev": "microbundle watch -f modern,umd,es,cjs --tsconfig ./tsconfig.json",
+    "build": "microbundle -f modern,umd,es,cjs --tsconfig ./tsconfig.json",
     "prepublishOnly": "yarn build",
     "test": "jest",
     "test-watch": "jest --watch"
