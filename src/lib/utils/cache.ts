@@ -6,11 +6,15 @@ interface CacheEntry<T> {
 export class TTLCache<T> {
   private cache = new Map<string, CacheEntry<T>>();
 
-  constructor(private ttlInMS: number) {}
+  constructor(private defaultTTLinMS: number = 10 * 60 * 1000) {}
 
-  async get(key: string, getter: () => Promise<T>): Promise<T> {
+  async get(
+    key: string,
+    ttlInMS: number,
+    getter: () => Promise<T>
+  ): Promise<T> {
     const e = this.cache.get(key);
-    if (e && e.cachedAt > Date.now() - this.ttlInMS) {
+    if (e && e.cachedAt > Date.now() - (ttlInMS || this.defaultTTLinMS)) {
       return e.content;
     }
 

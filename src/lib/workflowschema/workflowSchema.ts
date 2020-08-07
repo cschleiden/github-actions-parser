@@ -13,7 +13,7 @@ import { TTLCache } from "../utils/cache";
 import { mergeDeep } from "../utils/deepMerge";
 import { _getContextProviderFactory } from "./contextCompletion";
 
-const cache = new TTLCache<ValueDesc[]>(10 * 60 * 1000);
+const cache = new TTLCache<ValueDesc[]>();
 
 const value = (description?: string): NodeDesc => ({
   type: "value",
@@ -326,7 +326,7 @@ const runsOn = (context: Context): NodeDesc => ({
     "The type of machine to run the job on. The machine can be either a GitHub-hosted runner, or a self-hosted runner.",
 
   customValueProvider: async () =>
-    cache.get("runs-on-labels", async () => {
+    cache.get("runs-on-labels", context.timeToCacheResponsesInMS, async () => {
       const labels = new Set<string>();
       labels.add("ubuntu-latest");
       labels.add("windows-latest");
@@ -368,6 +368,17 @@ export interface Context {
 
   /** Is the repository owned by an organization? */
   ownerIsOrg?: boolean;
+
+  /**
+   * Dynamic auto-completion/validations are cached for a certain time to speed up successive
+   * operations.
+   *
+   * Setting this to a low number will greatly increase the number of API calls and duration
+   * parsing/validation/auto-completion will take.
+   *
+   * @default 10 * 60 * 1000 = 10 minutes
+   **/
+  timeToCacheResponsesInMS?: number;
 }
 
 export function _getSchema(context: Context): NodeDesc {
@@ -442,6 +453,10 @@ export function _getSchema(context: Context): NodeDesc {
                   shell: value(),
                   with: {
                     type: "map",
+                    // TODO: CS: Find matching `uses`, if it's an action, retrieve its `action.yaml`
+                    // customValueProvider: (desc, workflow, path) => {
+                    //   // Find corresponding `uses`
+                    // }
                   },
                   env,
                   "continue-on-error": value(),

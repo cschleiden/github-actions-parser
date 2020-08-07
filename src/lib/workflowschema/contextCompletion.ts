@@ -14,34 +14,53 @@ export function _getContextProviderFactory(
       new EditContextProvider(
         workflow,
         path,
-        await cache.get("secrets", async () => {
-          // Use a set to dedupe repo and org secrets
-          const secrets = new Set<string>(["GITHUB_TOKEN"]);
+        await cache.get(
+          "secrets",
+          context.timeToCacheResponsesInMS,
+          async () => {
+            // Use a set to dedupe repo and org secrets
+            const secrets = new Set<string>(["GITHUB_TOKEN"]);
 
-          // Get repo secrets
-          const repoSecretsResponse = await context.client.actions.listRepoSecrets(
-            {
-              owner: context.owner,
-              repo: context.repository,
-            }
-          );
+            // Get repo secrets
+            const p: Promise<unknown>[] = [];
+            p.push(
+              (async () => {
+                const repoSecretsResponse = await context.client.actions.listRepoSecrets(
+                  {
+                    owner: context.owner,
+                    repo: context.repository,
+                  }
+                );
 
-          repoSecretsResponse.data.secrets.forEach((x) => secrets.add(x.name));
-
-          // Get org secrets
-          if (context.ownerIsOrg) {
-            const orgSecretsResponse = await context.client.actions.listOrgSecrets(
-              {
-                org: context.owner,
-                repo: context.repository,
-              }
+                repoSecretsResponse.data.secrets.forEach((x) =>
+                  secrets.add(x.name)
+                );
+              })()
             );
 
-            orgSecretsResponse.data.secrets.forEach((x) => secrets.add(x.name));
-          }
+            // Get org secrets
+            if (context.ownerIsOrg) {
+              p.push(
+                (async () => {
+                  const orgSecretsResponse = await context.client.actions.listOrgSecrets(
+                    {
+                      org: context.owner,
+                      repo: context.repository,
+                    }
+                  );
 
-          return Array.from(secrets.values());
-        })
+                  orgSecretsResponse.data.secrets.forEach((x) =>
+                    secrets.add(x.name)
+                  );
+                })()
+              );
+            }
+
+            await Promise.all(p);
+
+            return Array.from(secrets.values());
+          }
+        )
       ),
   };
 }
