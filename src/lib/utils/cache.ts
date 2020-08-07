@@ -10,7 +10,7 @@ export class TTLCache<T> {
 
   async get(
     key: string,
-    ttlInMS: number,
+    ttlInMS: number | undefined,
     getter: () => Promise<T>
   ): Promise<T> {
     const e = this.cache.get(key);
