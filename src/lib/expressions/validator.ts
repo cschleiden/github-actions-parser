@@ -1,8 +1,8 @@
-import { ExpressionContext, removeExpressionMarker } from ".";
+import { removeExpressionMarker } from ".";
 import { Position } from "../../types";
 import { ValidationError } from "../parser/validator";
 import { iteratePath, PropertyPath } from "../utils/path";
-import { ExpressionEvaluator } from "./evaluator";
+import { ExpressionContext, ExpressionEvaluator } from "./evaluator";
 import { ExpressionLexer, parser } from "./parser";
 import { ContextProvider } from "./types";
 
