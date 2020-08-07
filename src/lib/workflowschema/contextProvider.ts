@@ -1,3 +1,4 @@
+import { evaluateExpression, isExpression } from "../expressions";
 import { ContextProvider } from "../expressions/types";
 import { Workflow } from "../parser/parser";
 import { iteratePath, PropertyPath } from "../utils/path";
@@ -26,6 +27,7 @@ export class EditContextProvider implements ContextProvider {
         // TODO: CS: Need to derive this from the events the workflow is listening on, and then present
         // the intersection of the payloads...
         return {
+          event_name: "push",
           event: {
             action: "hello",
           },
@@ -37,9 +39,28 @@ export class EditContextProvider implements ContextProvider {
         if (this.workflow) {
           iteratePath(this.path, this.workflow, (x) => {
             if (x["env"]) {
+              const newEnv = {
+                ...x["env"],
+              };
+
+              for (const key of Object.keys(newEnv)) {
+                const value = newEnv[key];
+                if (isExpression(value)) {
+                  newEnv[key] = evaluateExpression(value, {
+                    get: (context) => {
+                      if (context === "env") {
+                        return env;
+                      }
+
+                      return this.get(context);
+                    },
+                  });
+                }
+              }
+
               env = {
                 ...env,
-                ...x["env"],
+                ...newEnv,
               };
             }
           });

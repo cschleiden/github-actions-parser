@@ -139,22 +139,18 @@ async function validateNode(
         // Check if we know more about this key
         const mappingDesc = nodeDesc.keys && nodeDesc.keys[key];
         if (mappingDesc) {
-          if (Array.isArray(mappingDesc)) {
-            // Check if it satisfies one of the definitions
-          } else {
-            // Validate each mapping
+          // Validate each mapping
 
-            // Add mapping desc for later lookup (e.g., to complete keys)
-            nodeToDesc.set(mapping, mappingDesc);
-            await validateNode(
-              mapping.value,
-              mappingDesc,
-              nodeToDesc,
-              workflow,
-              contextProviderFactory,
-              errors
-            );
-          }
+          // Add mapping desc for later lookup (e.g., to complete keys)
+          nodeToDesc.set(mapping, mappingDesc);
+          await validateNode(
+            mapping.value,
+            mappingDesc,
+            nodeToDesc,
+            workflow,
+            contextProviderFactory,
+            errors
+          );
         } else if (nodeDesc.itemDesc) {
           await validateNode(
             mapping.value,

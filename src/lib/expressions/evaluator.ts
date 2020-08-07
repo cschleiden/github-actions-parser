@@ -13,30 +13,10 @@ import {
   NEq,
   Or,
 } from "./parser";
-
-export interface RuntimeContext {
-  getValue(key: string): Promise<string | number | boolean>;
-
-  getKeys(): Promise<string[]>;
-
-  getRaw(): any;
-}
-
-export interface RuntimeContexts {
-  github: any;
-  // TODO: Document and define when these are set
-  env?: any;
-  job?: any;
-  steps?: any;
-  runner?: any;
-  secrets?: RuntimeContext;
-  strategy?: any;
-  matrix?: any;
-  needs?: any;
-}
+import { ContextProvider } from "./types";
 
 export interface ExpressionContext {
-  contexts: RuntimeContexts;
+  contextProvider: ContextProvider;
 }
 
 /**
@@ -148,7 +128,7 @@ export class ExpressionEvaluator extends BaseCstVisitor {
     path: PropertyPath,
     context: ExpressionContext
   ) {
-    const contextObject = context.contexts[contextName];
+    const contextObject = context.contextProvider.get(contextName as any);
     const result = iteratePath(path, contextObject);
 
     return result || "";

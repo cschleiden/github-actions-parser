@@ -403,6 +403,7 @@ export function _getSchema(context: Context): NodeDesc {
         itemDesc: {
           type: "map",
           keys: {
+            name: value("Optional custom name for this job"),
             env,
             if: {
               type: "value",

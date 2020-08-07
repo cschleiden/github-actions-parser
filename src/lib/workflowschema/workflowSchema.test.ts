@@ -126,6 +126,7 @@ describe("Completion", () => {
       await completeSimple("jobs:\n  build:\n    |", [
         "env",
         "if",
+        "name",
         "runs-on",
         "steps",
       ]);
@@ -134,7 +135,7 @@ describe("Completion", () => {
     it("completes top-level keys with existing", async () => {
       await completeSimple(
         "jobs:\n  build:\n    runs-on: ubuntu-latest\n    |",
-        ["env", "if", "steps"]
+        ["env", "if", "name", "steps"]
       );
     });
   });

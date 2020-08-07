@@ -1,22 +1,45 @@
 import { evaluateExpression, replaceExpressions } from ".";
-import { ExpressionContext } from "./evaluator";
+import { ContextProvider } from "./types";
 
-const ctx: ExpressionContext = {
-  contexts: {
-    github: {
-      ref: "refs/heads/master",
-      event_name: "push",
-      event: {
-        ref: "refs/heads/master",
-      },
-    },
-    secrets: {
-      getValue: (key: string) => Promise.resolve({ FOO: "Bar" }[key]),
-      getKeys: () => Promise.resolve(["FOO"]),
-      getRaw: () => [],
-    },
+const ctx: ContextProvider = {
+  get: (context: string) => {
+    switch (context) {
+      case "github": {
+        return {
+          token: "thisisasecrettoken",
+          job: "first",
+          // ref: `refs/heads/${("branch" in event && event.branch) || "master"}`,
+          sha: "825e127fcace28992b3688a96f78fe4d55e1e145",
+          repository: "cschleiden/github-actions-hero",
+          repositoryUrl: "git://github.com/cschleiden/github-actions-hero.git",
+          run_id: "42",
+          run_number: "23",
+          actor: "cschleiden",
+          // workflow,
+          head_ref: "825e127fcace28992b3688a96f78fe4d55e1e145",
+          base_ref: "",
+          // event_name: event.event,
+          // event: getEventPayload(event.event),
+
+          ref: "refs/heads/master",
+          event_name: "push",
+          event: {
+            ref: "refs/heads/master",
+          },
+        };
+      }
+
+      case "secrets": {
+        return {
+          FOO: "Bar",
+        };
+      }
+    }
+
+    return {};
   },
 };
+
 const ev = <T>(input: string): T => evaluateExpression(input, ctx);
 
 describe("expression parser", () => {
@@ -177,10 +200,6 @@ describe("expression parser", () => {
     it("toJson", () => {
       expect(ev("toJson([1,2,3])")).toBe("[1,2,3]");
       expect(ev("toJson(github.event_name)")).toBe('"push"');
-
-      // TODO: CS: Re-enable
-      //expect(ev("toJson(secrets)")).toBe('{"FOO":"Bar"}');
-
       expect(ev("toJson(true)")).toBe("true");
       expect(ev("toJson(false)")).toBe("false");
     });

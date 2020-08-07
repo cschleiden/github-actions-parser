@@ -1,8 +1,9 @@
 import { ILexingError, IRecognitionException } from "chevrotain";
-import { evaluator, ExpressionContext, RuntimeContexts } from "./evaluator";
+import { evaluator, ExpressionContext } from "./evaluator";
 import { ExpressionLexer, parser } from "./parser";
+import { ContextProvider } from "./types";
 
-export type { ExpressionContext, RuntimeContexts };
+export type { ExpressionContext };
 
 export class ExpressionError extends Error {
   constructor(
@@ -38,11 +39,11 @@ export function parseExpression(expression: string) {
  * Evaluates a single expression with the given context
  *
  * @param expression Expression to evaluate, with or without ${{ }} marker
- * @param context Context for evaluation
+ * @param contextProvider Context provider for evaluation
  */
 export function evaluateExpression(
   expression: string,
-  context: ExpressionContext
+  contextProvider: ContextProvider
 ) {
   // This expects a single expression in the form of "<expr>" or "${{ <expr> }}". Remove the
   // ${{ }} markers
@@ -56,7 +57,7 @@ export function evaluateExpression(
   // any top level rule may be used as an entry point
   const cst = parser.expression();
 
-  const result = evaluator.visit(cst, context);
+  const result = evaluator.visit(cst, { contextProvider });
 
   if (lexResult.errors.length > 0 || parser.errors.length > 0) {
     throw new ExpressionError(lexResult.errors, parser.errors);
@@ -70,13 +71,13 @@ export function evaluateExpression(
  * ${{ <expr> }} and will be replaced with their evaluation result in the returned string.
  *
  * @param input String containing zero or more expression
- * @param context Context for evaluation
+ * @param contextProvider Context provider for evaluation
  */
 export function replaceExpressions(
   input: string,
-  context: ExpressionContext
+  contextProvider: ContextProvider
 ): string {
   return input.replace(expressionMarker, (_, g) => {
-    return evaluateExpression(g, context);
+    return evaluateExpression(g, contextProvider);
   });
 }

@@ -1,12 +1,30 @@
 import { Hover, Kind, YNode } from "../../types";
-import { findNode } from "./ast";
+import { evaluateExpression, isExpression } from "../expressions";
+import { findNode, getPathFromNode } from "./ast";
 import { ContextProviderFactory } from "./complete";
-import { parse } from "./parser";
+import { parse, Workflow } from "./parser";
 import { NodeDesc } from "./schema";
 
-function doHover(node: YNode, desc: NodeDesc): Hover | undefined {
+async function doHover(
+  node: YNode,
+  desc: NodeDesc,
+  workflow: Workflow,
+  contextProviderFactory: ContextProviderFactory
+): Promise<Hover | undefined> {
   switch (desc.type) {
     case "value": {
+      if (node.kind === Kind.SCALAR && isExpression(node.value)) {
+        const result = evaluateExpression(
+          node.value,
+          await contextProviderFactory.get(workflow, getPathFromNode(node))
+        );
+        if (result !== undefined) {
+          return {
+            description: `Expression evaluates to: \`${result}\``,
+          };
+        }
+      }
+
       if (desc.allowedValues) {
         const allowedValue = desc.allowedValues.find((x) => node.value);
         if (allowedValue && allowedValue.description) {
@@ -22,7 +40,7 @@ function doHover(node: YNode, desc: NodeDesc): Hover | undefined {
     case "sequence": {
       if (node.kind !== Kind.SEQ) {
         if (desc.itemDesc) {
-          return doHover(node, desc.itemDesc);
+          return doHover(node, desc.itemDesc, workflow, contextProviderFactory);
         }
       }
     }
@@ -46,6 +64,6 @@ export async function hover(
   const node = findNode(doc.workflowST, pos) as YNode;
   const desc = doc.nodeToDesc.get(node);
   if (desc) {
-    return doHover(node, desc);
+    return doHover(node, desc, doc.workflow, contextProviderFactory);
   }
 }
