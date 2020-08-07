@@ -70,7 +70,7 @@ export class EditContextProvider implements ContextProvider {
 
       case "secrets":
         return this.secrets.reduce((s, name) => {
-          s[name] = true;
+          s[name] = "***";
           return s;
         }, {});
     }
