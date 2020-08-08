@@ -62,9 +62,11 @@ export type NodeDesc = (
    * @param workflow Workflow if it could be parsed
    * @param path Path in the workflow
    */
-  customValueProvider?: (
-    desc: NodeDesc,
-    workflow: Workflow | undefined,
-    path: PropertyPath
-  ) => Promise<ValueDesc[]>;
+  customValueProvider?: CustomValueProvider;
 };
+
+export type CustomValueProvider = (
+  desc: NodeDesc,
+  workflow: Workflow | undefined,
+  path: PropertyPath
+) => Promise<ValueDesc[]>;

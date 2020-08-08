@@ -1,9 +1,10 @@
+import { Context } from "../../types";
 import { ContextProviderFactory } from "../parser/complete";
 import { hover } from "../parser/hover";
 import { Workflow } from "../parser/parser";
 import { PropertyPath } from "../utils/path";
 import { EditContextProvider } from "./contextProvider";
-import { Context, _getSchema } from "./workflowSchema";
+import { _getSchema } from "./workflowSchema";
 
 const context: Context = {
   client: null,

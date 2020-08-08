@@ -46,12 +46,14 @@ async function completeMapKeys(
     );
   }
 
-  options.push(
-    ...Object.keys(mapDesc.keys).map((key) => ({
-      value: key,
-      description: mapDesc.keys[key].description,
-    }))
-  );
+  if (mapDesc.keys) {
+    options.push(
+      ...Object.keys(mapDesc.keys).map((key) => ({
+        value: key,
+        description: mapDesc.keys[key].description,
+      }))
+    );
+  }
 
   return filterAndSortCompletionOptions(partialInput, options, existingKeys);
 }

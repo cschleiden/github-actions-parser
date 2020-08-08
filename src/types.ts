@@ -1,3 +1,4 @@
+import { Octokit } from "@octokit/rest";
 import { YAMLException } from "yaml-ast-parser";
 
 //
@@ -72,6 +73,31 @@ export type YNode = YAMLMap | YAMLMapping | YAMLSequence | YAMLScalar;
 //
 // Custom types
 //
+
+export interface Context {
+  /** Octokit client to use for dynamic auto completion */
+  client: Octokit;
+
+  /** Repository owner */
+  owner: string;
+
+  /** Repository name */
+  repository: string;
+
+  /** Is the repository owned by an organization? */
+  ownerIsOrg?: boolean;
+
+  /**
+   * Dynamic auto-completion/validations are cached for a certain time to speed up successive
+   * operations.
+   *
+   * Setting this to a low number will greatly increase the number of API calls and duration
+   * parsing/validation/auto-completion will take.
+   *
+   * @default 10 * 60 * 1000 = 10 minutes
+   **/
+  timeToCacheResponsesInMS?: number;
+}
 
 export type Position = [number, number];
 

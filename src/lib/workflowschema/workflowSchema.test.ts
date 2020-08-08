@@ -1,8 +1,9 @@
+import { Context } from "../../types";
 import { complete, ContextProviderFactory } from "../parser/complete";
 import { Workflow } from "../parser/parser";
 import { PropertyPath } from "../utils/path";
 import { EditContextProvider } from "./contextProvider";
-import { Context, events, _getSchema } from "./workflowSchema";
+import { events, _getSchema } from "./workflowSchema";
 
 const context: Context = {
   client: null,

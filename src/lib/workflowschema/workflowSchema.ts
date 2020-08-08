@@ -1,5 +1,4 @@
-import { Octokit } from "@octokit/rest";
-import { CompletionOption, Hover } from "../../types";
+import { CompletionOption, Context, Hover } from "../../types";
 import { complete as genericComplete } from "../parser/complete";
 import { hover as genericHover } from "../parser/hover";
 import { parse as genericParse, WorkflowDocument } from "../parser/parser";
@@ -12,6 +11,7 @@ import {
 import { TTLCache } from "../utils/cache";
 import { mergeDeep } from "../utils/deepMerge";
 import { _getContextProviderFactory } from "./contextCompletion";
+import { actionsInputProvider } from "./valueProvider/actionsInputProvider";
 
 const cache = new TTLCache<ValueDesc[]>();
 
@@ -356,31 +356,6 @@ const runsOn = (context: Context): NodeDesc => ({
     }),
 });
 
-export interface Context {
-  /** Octokit client to use for dynamic auto completion */
-  client: Octokit;
-
-  /** Repository owner */
-  owner: string;
-
-  /** Repository name */
-  repository: string;
-
-  /** Is the repository owned by an organization? */
-  ownerIsOrg?: boolean;
-
-  /**
-   * Dynamic auto-completion/validations are cached for a certain time to speed up successive
-   * operations.
-   *
-   * Setting this to a low number will greatly increase the number of API calls and duration
-   * parsing/validation/auto-completion will take.
-   *
-   * @default 10 * 60 * 1000 = 10 minutes
-   **/
-  timeToCacheResponsesInMS?: number;
-}
-
 export function _getSchema(context: Context): NodeDesc {
   return {
     type: "map",
@@ -457,6 +432,7 @@ export function _getSchema(context: Context): NodeDesc {
                     // customValueProvider: (desc, workflow, path) => {
                     //   // Find corresponding `uses`
                     // }
+                    customValueProvider: actionsInputProvider(context),
                   },
                   env,
                   "continue-on-error": value(),
