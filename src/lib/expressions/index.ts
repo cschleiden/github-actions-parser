@@ -3,6 +3,11 @@ import { evaluator } from "./evaluator";
 import { ExpressionLexer, parser } from "./parser";
 import { ContextProvider } from "./types";
 
+// Work-around:
+// Export this to prevent name mangling, which breaks chevrotain's `functionName`
+// logic.
+export { ExpressionParser } from "./parser";
+
 export class ExpressionError extends Error {
   constructor(
     public lexErrors: ILexingError[],

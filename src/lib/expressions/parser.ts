@@ -247,7 +247,7 @@ const allTokens = [
 ];
 const ExpressionLexer = new chevrotain.Lexer(allTokens);
 
-class ExpressionParser extends chevrotain.CstParser {
+export class ExpressionParser extends chevrotain.CstParser {
   constructor() {
     super(allTokens);
     this.performSelfAnalysis();
