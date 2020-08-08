@@ -40,7 +40,7 @@ describe("Dynamic validation", () => {
       [
         {
           kind: DiagnosticKind.Error,
-          pos: [11, 20],
+          pos: [0, 20],
           message: "Missing required key 'foo'",
         },
       ],

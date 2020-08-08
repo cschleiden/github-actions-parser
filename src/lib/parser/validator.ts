@@ -184,8 +184,13 @@ async function validateNode(
         for (const missingKey of requiredKeys.filter(
           (key) => !seenKeys.has(key)
         )) {
+          let pos: Position = [mapNode.startPosition, mapNode.endPosition];
+          if (mapNode.parent) {
+            pos = [mapNode.parent.startPosition, mapNode.parent.endPosition];
+          }
+
           errors.push({
-            pos: [node.startPosition, node.endPosition],
+            pos,
             message: `Missing required key '${missingKey}'`,
           });
         }
