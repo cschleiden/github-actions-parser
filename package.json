@@ -15,6 +15,7 @@
   "scripts": {
     "dev": "microbundle watch -f modern,umd,es,cjs --tsconfig ./tsconfig.json",
     "build": "microbundle -f modern,umd,es,cjs --tsconfig ./tsconfig.json",
+    "localPublish": "yarn build && yalc push",
     "prepublishOnly": "yarn build",
     "test": "jest",
     "test-watch": "jest --watch"
