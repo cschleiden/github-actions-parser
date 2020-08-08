@@ -1,5 +1,6 @@
+import { Diagnostic, DiagnosticKind } from "../../types";
 import { complete } from "./complete";
-import { Diagnostic, DiagnosticKind, parse } from "./parser";
+import { parse } from "./parser";
 import { NodeDesc } from "./schema";
 import { NullCompletion } from "./test/fixtures";
 

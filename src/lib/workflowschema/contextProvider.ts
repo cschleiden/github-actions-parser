@@ -1,7 +1,17 @@
+import { getEventPayload } from "../events/eventPayload";
 import { containsExpression, evaluateExpression } from "../expressions";
 import { ContextProvider } from "../expressions/types";
 import { Workflow } from "../parser/parser";
 import { iteratePath, PropertyPath } from "../utils/path";
+
+function getEvent(workflow: Workflow) {
+  if (workflow && workflow.on) {
+    return getEventPayload(Object.keys(workflow.on));
+  }
+
+  // Default to push, since it's one of the most common payloads
+  return getEventPayload(["push"]);
+}
 
 export class EditContextProvider implements ContextProvider {
   constructor(
@@ -24,13 +34,26 @@ export class EditContextProvider implements ContextProvider {
   ): Object {
     switch (context) {
       case "github":
-        // TODO: CS: Need to derive this from the events the workflow is listening on, and then present
-        // the intersection of the payloads...
         return {
-          event_name: "push",
-          event: {
-            action: "hello",
-          },
+          event: getEvent(this.workflow),
+          event_path: "",
+          workflow: this.workflow?.name || "workflow.yaml",
+          job: "",
+          run_id: "42",
+          run_number: "23",
+          actor: "monalisa",
+          repository: "repository",
+          repository_owner: "repository_owner",
+          event_name:
+            (this.workflow?.on && Object.keys(this.workflow.on)[0]) || "push",
+          sha: "6113728f27ae82c7b1a177c8d03f9e96e0adf246",
+          ref: "main",
+          head_ref: "refs/heads/branch",
+          base_ref: "refs/heads/main",
+          token: "***",
+          workspace: "",
+          action: "",
+          action_path: "",
         };
 
       case "env":

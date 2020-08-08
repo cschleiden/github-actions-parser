@@ -1,12 +1,14 @@
 import { safeLoad as jsYamlSafeLoad } from "js-yaml";
-import { Kind, safeLoad, YAMLNode } from "yaml-ast-parser";
-import { Position } from "../../types";
+import { safeLoad, YAMLNode } from "yaml-ast-parser";
+import { Diagnostic, DiagnosticKind } from "../../types";
 import { ContextProviderFactory } from "./complete";
 import { NodeDesc } from "./schema";
 import { validate } from "./validator";
 
 export interface Workflow {
   name?: string;
+
+  on: { [key: string]: {} };
 }
 
 export interface WorkflowDocument {
@@ -21,34 +23,6 @@ export interface WorkflowDocument {
 
   /** Mapping of AST nodes to mapped schema descriptions */
   nodeToDesc: Map<YAMLNode, NodeDesc>;
-}
-
-export enum DiagnosticKind {
-  Error,
-  Warning,
-}
-
-export interface Diagnostic {
-  kind: DiagnosticKind;
-
-  message: string;
-
-  pos: Position;
-}
-
-const kindToType = {
-  [Kind.MAP]: "map",
-  [Kind.SEQ]: "sequence",
-  [Kind.SCALAR]: "value",
-};
-
-function walk(node: YAMLNode, desc: NodeDesc) {
-  // Check desired type
-  if (kindToType[node.kind] !== desc.type) {
-    // report error!
-  }
-
-  // for (const child of node.mappings)
 }
 
 export async function parse(

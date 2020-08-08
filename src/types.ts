@@ -109,6 +109,19 @@ export interface CompletionOption {
   description?: string;
 }
 
+export enum DiagnosticKind {
+  Error,
+  Warning,
+}
+
+export interface Diagnostic {
+  kind: DiagnosticKind;
+
+  message: string;
+
+  pos: Position;
+}
+
 export interface Hover {
   /** Description for the hover, might be formatted with markdown */
   description: string;

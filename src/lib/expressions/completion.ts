@@ -72,6 +72,10 @@ export async function completeExpression(
       }
     }
 
+    // We iterate over the token vector backwards, so reverse the path for the
+    // actual context access
+    path = path.reverse();
+
     if (contextName) {
       const context = contextProvider.get(contextName as any);
       const obj = iteratePath(

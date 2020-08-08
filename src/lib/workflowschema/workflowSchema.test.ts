@@ -160,7 +160,10 @@ describe("Completion", () => {
     describe("context", () => {
       describe("multi-level", () => {
         it("github.event.action", () =>
-          completeSimple(`name: \${{ github.event.| }}`, ["action"]));
+          completeSimple(`name: \${{ github.event.r| }}`, [
+            "ref",
+            "repository",
+          ]));
       });
 
       describe("env", () => {

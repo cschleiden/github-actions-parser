@@ -1,4 +1,5 @@
-import { Diagnostic, DiagnosticKind, parse } from "./parser";
+import { Diagnostic, DiagnosticKind } from "../../types";
+import { parse } from "./parser";
 import { CustomValueValidation, NodeDesc } from "./schema";
 import { NullCompletion } from "./test/fixtures";
 

@@ -1,237 +1,107 @@
-export function getEventPayload(event: string) {
-  switch (event) {
-    case "push":
-      return {
-        after: "825e127fcace28992b3688a96f78fe4d55e1e145",
-        base_ref: null,
-        before: "0fdec3fd798d4a239fc431deac223cc4196c50c3",
-        commits: [
-          {
-            author: {
-              email: "cschleiden@github.com",
-              name: "Christopher Schleiden",
-              username: "cschleiden",
-            },
-            committer: {
-              email: "noreply@github.com",
-              name: "GitHub",
-              username: "web-flow",
-            },
-            distinct: true,
-            id: "825e127fcace28992b3688a96f78fe4d55e1e145",
-            message: "Update new-schedule.yaml",
-            timestamp: "2020-04-01T16:27:08-07:00",
-            tree_id: "8f2e4ae43054c6d9cab914ea0b8e1ced9559c4ab",
-            url:
-              "https://github.com/myorg/cschleiden-test/commit/825e127fcace28992b3688a96f78fe4d55e1e145",
-          },
-        ],
-        compare:
-          "https://github.com/myorg/cschleiden-test/compare/0fdec3fd798d...825e127fcace",
-        created: false,
-        deleted: false,
-        forced: false,
-        head_commit: {
-          author: {
-            email: "cschleiden@github.com",
-            name: "Christopher Schleiden",
-            username: "cschleiden",
-          },
-          committer: {
-            email: "noreply@github.com",
-            name: "GitHub",
-            username: "web-flow",
-          },
-          distinct: true,
-          id: "825e127fcace28992b3688a96f78fe4d55e1e145",
-          message: "Update new-schedule.yaml",
-          timestamp: "2020-04-01T16:27:08-07:00",
-          tree_id: "8f2e4ae43054c6d9cab914ea0b8e1ced9559c4ab",
-          url:
-            "https://github.com/myorg/cschleiden-test/commit/825e127fcace28992b3688a96f78fe4d55e1e145",
-        },
-        organization: {
-          avatar_url: "https://avatars1.githubusercontent.com/u/33435682?v=4",
-          description: '"Some org!"',
-          events_url: "https://api.github.com/orgs/myorg/events",
-          hooks_url: "https://api.github.com/orgs/myorg/hooks",
-          id: 33435682,
-          issues_url: "https://api.github.com/orgs/myorg/issues",
-          login: "myorg",
-          members_url: "https://api.github.com/orgs/myorg/members{/member}",
-          node_id: "MDEyOk9yZ2FuaXphdGlvbjMzNDM1Njgy",
-          public_members_url:
-            "https://api.github.com/orgs/myorg/public_members{/member}",
-          repos_url: "https://api.github.com/orgs/myorg/repos",
-          url: "https://api.github.com/orgs/myorg",
-        },
-        pusher: {
-          email: "cschleiden@live.de",
-          name: "cschleiden",
-        },
-        ref: "refs/heads/master",
-        repository: {
-          archive_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/{archive_format}{/ref}",
-          archived: false,
-          assignees_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/assignees{/user}",
-          blobs_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/git/blobs{/sha}",
-          branches_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/branches{/branch}",
-          clone_url: "https://github.com/myorg/cschleiden-test.git",
-          collaborators_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/collaborators{/collaborator}",
-          comments_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/comments{/number}",
-          commits_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/commits{/sha}",
-          compare_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/compare/{base}...{head}",
-          contents_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/contents/{+path}",
-          contributors_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/contributors",
-          created_at: 1570143203,
-          default_branch: "master",
-          deployments_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/deployments",
-          description: null,
-          disabled: false,
-          downloads_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/downloads",
-          events_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/events",
-          fork: false,
-          forks: 0,
-          forks_count: 0,
-          forks_url: "https://api.github.com/repos/myorg/cschleiden-test/forks",
-          full_name: "myorg/cschleiden-test",
-          git_commits_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/git/commits{/sha}",
-          git_refs_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/git/refs{/sha}",
-          git_tags_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/git/tags{/sha}",
-          git_url: "git://github.com/myorg/cschleiden-test.git",
-          has_downloads: true,
-          has_issues: true,
-          has_pages: false,
-          has_projects: true,
-          has_wiki: true,
-          homepage: null,
-          hooks_url: "https://api.github.com/repos/myorg/cschleiden-test/hooks",
-          html_url: "https://github.com/myorg/cschleiden-test",
-          id: 212695793,
-          issue_comment_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/issues/comments{/number}",
-          issue_events_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/issues/events{/number}",
-          issues_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/issues{/number}",
-          keys_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/keys{/key_id}",
-          labels_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/labels{/name}",
-          language: null,
-          languages_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/languages",
-          license: null,
-          master_branch: "master",
-          merges_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/merges",
-          milestones_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/milestones{/number}",
-          mirror_url: null,
-          name: "cschleiden-test",
-          node_id: "MDEwOlJlcG9zaXRvcnkyMTI2OTU3OTM=",
-          notifications_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/notifications{?since,all,participating}",
-          open_issues: 12,
-          open_issues_count: 12,
-          organization: "myorg",
-          owner: {
-            avatar_url: "https://avatars1.githubusercontent.com/u/33435682?v=4",
-            email: null,
-            events_url: "https://api.github.com/users/myorg/events{/privacy}",
-            followers_url: "https://api.github.com/users/myorg/followers",
-            following_url:
-              "https://api.github.com/users/myorg/following{/other_user}",
-            gists_url: "https://api.github.com/users/myorg/gists{/gist_id}",
-            gravatar_id: "",
-            html_url: "https://github.com/myorg",
-            id: 33435682,
-            login: "myorg",
-            name: "myorg",
-            node_id: "MDEyOk9yZ2FuaXphdGlvbjMzNDM1Njgy",
-            organizations_url: "https://api.github.com/users/myorg/orgs",
-            received_events_url:
-              "https://api.github.com/users/myorg/received_events",
-            repos_url: "https://api.github.com/users/myorg/repos",
-            site_admin: false,
-            starred_url:
-              "https://api.github.com/users/myorg/starred{/owner}{/repo}",
-            subscriptions_url:
-              "https://api.github.com/users/myorg/subscriptions",
-            type: "Organization",
-            url: "https://api.github.com/users/myorg",
-          },
-          private: true,
-          pulls_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/pulls{/number}",
-          pushed_at: 1585783628,
-          releases_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/releases{/id}",
-          size: 153,
-          ssh_url: "git@github.com:myorg/cschleiden-test.git",
-          stargazers: 0,
-          stargazers_count: 0,
-          stargazers_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/stargazers",
-          statuses_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/statuses/{sha}",
-          subscribers_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/subscribers",
-          subscription_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/subscription",
-          svn_url: "https://github.com/myorg/cschleiden-test",
-          tags_url: "https://api.github.com/repos/myorg/cschleiden-test/tags",
-          teams_url: "https://api.github.com/repos/myorg/cschleiden-test/teams",
-          trees_url:
-            "https://api.github.com/repos/myorg/cschleiden-test/git/trees{/sha}",
-          updated_at: "2020-04-01T23:26:34Z",
-          url: "https://github.com/myorg/cschleiden-test",
-          watchers: 0,
-          watchers_count: 0,
-        },
-        sender: {
-          avatar_url: "https://avatars2.githubusercontent.com/u/2201819?v=4",
-          events_url:
-            "https://api.github.com/users/cschleiden/events{/privacy}",
-          followers_url: "https://api.github.com/users/cschleiden/followers",
-          following_url:
-            "https://api.github.com/users/cschleiden/following{/other_user}",
-          gists_url: "https://api.github.com/users/cschleiden/gists{/gist_id}",
-          gravatar_id: "",
-          html_url: "https://github.com/cschleiden",
-          id: 2201819,
-          login: "cschleiden",
-          node_id: "MDQ6VXNlcjIyMDE4MTk=",
-          organizations_url: "https://api.github.com/users/cschleiden/orgs",
-          received_events_url:
-            "https://api.github.com/users/cschleiden/received_events",
-          repos_url: "https://api.github.com/users/cschleiden/repos",
-          site_admin: true,
-          starred_url:
-            "https://api.github.com/users/cschleiden/starred{/owner}{/repo}",
-          subscriptions_url:
-            "https://api.github.com/users/cschleiden/subscriptions",
-          type: "User",
-          url: "https://api.github.com/users/cschleiden",
-        },
-      };
-  }
+import check_run from "../../../events/check_run.json";
+import check_suite from "../../../events/check_suite.json";
+import commit_comment from "../../../events/commit_comment.json";
+import content_reference from "../../../events/content_reference.json";
+import create from "../../../events/create.json";
+import deletePayload from "../../../events/delete.json";
+import deployment from "../../../events/deployment.json";
+import deployment_status from "../../../events/deployment_status.json";
+import deploy_key from "../../../events/deploy_key.json";
+import fork from "../../../events/fork.json";
+import github_app_authorization from "../../../events/github_app_authorization.json";
+import gollum from "../../../events/gollum.json";
+import installation from "../../../events/installation.json";
+import installation_repositories from "../../../events/installation_repositories.json";
+import issues from "../../../events/issues.json";
+import issue_comment from "../../../events/issue_comment.json";
+import label from "../../../events/label.json";
+import marketplace_purchase from "../../../events/marketplace_purchase.json";
+import member from "../../../events/member.json";
+import membership from "../../../events/membership.json";
+import meta from "../../../events/meta.json";
+import milestone from "../../../events/milestone.json";
+import organization from "../../../events/organization.json";
+import org_block from "../../../events/org_block.json";
+import packagePayload from "../../../events/package.json";
+import page_build from "../../../events/page_build.json";
+import ping from "../../../events/ping.json";
+import project from "../../../events/project.json";
+import project_card from "../../../events/project_card.json";
+import project_column from "../../../events/project_column.json";
+import publicPayload from "../../../events/public.json";
+import pull_request from "../../../events/pull_request.json";
+import pull_request_review from "../../../events/pull_request_review.json";
+import pull_request_review_comment from "../../../events/pull_request_review_comment.json";
+import push from "../../../events/push.json";
+import release from "../../../events/release.json";
+import repository from "../../../events/repository.json";
+import repository_dispatch from "../../../events/repository_dispatch.json";
+import repository_import from "../../../events/repository_import.json";
+import repository_vulnerability_alert from "../../../events/repository_vulnerability_alert.json";
+import security_advisory from "../../../events/security_advisory.json";
+import sponsorship from "../../../events/sponsorship.json";
+import star from "../../../events/star.json";
+import status from "../../../events/status.json";
+import team from "../../../events/team.json";
+import team_add from "../../../events/team_add.json";
+import watch from "../../../events/watch.json";
+import workflow_dispatch from "../../../events/workflow_dispatch.json";
+import workflow_run from "../../../events/workflow_run.json";
+import { mergeDeep } from "../utils/deepMerge";
 
-  return {};
+const eventPayloads = {
+  check_run,
+  check_suite,
+  commit_comment,
+  content_reference,
+  create,
+  delete: deletePayload,
+  deploy_key,
+  deployment,
+  deployment_status,
+  fork,
+  github_app_authorization,
+  gollum,
+  installation,
+  installation_repositories,
+  issue_comment,
+  issues,
+  label,
+  marketplace_purchase,
+  member,
+  membership,
+  meta,
+  milestone,
+  org_block,
+  organization,
+  package: packagePayload,
+  page_build,
+  ping,
+  project,
+  project_card,
+  project_column,
+  public: publicPayload,
+  pull_request,
+  pull_request_review,
+  pull_request_review_comment,
+  push,
+  release,
+  repository,
+  repository_dispatch,
+  repository_import,
+  repository_vulnerability_alert,
+  security_advisory,
+  sponsorship,
+  star,
+  status,
+  team,
+  team_add,
+  watch,
+  workflow_dispatch,
+  workflow_run,
+};
+
+export function getEventPayload(events: string[]) {
+  const payloads = events.map((event) => eventPayloads[event]);
+  return mergeDeep({}, ...payloads);
 }

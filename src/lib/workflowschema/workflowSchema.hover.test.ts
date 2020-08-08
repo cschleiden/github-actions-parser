@@ -85,13 +85,14 @@ jobs:
 
     it("evaluates expression with referencing env variables", () =>
       hoverSimple(
-        `env:
+        `on:\n  push:\n
+env:
   WF_VALUE: 42
-  WF2: \${{ github.event.action }}
+  WF2: \${{ github.event.ref }}
 jobs:
   build:
     name: \${{ env.W|F2 }}`,
-        "Expression evaluates to: `hello`"
+        "Expression evaluates to: `refs/tags/simple-tag`"
       ));
   });
 });
