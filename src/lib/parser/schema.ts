@@ -65,8 +65,28 @@ export type NodeDesc = (
   customValueProvider?: CustomValueProvider;
 };
 
+export enum CustomValueValidation {
+  /** Default, no special handling */
+  None = 0,
+
+  /**
+   * Value/key must be provided
+   *
+   * This is mostly used for requiring certain keys to be provided
+   **/
+  Required = 1,
+}
+
+export interface CustomValue {
+  value: string;
+
+  description?: string;
+
+  validation?: CustomValueValidation;
+}
+
 export type CustomValueProvider = (
   desc: NodeDesc,
   workflow: Workflow | undefined,
   path: PropertyPath
-) => Promise<ValueDesc[]>;
+) => Promise<CustomValue[]>;

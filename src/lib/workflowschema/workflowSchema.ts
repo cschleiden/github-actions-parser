@@ -428,11 +428,7 @@ export function _getSchema(context: Context): NodeDesc {
                   shell: value(),
                   with: {
                     type: "map",
-                    // TODO: CS: Find matching `uses`, if it's an action, retrieve its `action.yaml`
-                    // customValueProvider: (desc, workflow, path) => {
-                    //   // Find corresponding `uses`
-                    // }
-                    customValueProvider: actionsInputProvider(context),
+                    customValueProvider: actionsInputProvider(context, cache),
                   },
                   env,
                   "continue-on-error": value(),

@@ -12,7 +12,7 @@ import { validateExpression } from "../expressions/validator";
 import { getPathFromNode } from "./ast";
 import { ContextProviderFactory } from "./complete";
 import { Workflow } from "./parser";
-import { NodeDesc } from "./schema";
+import { CustomValue, CustomValueValidation, NodeDesc } from "./schema";
 
 export interface ValidationError {
   pos: Position;
@@ -128,8 +128,16 @@ async function validateNode(
       }
 
       const mapNode = node as YamlMap;
-
       nodeToDesc.set(node, nodeDesc);
+
+      let customValues: CustomValue[] | undefined;
+      if (nodeDesc.customValueProvider) {
+        customValues = await nodeDesc.customValueProvider(
+          nodeDesc,
+          workflow,
+          getPathFromNode(n)
+        );
+      }
 
       const seenKeys = new Map<string, YAMLMapping>();
 
@@ -165,8 +173,15 @@ async function validateNode(
       }
 
       // Check required keys
-      if (nodeDesc.required) {
-        for (const missingKey of nodeDesc.required.filter(
+      if (nodeDesc.required || customValues) {
+        const requiredKeys = [
+          ...(nodeDesc.required || []),
+          ...(customValues || [])
+            .filter((x) => x.validation === CustomValueValidation.Required)
+            .map((x) => x.value),
+        ];
+
+        for (const missingKey of requiredKeys.filter(
           (key) => !seenKeys.has(key)
         )) {
           errors.push({

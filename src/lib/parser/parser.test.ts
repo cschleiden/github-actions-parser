@@ -1,22 +1,7 @@
-import { complete, ContextProviderFactory } from "./complete";
+import { complete } from "./complete";
 import { Diagnostic, DiagnosticKind, parse } from "./parser";
 import { NodeDesc } from "./schema";
-
-const NullCompletion: ContextProviderFactory = {
-  get: async () => ({
-    get: async (context: string) => {
-      switch (context) {
-        case "secrets": {
-          return {
-            AZURE_KEY: "",
-          };
-        }
-      }
-
-      return {};
-    },
-  }),
-};
+import { NullCompletion } from "./test/fixtures";
 
 /** | in string denotes cursor position */
 const _testComplete = async (input: string, schema: NodeDesc) => {
