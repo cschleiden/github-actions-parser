@@ -21,9 +21,6 @@ export interface WorkflowDocument {
 
   /** Mapping of AST nodes to mapped schema descriptions */
   nodeToDesc: Map<YAMLNode, NodeDesc>;
-
-  /** Schema used for parsing and validation */
-  schema: NodeDesc;
 }
 
 export enum DiagnosticKind {
@@ -89,6 +86,5 @@ export async function parse(
     workflowST: yamlRoot,
     nodeToDesc: validationResult.nodeToDesc,
     diagnostics,
-    schema,
   };
 }
