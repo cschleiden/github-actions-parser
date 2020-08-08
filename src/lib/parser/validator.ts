@@ -185,8 +185,11 @@ async function validateNode(
           (key) => !seenKeys.has(key)
         )) {
           let pos: Position = [mapNode.startPosition, mapNode.endPosition];
-          if (mapNode.parent) {
-            pos = [mapNode.parent.startPosition, mapNode.parent.endPosition];
+          if (mapNode.parent && mapNode.parent.key) {
+            pos = [
+              mapNode.parent.key.startPosition,
+              mapNode.parent.key.endPosition,
+            ];
           }
 
           errors.push({
