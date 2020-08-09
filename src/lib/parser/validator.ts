@@ -6,7 +6,10 @@ import {
   YAMLScalar,
 } from "yaml-ast-parser";
 import { Position, YNode } from "../../types";
-import { containsExpression } from "../expressions/embedding";
+import {
+  containsExpression,
+  iterateExpressions,
+} from "../expressions/embedding";
 import { ContextProvider } from "../expressions/types";
 import { validateExpression } from "../expressions/validator";
 import { getPathFromNode } from "./ast";
@@ -41,8 +44,9 @@ function validateExpressions(
   errors: ValidationError[],
   contextProvider: ContextProvider
 ) {
-  // TODO: CS: Need to find all expressions in input and then validate them separately
-  validateExpression(input, posOffset, errors, contextProvider);
+  iterateExpressions(input, (expr, pos) => {
+    validateExpression(expr, posOffset + pos, errors, contextProvider);
+  });
 }
 
 async function validateNode(

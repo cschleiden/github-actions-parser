@@ -178,6 +178,8 @@ export function _getSchema(context: Context): NodeDesc {
                   itemDesc: runsOn(context),
                 },
               ],
+              description:
+                "The type of machine to run the job on. The machine can be either a GitHub-hosted runner, or a self-hosted runner.",
             },
             steps: {
               type: "sequence",
@@ -191,9 +193,11 @@ export function _getSchema(context: Context): NodeDesc {
                     type: "value",
                     isExpression: true,
                   },
-                  name: value(),
+                  name: value("Optional custom name for the step"),
                   uses: value(),
-                  run: value(),
+                  run: value(
+                    "Runs command-line programs using the operating system's shell. If you do not provide a `name`, the step name will default to the text specified in the `run` command."
+                  ),
                   "working-directory": value(),
                   shell,
                   with: {
@@ -205,6 +209,26 @@ export function _getSchema(context: Context): NodeDesc {
                   "timeout-minutes": value(),
                 },
               },
+            },
+            strategy: {
+              type: "map",
+              keys: {
+                matrix: {
+                  type: "sequence",
+                  itemDesc: {
+                    type: "map",
+                  },
+                  description:
+                    "A build matrix is a set of different configurations of the virtual environment. For example you might run a job against more than one supported version of a language, operating system, or tool. Each configuration is a copy of the job that runs and reports a status.\nYou can specify a matrix by supplying an array for the configuration options. For example, if the GitHub virtual environment supports Node.js versions 6, 8, and 10 you could specify an array of those versions in the matrix.\nWhen you define a matrix of operating systems, you must set the required runs-on keyword to the operating system of the current job, rather than hard-coding the operating system name. To access the operating system name, you can use the matrix.os context parameter to set runs-on. For more information, see https://help.github.com/en/articles/contexts-and-expression-syntax-for-github-actions.",
+                },
+                "fail-fast": value(
+                  "When set to true, GitHub cancels all in-progress jobs if any matrix job fails. Default: true"
+                ),
+                "max-parallel": value(
+                  "The maximum number of jobs that can run simultaneously when using a matrix job strategy. By default, GitHub will maximize the number of jobs run in parallel depending on the available runners on GitHub-hosted virtual machines."
+                ),
+              },
+              required: ["matrix"],
             },
           },
 

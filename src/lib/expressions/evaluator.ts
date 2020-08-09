@@ -115,7 +115,7 @@ export class ExpressionEvaluator extends BaseCstVisitor {
     const p: PropertyPath = [];
     if (!!ctx.contextMember) {
       for (const cM of ctx.contextMember as any[]) {
-        this.visit(cM, p);
+        this.visit(cM, { path: p, context });
       }
     }
 
@@ -134,13 +134,16 @@ export class ExpressionEvaluator extends BaseCstVisitor {
     return result || "";
   }
 
-  contextMember(ctx: any, path: PropertyPath) {
+  contextMember(
+    ctx: any,
+    { path, context }: { path: PropertyPath; context: ExpressionContext }
+  ) {
     switch (true) {
       case !!ctx.contextDotMember:
         return this.visit(ctx.contextDotMember, path);
 
       case !!ctx.contextBoxMember:
-        return this.visit(ctx.contextBoxMember, path);
+        return this.visit(ctx.contextBoxMember, { path, context });
     }
   }
 
@@ -149,8 +152,12 @@ export class ExpressionEvaluator extends BaseCstVisitor {
     path.push(p);
   }
 
-  contextBoxMember(ctx: any, path: PropertyPath) {
-    const p = this._removeQuotes(ctx.StringLiteral[0].image);
+  contextBoxMember(
+    ctx: any,
+    { path, context }: { path: PropertyPath; context: ExpressionContext }
+  ) {
+    //const p = this._removeQuotes(ctx.StringLiteral[0].image);
+    const p = this.visit(ctx.subExpression, context);
     path.push(p);
   }
 

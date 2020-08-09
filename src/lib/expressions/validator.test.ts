@@ -7,7 +7,7 @@ const contextProvider: ContextProvider = {
     switch (context) {
       case "env": {
         return {
-          FOO: "",
+          FOO: "AWS_TOKEN",
           BAR_TEST: "",
         };
       }
@@ -37,6 +37,8 @@ describe("validation", () => {
         },
       ]);
     });
+
+    it("array access", () => testValidation("${{ secrets[env.FOO] }}", []));
   });
 
   describe("for contexts", () => {
@@ -52,6 +54,7 @@ describe("validation", () => {
     it("unknown context acesss", async () => {
       await testValidation("${{ github.test }}", [
         { message: "Unknown context access: 'github.test'", pos: [0, 18] },
+        { message: "Invalid expression", pos: [0, 18] },
       ]);
     });
   });

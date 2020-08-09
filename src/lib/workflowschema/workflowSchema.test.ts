@@ -1,6 +1,6 @@
 import { Context } from "../../types";
 import { complete, ContextProviderFactory } from "../parser/complete";
-import { Workflow } from "../parser/parser";
+import { parse, Workflow } from "../parser/parser";
 import { PropertyPath } from "../utils/path";
 import { EditContextProvider } from "./contextProvider";
 import { events } from "./schema/events";
@@ -137,6 +137,7 @@ describe("Completion", () => {
         "runs-on",
         "services",
         "steps",
+        "strategy",
         "timeout-minutes",
       ]);
     });
@@ -155,6 +156,7 @@ describe("Completion", () => {
           "outputs",
           "services",
           "steps",
+          "strategy",
           "timeout-minutes",
         ]
       );
@@ -211,6 +213,31 @@ jobs:
           );
         });
       });
+    });
+  });
+});
+
+describe("validation", () => {
+  const testValidation = async (input: string) => {
+    return (
+      await parse(input, WorkflowSchema, ExpressionContextProviderFactory)
+    ).diagnostics;
+  };
+
+  describe("expressions", () => {
+    it("in string", async () => {
+      expect(
+        await testValidation(`on: push
+env:
+  secret_name: test
+  test: 42
+jobs:
+  first:
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: pass secret value
+        run: echo "::set-env name=secret_value::\${{ env[env.secret_name] }}"`)
+      ).toEqual([]);
     });
   });
 });

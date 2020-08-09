@@ -1,7 +1,7 @@
 export const expressionMarker = /\$\{\{(.*?)\}\}/gm;
 
 export function containsExpression(input: string): boolean {
-  return expressionMarker.test(input);
+  return input?.match && input.match(expressionMarker) !== null;
 }
 
 export function removeExpressionMarker(input: string): string {

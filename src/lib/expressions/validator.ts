@@ -18,14 +18,15 @@ class ExpressionValidator extends ExpressionEvaluator {
   protected getContextValue(contextName: string, path: PropertyPath) {
     const ctx = this.contextProvider.get(contextName as any);
 
-    if (!ctx || iteratePath(path, ctx) === undefined) {
+    const value = ctx && iteratePath(path, ctx);
+    if (!ctx || value === undefined) {
       this.errors.push({
         message: `Unknown context access: '${contextName}.${path.join(".")}'`,
         pos: this.pos,
       });
     }
 
-    return ctx;
+    return value;
   }
 }
 

@@ -68,6 +68,12 @@ describe("Hover", () => {
         "Runs your workflow anytime the check_run event occurs. More than one activity type triggers this event. " +
           "For information about the REST API, see https://developer.github.com/v3/checks/runs."
       ));
+
+    it("description for event using map", () =>
+      hoverSimple(
+        "on: push\njobs:\n  build:\n    runs|-on: ubuntu-latest",
+        "The type of machine to run the job on. The machine can be either a GitHub-hosted runner, or a self-hosted runner."
+      ));
   });
 
   describe("expressions", () => {

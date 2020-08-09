@@ -34,6 +34,12 @@ const ctx: ContextProvider = {
           FOO: "Bar",
         };
       }
+
+      case "env": {
+        return {
+          foo: "token",
+        };
+      }
     }
 
     return {};
@@ -214,6 +220,9 @@ describe("expression parser", () => {
       expect(ev("github.event['ref']")).toBe("refs/heads/master");
       expect(ev("github.event.ref")).toBe("refs/heads/master");
       expect(ev("github['event']['ref']")).toBe("refs/heads/master");
+    });
+    it("indirect access", () => {
+      expect(ev("github[env.foo]")).toBe("thisisasecrettoken");
     });
   });
 });

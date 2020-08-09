@@ -299,7 +299,7 @@ export class ExpressionParser extends chevrotain.CstParser {
 
   contextBoxMember = this.RULE("contextBoxMember", () => {
     this.CONSUME(LSquare);
-    this.CONSUME(StringLiteral);
+    this.SUBRULE(this.subExpression);
     this.CONSUME(RSquare);
   });
 
