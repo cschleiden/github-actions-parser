@@ -96,6 +96,42 @@ export class EditContextProvider implements ContextProvider {
 
         return env;
 
+      case "runner": {
+        return {
+          os: "macOS",
+          temp: "/tmp",
+          tool_cache: "/tmp/cache",
+        };
+      }
+
+      case "job": {
+        return {
+          status: "success",
+          // TODO: CS: Other job parameters
+        };
+      }
+
+      case "needs": {
+        // TOOD: CS: This needs a properly parsed workflow,
+        return {
+          /*
+          <job id>.result
+          <job id>.outputs {
+            <outputname>
+          }
+          */
+        };
+      }
+
+      case "matrix": {
+        return {};
+      }
+
+      case "steps": {
+        // TODO: CS: Previous steps
+        return {};
+      }
+
       case "secrets":
         return this.secrets.reduce((s, name) => {
           s[name] = "***";

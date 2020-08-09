@@ -22,6 +22,9 @@ export type MapNodeDesc = {
    */
   itemDesc?: NodeDesc;
 
+  /**
+   * Required keys for the map
+   */
   required?: string[];
 };
 

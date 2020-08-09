@@ -278,13 +278,17 @@ export const eventMap: NodeDescMap = mergeDeep(
       },
     },
     schedule: {
-      type: "map",
-      keys: {
-        cron: {
-          type: "value",
-          // TODO: Validate cron
-          customValidator: (node, x) => {},
+      type: "sequence",
+      itemDesc: {
+        type: "map",
+        keys: {
+          cron: {
+            type: "value",
+            // TODO: Validate cron
+            //customValidator: (node, x) => {},
+          },
         },
+        required: ["cron"],
       },
     },
     workflow_dispatch: {
@@ -310,7 +314,7 @@ export const eventMap: NodeDescMap = mergeDeep(
         },
       },
     },
-  }
+  } as NodeDescMap
 );
 
 const env: MapNodeDesc = {

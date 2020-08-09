@@ -14,7 +14,7 @@ export function isObject(item) {
  * @param target
  * @param ...sources
  */
-export function mergeDeep(target, ...sources) {
+export function mergeDeep<T = any>(target: T, ...sources: T[]) {
   if (!sources.length) return target;
   const source = sources.shift();
 
