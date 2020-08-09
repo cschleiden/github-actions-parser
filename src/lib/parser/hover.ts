@@ -1,6 +1,6 @@
 import { Hover, Kind, YNode } from "../../types";
 import { containsExpression, evaluateExpression } from "../expressions";
-import { findNode, getPathFromNode } from "./ast";
+import { findNode, getPathFromNode, inPos } from "./ast";
 import { ContextProviderFactory } from "./complete";
 import { parse, Workflow } from "./parser";
 import { NodeDesc } from "./schema";
@@ -14,6 +14,7 @@ async function doHover(
 ): Promise<Hover | undefined> {
   switch (desc.type) {
     case "value": {
+      // Expressions
       if (node.kind === Kind.SCALAR && containsExpression(node.value)) {
         const result = evaluateExpression(
           node.value,
@@ -26,6 +27,7 @@ async function doHover(
         }
       }
 
+      // Allowed values
       if (desc.allowedValues) {
         const allowedValue = desc.allowedValues.find((x) => node.value);
         if (allowedValue && allowedValue.description) {
@@ -50,6 +52,25 @@ async function doHover(
           );
         }
       }
+
+      break;
+    }
+
+    case "map": {
+      if (node.kind === Kind.MAP) {
+        const mapping = node.mappings?.find((m) =>
+          inPos([m.startPosition, m.endPosition], pos)
+        );
+        if (mapping) {
+          const key = mapping.key?.value;
+          if (key && desc.keys?.[key]?.description) {
+            return {
+              description: desc.keys[key].description,
+            };
+          }
+        }
+      }
+      break;
     }
   }
 

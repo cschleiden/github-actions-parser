@@ -61,6 +61,15 @@ describe("Hover", () => {
       ));
   });
 
+  describe("keys", () => {
+    it("description for event using map", () =>
+      hoverSimple(
+        "on:\n  check|_run:",
+        "Runs your workflow anytime the check_run event occurs. More than one activity type triggers this event. " +
+          "For information about the REST API, see https://developer.github.com/v3/checks/runs."
+      ));
+  });
+
   describe("expressions", () => {
     it("evaluates simple expressions", () =>
       hoverSimple(
