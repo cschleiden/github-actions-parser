@@ -78,7 +78,18 @@ describe("Hover", () => {
 jobs:
   build:
     name: \${{ env.WF|_VALUE }}`,
-        "Expression evaluates to: `42`"
+        "Evaluates to: `42`"
+      ));
+
+    it("evaluates multiple expressions", () =>
+      hoverSimple(
+        `env:
+  WF_VALUE: 42
+  WF2: 23
+jobs:
+  build:
+    name: \${{ env.WF|_VALUE }} -- \${{ env.WF2 }}`,
+        "Evaluates to: `42 -- 23`"
       ));
 
     it("evaluates complex expressions", () =>
@@ -89,7 +100,7 @@ jobs:
 jobs:
   build:
     name: \${{ env.WF|_VALUE == env.WF2 }}`,
-        "Expression evaluates to: `false`"
+        "Evaluates to: `false`"
       ));
 
     it("evaluates expression with referencing env variables", () =>
@@ -101,7 +112,7 @@ env:
 jobs:
   build:
     name: \${{ env.W|F2 }}`,
-        "Expression evaluates to: `refs/tags/simple-tag`"
+        "Evaluates to: `refs/tags/simple-tag`"
       ));
   });
 });

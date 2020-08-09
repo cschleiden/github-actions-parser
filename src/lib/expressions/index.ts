@@ -1,4 +1,5 @@
 import { ILexingError, IRecognitionException } from "chevrotain";
+import { expressionMarker } from "./embedding";
 import { evaluator } from "./evaluator";
 import { ExpressionLexer, parser } from "./parser";
 import { ContextProvider } from "./types";
@@ -19,16 +20,6 @@ export class ExpressionError extends Error {
         .join()}`
     );
   }
-}
-
-const expressionMarker = /\$\{\{(.*?)\}\}/gm;
-
-export function containsExpression(input: string): boolean {
-  return expressionMarker.test(input);
-}
-
-export function removeExpressionMarker(input: string): string {
-  return input.replace(expressionMarker, (_, g) => g);
 }
 
 export function parseExpression(expression: string) {

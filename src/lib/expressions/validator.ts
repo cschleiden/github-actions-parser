@@ -1,7 +1,7 @@
-import { removeExpressionMarker } from ".";
 import { Position } from "../../types";
 import { ValidationError } from "../parser/validator";
 import { iteratePath, PropertyPath } from "../utils/path";
+import { iterateExpressions, removeExpressionMarker } from "./embedding";
 import { ExpressionContext, ExpressionEvaluator } from "./evaluator";
 import { ExpressionLexer, parser } from "./parser";
 import { ContextProvider } from "./types";
@@ -72,4 +72,15 @@ export function validateExpression(
       pos: expressionPosition,
     });
   }
+}
+
+export function validateExpressions(
+  input: string,
+  posOffset: number,
+  errors: ValidationError[],
+  contextProvider: ContextProvider
+) {
+  iterateExpressions(input, (expr, pos) => {
+    validateExpression(expr, posOffset + pos, errors, contextProvider);
+  });
 }

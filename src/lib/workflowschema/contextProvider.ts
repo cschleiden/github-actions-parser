@@ -1,5 +1,6 @@
 import { getEventPayload } from "../events/eventPayload";
-import { containsExpression, evaluateExpression } from "../expressions";
+import { replaceExpressions } from "../expressions";
+import { containsExpression } from "../expressions/embedding";
 import { ContextProvider } from "../expressions/types";
 import { Workflow } from "../parser/parser";
 import { iteratePath, PropertyPath } from "../utils/path";
@@ -70,7 +71,7 @@ export class EditContextProvider implements ContextProvider {
                 const value = newEnv[key];
                 if (containsExpression(value)) {
                   try {
-                    newEnv[key] = evaluateExpression(value, {
+                    newEnv[key] = replaceExpressions(value, {
                       get: (context) => {
                         if (context === "env") {
                           return env;

@@ -6,7 +6,7 @@ import {
   YAMLScalar,
 } from "yaml-ast-parser";
 import { Position, YNode } from "../../types";
-import { containsExpression } from "../expressions";
+import { containsExpression } from "../expressions/embedding";
 import { ContextProvider } from "../expressions/types";
 import { validateExpression } from "../expressions/validator";
 import { getPathFromNode } from "./ast";

@@ -1,5 +1,6 @@
 import { Hover, Kind, YNode } from "../../types";
-import { containsExpression, evaluateExpression } from "../expressions";
+import { replaceExpressions } from "../expressions";
+import { containsExpression } from "../expressions/embedding";
 import { findNode, getPathFromNode, inPos } from "./ast";
 import { ContextProviderFactory } from "./complete";
 import { parse, Workflow } from "./parser";
@@ -16,13 +17,13 @@ async function doHover(
     case "value": {
       // Expressions
       if (node.kind === Kind.SCALAR && containsExpression(node.value)) {
-        const result = evaluateExpression(
+        const result = replaceExpressions(
           node.value,
           await contextProviderFactory.get(workflow, getPathFromNode(node))
         );
         if (result !== undefined) {
           return {
-            description: `Expression evaluates to: \`${result}\``,
+            description: `Evaluates to: \`${result}\``,
           };
         }
       }

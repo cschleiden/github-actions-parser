@@ -1,6 +1,6 @@
 import { ValidationError } from "../parser/validator";
 import { ContextProvider } from "./types";
-import { validateExpression } from "./validator";
+import { validateExpressions } from "./validator";
 
 const contextProvider: ContextProvider = {
   get: (context) => {
@@ -21,28 +21,51 @@ const contextProvider: ContextProvider = {
   },
 };
 
-const testValidation = async (input: string, expected: string[]) => {
+const testValidation = async (input: string, expected: ValidationError[]) => {
   const errors: ValidationError[] = [];
-  validateExpression(input, 0, errors, contextProvider);
-  expect(errors.map((x) => x.message)).toEqual(expected);
+  validateExpressions(input, 0, errors, contextProvider);
+  expect(errors).toEqual(expected);
 };
 
 describe("validation", () => {
   describe("parsing error", () => {
     it("unknown operator", async () => {
-      await testValidation("1 === 4", ["Invalid expression"]);
+      await testValidation("${{ 1 === 4 }}", [
+        {
+          message: "Invalid expression",
+          pos: [0, 14],
+        },
+      ]);
     });
   });
 
   describe("for contexts", () => {
     it("unknown context", async () => {
-      await testValidation("foo.test", ["Invalid expression"]);
+      await testValidation("${{ foo.test }}", [
+        {
+          message: "Invalid expression",
+          pos: [0, 15],
+        },
+      ]);
     });
 
     it("unknown context acesss", async () => {
-      await testValidation("github.test", [
-        "Unknown context access: 'github.test'",
+      await testValidation("${{ github.test }}", [
+        { message: "Unknown context access: 'github.test'", pos: [0, 18] },
       ]);
     });
+  });
+
+  describe("multiple expressions", () => {
+    it("partial error", () =>
+      testValidation("${{ foo.test }} ${{ env.FOO }}", [
+        { message: "Invalid expression", pos: [0, 15] },
+      ]));
+
+    it("multiple errors", () =>
+      testValidation("${{ foo.test }} ${{ foo.test }}", [
+        { message: "Invalid expression", pos: [0, 15] },
+        { message: "Invalid expression", pos: [16, 31] },
+      ]));
   });
 });
