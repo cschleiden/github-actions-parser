@@ -3,7 +3,8 @@ import { complete, ContextProviderFactory } from "../parser/complete";
 import { Workflow } from "../parser/parser";
 import { PropertyPath } from "../utils/path";
 import { EditContextProvider } from "./contextProvider";
-import { events, _getSchema } from "./workflowSchema";
+import { events } from "./schema/events";
+import { _getSchema } from "./workflowSchema";
 
 const context: Context = {
   client: null,
@@ -125,18 +126,37 @@ describe("Completion", () => {
   describe("job", () => {
     it("completes top-level keys", async () => {
       await completeSimple("jobs:\n  build:\n    |", [
+        "container",
+        "continue-on-error",
+        "defaults",
         "env",
         "if",
         "name",
+        "needs",
+        "outputs",
         "runs-on",
+        "services",
         "steps",
+        "timeout-minutes",
       ]);
     });
 
     it("completes top-level keys with existing", async () => {
       await completeSimple(
         "jobs:\n  build:\n    runs-on: ubuntu-latest\n    |",
-        ["env", "if", "name", "steps"]
+        [
+          "container",
+          "continue-on-error",
+          "defaults",
+          "env",
+          "if",
+          "name",
+          "needs",
+          "outputs",
+          "services",
+          "steps",
+          "timeout-minutes",
+        ]
       );
     });
   });
