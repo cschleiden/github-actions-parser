@@ -6,6 +6,7 @@ import { MapNodeDesc, NodeDesc, ValueDesc } from "../parser/schema";
 import { TTLCache } from "../utils/cache";
 import { _getContextProviderFactory } from "./contextCompletion";
 import { eventMap, events } from "./schema/events";
+import { NeedsCustomValueProvider } from "./schema/needs";
 import { actionsInputProvider } from "./valueProvider/actionsInputProvider";
 
 const cache = new TTLCache<ValueDesc[]>();
@@ -150,7 +151,17 @@ export function _getSchema(context: Context): NodeDesc {
             name: value("Optional custom name for this job"),
             env,
             needs: {
-              type: "sequence",
+              type: "oneOf",
+              oneOf: [
+                {
+                  type: "value",
+                  customValueProvider: NeedsCustomValueProvider,
+                },
+                {
+                  type: "sequence",
+                  customValueProvider: NeedsCustomValueProvider,
+                },
+              ],
             },
             outputs: {
               type: "map",

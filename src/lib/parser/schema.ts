@@ -1,5 +1,5 @@
 import { PropertyPath } from "../utils/path";
-import { Workflow } from "./parser";
+import { Workflow } from "../workflow";
 
 export type NodeDescMap = { [key: string]: NodeDesc };
 

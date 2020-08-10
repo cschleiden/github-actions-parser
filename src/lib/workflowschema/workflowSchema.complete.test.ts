@@ -1,4 +1,4 @@
-import { Context } from "../../types";
+import { Context, DiagnosticKind } from "../../types";
 import { complete, ContextProviderFactory } from "../parser/complete";
 import { parse } from "../parser/parser";
 import { PropertyPath } from "../utils/path";
@@ -252,6 +252,42 @@ jobs:
       - name: pass secret value
         run: echo "::set-env name=secret_value::\${{ env[env.secret_name] }}"`)
       ).toEqual([]);
+    });
+  });
+
+  describe("needs", () => {
+    it("validates successfully", async () => {
+      expect(
+        await testValidation(`on: push
+jobs:
+  build:
+    runs-on: [ubuntu-latest]
+    steps:
+      - run: echo 1
+  test:
+    runs-on: [ubuntu-latest]
+    needs: build
+    steps:
+      - run: echo 1`)
+      ).toEqual([]);
+    });
+
+    it("validates missing jobs", async () => {
+      expect(
+        await testValidation(`on: push
+jobs:
+  test:
+    runs-on: [ubuntu-latest]
+    needs: build
+    steps:
+      - run: echo 1`)
+      ).toEqual([
+        {
+          kind: DiagnosticKind.Error,
+          message: "'build' is not in the list of allowed values",
+          pos: [63, 68],
+        },
+      ]);
     });
   });
 });
