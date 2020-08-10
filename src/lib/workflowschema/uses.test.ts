@@ -5,15 +5,30 @@ describe("parseUses", () => {
     const r = parseUses("actions/checkout@v1");
 
     expect(r).toEqual({
+      type: "remote",
       ref: "v1",
       owner: "actions",
-      name: "checkout",
+      repository: "checkout",
     });
   });
 
-  it("returns undefined for invalid ref", () => {
+  it("parses remote uses in subdirectory", () => {
+    const r = parseUses("actions/aws/ec2@v1");
+
+    expect(r).toEqual({
+      type: "remote",
+      ref: "v1",
+      owner: "actions",
+      repository: "aws",
+      subdirectory: "ec2",
+    });
+  });
+
+  it("parses local uses", () => {
     const r = parseUses("actions");
 
-    expect(r).toBeUndefined();
+    expect(r).toEqual({
+      type: "local",
+    });
   });
 });

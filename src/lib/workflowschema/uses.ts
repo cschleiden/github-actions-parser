@@ -1,30 +1,30 @@
-export interface RemoteUses {
-  ref: string;
-
-  owner: string;
-
-  name: string;
-}
-
-export interface LocalUses {
-  path: string;
-}
-
-export type Uses = RemoteUses | LocalUses;
+import { Uses } from "../workflow";
 
 export function parseUses(input: string): Uses | undefined {
   if (input.indexOf("@") !== -1) {
     // Remote uses
     const [x, ref] = input.split("@");
-    const [owner, name] = x.split("/");
+    const [_, owner, repository, subdirectory] = x.match(
+      /([^\/]*)\/([^\/]*)\/?(.*)?/
+    );
 
     return {
+      type: "remote",
       ref,
       owner,
-      name,
+      repository,
+      subdirectory,
+    };
+  } else if (input.indexOf("docker://") !== -1) {
+    // TODO: Parse docker uses
+    return {
+      type: "docker",
     };
   } else {
-    // TODO: CS: support local
+    // Local
+    return {
+      type: "local",
+    };
   }
 
   return undefined;

@@ -8,8 +8,7 @@ import {
 } from "../../parser/schema";
 import { TTLCache } from "../../utils/cache";
 import { iteratePath, PropertyPath } from "../../utils/path";
-import { Workflow } from "../../workflow";
-import { parseUses, RemoteUses } from "../uses";
+import { RemoteUses, Step, Workflow } from "../../workflow";
 
 async function getActionYamlContent(
   context: Context,
@@ -19,7 +18,7 @@ async function getActionYamlContent(
   // be invalid, or it might not meet SSO requirements
   let contentResp = await context.client.repos.getContent({
     owner: uses.owner,
-    repo: uses.name,
+    repo: uses.repository,
     path: "action.yml",
     ref: uses.ref,
   });
@@ -27,7 +26,7 @@ async function getActionYamlContent(
   if (contentResp.status === 404) {
     contentResp = await context.client.repos.getContent({
       owner: uses.owner,
-      repo: uses.name,
+      repo: uses.repository,
       path: "action.yaml",
       ref: uses.ref,
     });
@@ -67,17 +66,18 @@ export const actionsInputProvider = (
     path.pop();
   }
 
-  const step = iteratePath(path, workflow);
-  const usesInput = step["uses"];
-  if (!usesInput) {
-    // TODO: CS: Check that this is a remote uses
+  const step = iteratePath(path, workflow) as Step;
+  if (!step || !("uses" in step) || step.uses.type !== "remote") {
     return [];
   }
 
+  const uses = step.uses;
+
   try {
-    const uses = parseUses(usesInput);
-    if (uses && "owner" in uses) {
-      return cache.get(usesInput, undefined, async () => {
+    return cache.get(
+      `${uses.owner}/${uses.repository}@${uses.ref}`,
+      undefined,
+      async () => {
         const text = await getActionYamlContent(context, uses);
         if (text) {
           const { inputs } = safeLoad(text);
@@ -96,8 +96,8 @@ export const actionsInputProvider = (
             }));
           }
         }
-      });
-    }
+      }
+    );
   } catch (e) {
     console.error(e);
   }

@@ -43,8 +43,26 @@ export interface RunStep {
 
 export type Expression = string;
 
+export interface RemoteUses {
+  type: "remote";
+  owner: string;
+  repository: string;
+  ref: string;
+  subdirectory?: string;
+}
+
+export interface DockerUses {
+  type: "docker";
+}
+
+export interface LocalUses {
+  type: "local";
+}
+
+export type Uses = RemoteUses | DockerUses | LocalUses;
+
 export interface UsesStep {
-  uses: string;
+  uses: Uses;
 }
 
 export type Step = {

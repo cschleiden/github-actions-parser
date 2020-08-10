@@ -8,15 +8,11 @@ const testNormalize = (workflow: any): Workflow => {
 
 describe("normalize name", () => {
   it("no name given", () => {
-    expect(testNormalize({ name: undefined })).toEqual({
-      name: "workflow.yaml",
-    });
+    expect(testNormalize({ name: undefined }).name).toBe("workflow.yaml");
   });
 
   it("name given", () => {
-    expect(testNormalize({ name: "CI" })).toEqual({
-      name: "CI",
-    });
+    expect(testNormalize({ name: "CI" }).name).toBe("CI");
   });
 });
 
