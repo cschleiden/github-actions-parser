@@ -12,9 +12,9 @@ import {
 } from "../expressions/embedding";
 import { ContextProvider } from "../expressions/types";
 import { validateExpression } from "../expressions/validator";
+import { Workflow } from "../workflow";
 import { getPathFromNode } from "./ast";
 import { ContextProviderFactory } from "./complete";
-import { Workflow } from "./parser";
 import { CustomValue, CustomValueValidation, NodeDesc } from "./schema";
 
 export interface ValidationError {

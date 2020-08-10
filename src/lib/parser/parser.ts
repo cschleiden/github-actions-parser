@@ -1,15 +1,10 @@
 import { safeLoad as jsYamlSafeLoad } from "js-yaml";
 import { safeLoad, YAMLNode } from "yaml-ast-parser";
 import { Diagnostic, DiagnosticKind } from "../../types";
+import { Workflow } from "../workflow";
 import { ContextProviderFactory } from "./complete";
 import { NodeDesc } from "./schema";
 import { validate } from "./validator";
-
-export interface Workflow {
-  name?: string;
-
-  on: { [key: string]: {} };
-}
 
 export interface WorkflowDocument {
   /** Normalized workflow */

@@ -1,8 +1,8 @@
 import { Context } from "../../types";
 import { ContextProviderFactory } from "../parser/complete";
-import { Workflow } from "../parser/parser";
 import { TTLCache } from "../utils/cache";
 import { PropertyPath } from "../utils/path";
+import { Workflow } from "../workflow";
 import { EditContextProvider } from "./contextProvider";
 
 export function _getContextProviderFactory(

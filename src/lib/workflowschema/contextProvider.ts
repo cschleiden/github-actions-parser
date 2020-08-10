@@ -2,8 +2,8 @@ import { getEventPayload } from "../events/eventPayload";
 import { replaceExpressions } from "../expressions";
 import { containsExpression } from "../expressions/embedding";
 import { ContextProvider } from "../expressions/types";
-import { Workflow } from "../parser/parser";
 import { iteratePath, PropertyPath } from "../utils/path";
+import { Workflow } from "../workflow";
 
 function getEvent(workflow: Workflow) {
   if (workflow && workflow.on) {

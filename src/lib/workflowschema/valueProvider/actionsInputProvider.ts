@@ -1,6 +1,5 @@
 import { safeLoad } from "js-yaml";
 import { Context } from "../../../types";
-import { Workflow } from "../../parser/parser";
 import {
   CustomValue,
   CustomValueProvider,
@@ -9,6 +8,7 @@ import {
 } from "../../parser/schema";
 import { TTLCache } from "../../utils/cache";
 import { iteratePath, PropertyPath } from "../../utils/path";
+import { Workflow } from "../../workflow";
 import { parseUses, RemoteUses } from "../uses";
 
 async function getActionYamlContent(

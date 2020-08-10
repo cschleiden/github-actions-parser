@@ -4,8 +4,9 @@ import { completeExpression, inExpression } from "../expressions/completion";
 import { expressionMarker, iterateExpressions } from "../expressions/embedding";
 import { ContextProvider } from "../expressions/types";
 import { PropertyPath } from "../utils/path";
+import { Workflow } from "../workflow";
 import { findNode, getPathFromNode } from "./ast";
-import { parse, Workflow, WorkflowDocument } from "./parser";
+import { parse, WorkflowDocument } from "./parser";
 import { MapNodeDesc, NodeDesc } from "./schema";
 
 export interface ContextProviderFactory {
@@ -345,7 +346,6 @@ export async function complete(
   const node = findNode(doc.workflowST, newPos) as YNode;
   const desc = doc.nodeToDesc.get(node);
   if (desc) {
-    // Complete using original position
     let completionOptions = await doComplete(
       node,
       desc,

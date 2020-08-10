@@ -10,7 +10,9 @@ export interface OnTypes<T extends string> {
 export interface OnBranches {
   branches?: string[];
   "branches-ignore"?: string[];
+}
 
+export interface OnTags {
   tags?: string[];
   "tags-ignore"?: string[];
 }
@@ -64,11 +66,11 @@ export type Step = {
 } & (RunStep | UsesStep);
 
 export interface Job {
-  name?: string | Expression;
+  name?: string;
 
-  needs?: string | string[];
+  needs?: string[];
 
-  "runs-on": string | string[];
+  "runs-on": string[];
 
   outputs?: { [outputId: string]: string };
 
@@ -94,7 +96,7 @@ export interface Job {
   services?: any;
 }
 
-export type MatrixValues = string | number | string[] | number[];
+export type MatrixValues = string[] | number[];
 
 export interface Strategy {
   matrix: { [key: string]: MatrixValues };
@@ -108,15 +110,16 @@ export type EnvMap = KeyValueMap;
 
 export type JobMap = { [jobId: string]: Job };
 
+/**
+ * A normalized workflow
+ *
+ * For example, `on` can be represented via a scalar, a sequence, or a map in YAML. This
+ * workflow type is normalized so `on` is always a map of event_type to it's options.
+ */
 export interface Workflow {
   name?: string;
 
-  on: On;
-
-  env?: EnvMap;
-
-  // TODO
-  defaults?: any;
+  on: { [key: string]: {} };
 
   jobs: JobMap;
 }

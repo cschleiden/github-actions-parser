@@ -1,7 +1,8 @@
 import { Context } from "../../types";
 import { complete, ContextProviderFactory } from "../parser/complete";
-import { parse, Workflow } from "../parser/parser";
+import { parse } from "../parser/parser";
 import { PropertyPath } from "../utils/path";
+import { Workflow } from "../workflow";
 import { EditContextProvider } from "./contextProvider";
 import { events } from "./schema/events";
 import { _getSchema } from "./workflowSchema";
