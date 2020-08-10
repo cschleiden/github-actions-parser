@@ -2,7 +2,7 @@
 
 This package provides a parser and various language-server related features for GitHub Actions.
 
-Auto-completion and validation of expressions (e.g., `${{ secrets.FOO }}`) requires information about the repository that contains the workflow as well as an authenticated [Octokit](https://octokit.github.io/rest.js/v18/) client for making API calls
+Auto-completion and validation of expressions (e.g., `${{ secrets.FOO }}`) requires information about the repository that contains the workflow as well as an authenticated [Octokit](https://octokit.github.io/rest.js/v18/) client for making API calls.
 
 ## Usage
 
@@ -15,15 +15,23 @@ Some usages examples:
 const input = "on: ..."
 
 const workflowDoc = await parse({
-  client: client, // Octokit client with
+  client, // Authenticated Octokit client. Needs at least `repo`, `actions`, and for org-secrets also org admin permissions
   owner: "repository-owner",
-
+  repository: "repository"
 }, input)
 
-// workflowDoc.workflow // Parsed workflow
+// workflowDoc.workflow // Parsed, normalized workflow
 // workflowDoc.diagnostics // Errors/warnings
 // workflowDoc.workflowST // AST
 ```
+
+### Auto-complete
+
+tbd
+
+### Get "hover" information
+
+tbd
 
 ### Evaluate an expression
 
