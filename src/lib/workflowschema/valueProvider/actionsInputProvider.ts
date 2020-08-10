@@ -34,6 +34,7 @@ async function getActionYamlContent(
   }
 
   if (contentResp?.data?.content) {
+    // Response is base64 encoded, so decode
     const buff = new Buffer(contentResp.data.content, "base64");
     const text = buff.toString("ascii");
     return text;
@@ -61,7 +62,7 @@ export const actionsInputProvider = (
   //       with:
   //         | <- This is where this gets called
 
-  // First, find the `uses`. Strip of the last `with`, need the step level
+  // First, find the `uses`. Strip of the last `with` in the path, need the step level
   if (path[path.length - 1] === "with") {
     path.pop();
   }
@@ -69,6 +70,7 @@ export const actionsInputProvider = (
   const step = iteratePath(path, workflow);
   const usesInput = step["uses"];
   if (!usesInput) {
+    // TODO: CS: Check that this is a remote uses
     return [];
   }
 
