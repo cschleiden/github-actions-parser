@@ -52,3 +52,17 @@ describe("normalize on", () => {
     });
   });
 });
+
+describe("normalize job", () => {
+  it("needs", () => {
+    expect(
+      testNormalize({
+        jobs: {
+          test: {
+            needs: "build",
+          },
+        },
+      }).jobs.test.needs
+    ).toEqual(["build"]);
+  });
+});

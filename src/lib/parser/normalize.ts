@@ -1,4 +1,13 @@
 import { Job, Workflow } from "../workflow";
+import { parseUses } from "../workflowschema/uses";
+
+function toArray(input: string | string[]): string[] {
+  if (Array.isArray(input)) {
+    return input;
+  }
+
+  return [input];
+}
 
 export function normalizeWorkflow(filename: string, workflow: Workflow) {
   // Name
@@ -27,14 +36,19 @@ export function normalizeWorkflow(filename: string, workflow: Workflow) {
 }
 
 function normalizeJob(job: Job) {
+  // Steps
   if (!Array.isArray(job.steps)) {
     job.steps = [];
   }
 
   for (const step of job.steps) {
+    // Uses
     if ("uses" in step && typeof step.uses === "string") {
+      step.uses = parseUses(step.uses);
     }
   }
-}
 
-function parseUses(uses: string) {}
+  // Other properties
+  job.needs = toArray(job.needs);
+  job["timeout-minutes"] = job["timeout-minutes"] || 360;
+}
