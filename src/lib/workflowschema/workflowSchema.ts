@@ -159,7 +159,10 @@ export function _getSchema(context: Context): NodeDesc {
                 },
                 {
                   type: "sequence",
-                  customValueProvider: NeedsCustomValueProvider,
+                  itemDesc: {
+                    type: "value",
+                    customValueProvider: NeedsCustomValueProvider,
+                  },
                 },
               ],
             },

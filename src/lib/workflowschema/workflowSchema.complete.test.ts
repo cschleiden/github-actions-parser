@@ -289,5 +289,27 @@ jobs:
         },
       ]);
     });
+
+    it("validates missing some jobs", async () => {
+      expect(
+        await testValidation(`on: push
+jobs:
+  build:
+    runs-on: [ubuntu-latest]
+    steps:
+      - run: echo 1
+  test:
+    runs-on: [ubuntu-latest]
+    needs: [build, setup]
+    steps:
+      - run: echo 1`)
+      ).toEqual([
+        {
+          kind: DiagnosticKind.Error,
+          message: "'setup' is not in the list of allowed values",
+          pos: [140, 145],
+        },
+      ]);
+    });
   });
 });
