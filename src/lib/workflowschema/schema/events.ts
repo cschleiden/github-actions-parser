@@ -167,6 +167,7 @@ const _events: [string, string, ([string, string] | string)[]][] = [
     [],
   ],
   ["workflow_dispatch", "", []],
+  ["workflow_run", "", []],
 ];
 
 export const events: ValueDesc[] = _events.map(([value, description]) => ({
