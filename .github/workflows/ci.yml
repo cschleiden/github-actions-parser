@@ -9,5 +9,5 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: '12'
-      - runs: yarn
-      - runs: yarn test
+      - run: yarn
+      - run: yarn test
