@@ -127,6 +127,10 @@ export class EditContextProvider implements ContextProvider {
         return {};
       }
 
+      case "strategy": {
+        return {};
+      }
+
       case "steps": {
         // TODO: CS: Previous steps
         return {};

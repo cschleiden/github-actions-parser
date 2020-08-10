@@ -108,7 +108,8 @@ async function validateNode(
         // here.
         const path = getPathFromNode(n);
         validateExpressions(
-          scalarNode.value,
+          // Use raw value here to match offsets
+          scalarNode.rawValue,
           n.startPosition,
           errors,
           await contextProviderFactory.get(workflow, path)

@@ -1,6 +1,7 @@
 import { YAMLNode } from "yaml-ast-parser";
 import { CompletionOption, Kind, YNode } from "../../types";
 import { completeExpression, inExpression } from "../expressions/completion";
+import { expressionMarker, iterateExpressions } from "../expressions/embedding";
 import { ContextProvider } from "../expressions/types";
 import { PropertyPath } from "../utils/path";
 import { findNode, getPathFromNode } from "./ast";
@@ -122,7 +123,7 @@ async function doComplete(
           getPathFromNode(node),
           doc.workflow,
           contextProviderFactory,
-          true
+          desc.isExpression
         );
       }
 
@@ -246,27 +247,40 @@ async function expressionComplete(
   path: PropertyPath,
   workflow: Workflow,
   contextProviderFactory: ContextProviderFactory,
-  delimiterOptional = false
+  isExpression = false
 ): Promise<CompletionOption[]> {
-  const line = node.value;
-  const linePos = pos - node.startPosition;
+  const input = `${node.value}`;
+  const inputPos = pos - node.startPosition;
 
-  const startPos = line.indexOf("${{");
-  const endPos = line.indexOf("}}");
-  if (
-    delimiterOptional ||
-    (startPos !== -1 &&
-      startPos < linePos &&
-      (endPos === -1 || endPos > linePos))
-  ) {
-    const expressionLine = line.replace(/\$\{\{(.*)(\}\})?/, "$1");
-    const expressionPos = linePos - line.indexOf(expressionLine);
+  // Determine expression
+  let expression = input;
+  let expressionPos = inputPos;
+  if (!isExpression) {
+    let expressionFound = false;
+    iterateExpressions(input, (exp, start, length) => {
+      if (start <= inputPos && inputPos <= start + length) {
+        expressionFound = true;
+        expression = exp;
+        expressionPos = inputPos - start;
+      }
+    });
 
-    const contextProvider = await contextProviderFactory.get(workflow, path);
-    return completeExpression(expressionLine, expressionPos, contextProvider);
+    // Check for partial expression
+    if (!expressionFound) {
+      const startPos = input.indexOf("${{");
+      if (startPos === -1) {
+        return [];
+      }
+
+      expression = input.substr(startPos + 3);
+      expressionPos = inputPos - startPos - 3;
+    }
   }
 
-  return [];
+  expression = expression.replace(expressionMarker, "$1");
+
+  const contextProvider = await contextProviderFactory.get(workflow, path);
+  return completeExpression(expression, expressionPos, contextProvider);
 }
 
 function _transform(input: string, pos: number): [string, number, string] {

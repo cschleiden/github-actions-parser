@@ -10,9 +10,9 @@ export function removeExpressionMarker(input: string): string {
 
 export function iterateExpressions(
   input: string,
-  f: (expression: string, pos: number) => void
+  f: (expression: string, pos: number, length: number) => void
 ) {
   for (const match of Array.from(input.matchAll(expressionMarker))) {
-    f(match[0], match.index);
+    f(match[0], match.index, match.length);
   }
 }

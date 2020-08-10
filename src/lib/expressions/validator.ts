@@ -61,6 +61,7 @@ export function validateExpression(
       expressionPosition
     ).visit(cst, {} as ExpressionContext);
 
+    // TODO: CS: Should this be invalid?
     if (result === undefined) {
       errors.push({
         message: "Invalid expression",

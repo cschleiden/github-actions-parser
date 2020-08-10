@@ -174,6 +174,13 @@ describe("Completion", () => {
       ]);
     });
 
+    it("expression completion in string", async () => {
+      await completeSimple(
+        "jobs:\n  build:\n    name: This is a string${{ g|",
+        ["github"]
+      );
+    });
+
     it("if", async () => {
       // `if` is always an expression
       await completeSimple("jobs:\n  build:\n    if: g|", ["github"]);
