@@ -8,7 +8,7 @@ import { NullCompletion } from "./test/fixtures";
 const _testComplete = async (input: string, schema: NodeDesc) => {
   const pos = input.indexOf("|");
   input = input.replace("|", "");
-  return await complete(input, pos, schema, NullCompletion);
+  return await complete("workflow.yaml", input, pos, schema, NullCompletion);
 };
 
 /** | in string denotes cursor position */
@@ -102,7 +102,7 @@ describe("Validation", () => {
     expected: Diagnostic[],
     s = schema
   ) => {
-    const doc = await parse(input, s, NullCompletion);
+    const doc = await parse("workflow.yaml", input, s, NullCompletion);
 
     expect(doc.diagnostics).toEqual(expected);
   };
@@ -386,7 +386,7 @@ const oneOfSchema: NodeDesc = {
 
 describe("OneOf", () => {
   const testValidation = async (input: string, expected: Diagnostic[]) => {
-    const doc = await parse(input, oneOfSchema, NullCompletion);
+    const doc = await parse("workflow.yml", input, oneOfSchema, NullCompletion);
 
     expect(doc.diagnostics).toEqual(expected);
   };
@@ -531,7 +531,13 @@ describe("Async custom completion", () => {
   const testComplete = async (input: string) => {
     const pos = input.indexOf("|");
     input = input.replace("|", "");
-    return await complete(input, pos, dynamicSchema, NullCompletion);
+    return await complete(
+      "workflow.yml",
+      input,
+      pos,
+      dynamicSchema,
+      NullCompletion
+    );
   };
 
   /** | in string denotes cursor position */

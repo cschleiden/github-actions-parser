@@ -24,6 +24,7 @@ describe("Completion", () => {
     const pos = input.indexOf("|");
     input = input.replace("|", "");
     return await complete(
+      "workflow.yaml",
       input,
       pos,
       WorkflowSchema,
@@ -228,7 +229,12 @@ jobs:
 describe("validation", () => {
   const testValidation = async (input: string) => {
     return (
-      await parse(input, WorkflowSchema, ExpressionContextProviderFactory)
+      await parse(
+        "workflow.yml",
+        input,
+        WorkflowSchema,
+        ExpressionContextProviderFactory
+      )
     ).diagnostics;
   };
 

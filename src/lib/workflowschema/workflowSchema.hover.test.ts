@@ -1,8 +1,8 @@
 import { Context } from "../../types";
 import { ContextProviderFactory } from "../parser/complete";
 import { hover } from "../parser/hover";
-import { Workflow } from "../parser/parser";
 import { PropertyPath } from "../utils/path";
+import { Workflow } from "../workflow";
 import { EditContextProvider } from "./contextProvider";
 import { _getSchema } from "./workflowSchema";
 
@@ -23,6 +23,7 @@ describe("Hover", () => {
     const pos = input.indexOf("|");
     input = input.replace("|", "");
     return await hover(
+      "workflow.yml",
       input,
       pos,
       WorkflowSchema,

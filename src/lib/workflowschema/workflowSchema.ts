@@ -243,9 +243,11 @@ export function _getSchema(context: Context): NodeDesc {
 
 export async function parse(
   context: Context,
+  filename: string,
   input: string
 ): Promise<WorkflowDocument> {
   return genericParse(
+    filename,
     input,
     _getSchema(context),
     _getContextProviderFactory(context, cache)
@@ -254,10 +256,12 @@ export async function parse(
 
 export async function complete(
   context: Context,
+  filename: string,
   input: string,
   pos: number
 ): Promise<CompletionOption[]> {
   return genericComplete(
+    filename,
     input,
     pos,
     _getSchema(context),
@@ -267,10 +271,12 @@ export async function complete(
 
 export async function hover(
   context: Context,
+  filename: string,
   input: string,
   pos: number
 ): Promise<Hover | undefined> {
   return genericHover(
+    filename,
     input,
     pos,
     _getSchema(context),

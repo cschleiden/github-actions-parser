@@ -332,6 +332,7 @@ function _transform(input: string, pos: number): [string, number, string] {
 }
 
 export async function complete(
+  filename: string,
   input: string,
   pos: number,
   schema: NodeDesc,
@@ -341,7 +342,7 @@ export async function complete(
   const [newInput, newPos, partialInput] = _transform(input, pos);
 
   // Parse with fixed text
-  const doc = await parse(newInput, schema, contextProviderFactory);
+  const doc = await parse(filename, newInput, schema, contextProviderFactory);
 
   const node = findNode(doc.workflowST, newPos) as YNode;
   const desc = doc.nodeToDesc.get(node);

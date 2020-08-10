@@ -1,9 +1,10 @@
 import { Hover, Kind, YNode } from "../../types";
 import { replaceExpressions } from "../expressions";
 import { containsExpression } from "../expressions/embedding";
+import { Workflow } from "../workflow";
 import { findNode, getPathFromNode, inPos } from "./ast";
 import { ContextProviderFactory } from "./complete";
-import { parse, Workflow } from "./parser";
+import { parse } from "./parser";
 import { NodeDesc } from "./schema";
 
 async function doHover(
@@ -83,12 +84,13 @@ async function doHover(
 }
 
 export async function hover(
+  filename: string,
   input: string,
   pos: number,
   schema: NodeDesc,
   contextProviderFactory: ContextProviderFactory
 ): Promise<Hover | undefined> {
-  const doc = await parse(input, schema, contextProviderFactory);
+  const doc = await parse(filename, input, schema, contextProviderFactory);
 
   const node = findNode(doc.workflowST, pos) as YNode;
   const desc = doc.nodeToDesc.get(node);

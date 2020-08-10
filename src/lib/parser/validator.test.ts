@@ -30,7 +30,7 @@ describe("Dynamic validation", () => {
     expected: Diagnostic[],
     s = schema
   ) => {
-    const doc = await parse(input, s, NullCompletion);
+    const doc = await parse("workflow.yml", input, s, NullCompletion);
 
     expect(doc.diagnostics).toEqual(expected);
   };
