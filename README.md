@@ -1,5 +1,7 @@
 # github-actions-parser
 
+![CI](https://github.com/cschleiden/github-actions-parser/workflows/CI/badge.svg)
+
 This package provides a parser and various language-server related features for GitHub Actions.
 
 Auto-completion and validation of expressions (e.g., `${{ secrets.FOO }}`) requires information about the repository that contains the workflow as well as an authenticated [Octokit](https://octokit.github.io/rest.js/v18/) client for making API calls.
