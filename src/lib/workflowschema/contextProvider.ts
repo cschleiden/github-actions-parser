@@ -3,7 +3,7 @@ import { replaceExpressions } from "../expressions";
 import { containsExpression } from "../expressions/embedding";
 import { ContextProvider } from "../expressions/types";
 import { iteratePath, PropertyPath } from "../utils/path";
-import { Workflow } from "../workflow";
+import { Job, Step, Workflow } from "../workflow";
 
 function getEvent(workflow: Workflow) {
   if (workflow && workflow.on) {
@@ -12,6 +12,18 @@ function getEvent(workflow: Workflow) {
 
   // Default to push, since it's one of the most common payloads
   return getEventPayload(["push"]);
+}
+
+function getJob(workflow: Workflow, path: PropertyPath): Job | undefined {
+  const jobsIdx = path.indexOf("jobs");
+  if (jobsIdx === -1) {
+    return;
+  } else if (jobsIdx >= path.length - 2) {
+    return;
+  }
+
+  // [$, jobs, build, [steps, 0]]
+  return iteratePath(path.slice(0, jobsIdx + 2), workflow) as Job;
 }
 
 export class EditContextProvider implements ContextProvider {
@@ -105,35 +117,98 @@ export class EditContextProvider implements ContextProvider {
       }
 
       case "job": {
+        const job = getJob(this.workflow, this.path);
+        if (!job) {
+          return {};
+        }
+
         return {
           status: "success",
-          // TODO: CS: Other job parameters
+          container: {
+            id: "",
+            network: "",
+          },
+          services: job.services,
         };
       }
 
       case "needs": {
-        // TOOD: CS: This needs a properly parsed workflow,
-        return {
-          /*
-          <job id>.result
-          <job id>.outputs {
-            <outputname>
-          }
-          */
-        };
+        const job = getJob(this.workflow, this.path);
+        if (!job) {
+          return {};
+        }
+
+        return job.needs.reduce(
+          (r, jobId) => ({
+            ...r,
+            [jobId]: {
+              result: "success",
+              outputs: this.workflow.jobs[jobId].outputs || {},
+            },
+          }),
+          {}
+        );
       }
 
       case "matrix": {
+        const job = getJob(this.workflow, this.path);
+        if (!job) {
+          return {};
+        }
+
+        if (job.strategy?.matrix) {
+          // For each key in the matrix definition, return the first value
+          return Object.keys(job.strategy.matrix).reduce(
+            (r, v) => ({ ...r, [v]: job.strategy.matrix?.[v]?.[0] }),
+            {}
+          );
+        }
+
         return {};
       }
 
       case "strategy": {
-        return {};
+        const job = getJob(this.workflow, this.path);
+        if (!job) {
+          return {};
+        }
+
+        return job.strategy;
       }
 
       case "steps": {
-        // TODO: CS: Previous steps
-        return {};
+        // Check if we are in a step
+        const stepsIdx = this.path.indexOf("steps");
+        if (stepsIdx === -1) {
+          return {};
+        }
+
+        const job = getJob(this.workflow, this.path);
+        if (!job) {
+          return {};
+        }
+
+        const step = iteratePath(
+          this.path.slice(0, stepsIdx + 1),
+          this.workflow
+        ) as Step;
+
+        const stepIdx = job.steps.indexOf(step);
+        if (stepIdx === -1) {
+          return {};
+        }
+
+        return job.steps.slice(0, stepIdx + 1).reduce(
+          (r, s, si) => ({
+            ...r,
+            [s.id || `${si}`]: {
+              outputs: {}, // They might come from an action, we cannot determine those
+              outcome: "success",
+              conclusion: "success",
+            },
+          }),
+          {}
+        );
       }
 
       case "secrets":
