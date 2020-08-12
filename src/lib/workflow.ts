@@ -83,6 +83,24 @@ export type Step = {
   "timeout-minutes"?: number;
 } & (RunStep | UsesStep);
 
+export interface Defaults {
+  shell?: string;
+
+  "working-directory"?: string;
+}
+
+export interface Container {
+  image: string;
+
+  env: EnvMap;
+
+  ports?: number[];
+
+  volumes?: string[];
+
+  options: string;
+}
+
 export interface Job {
   name?: string;
 
@@ -94,8 +112,7 @@ export interface Job {
 
   env?: EnvMap;
 
-  // TODO
-  defaults?: any;
+  defaults?: Defaults;
 
   if?: Expression;
 
@@ -107,11 +124,9 @@ export interface Job {
 
   "continue-on-error"?: boolean;
 
-  // TODO
-  container?: any;
+  container?: Container;
 
-  // TODO
-  services?: any;
+  services?: { [id: string]: Container };
 }
 
 export type MatrixValues = string[] | number[];

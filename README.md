@@ -64,5 +64,5 @@ This library is built on some great open-source projects:
 
 - [octokit/rest](https://octokit.github.io/rest.js/v18/) for making API calls to GitHub
 - [js-yaml](https://github.com/nodeca/js-yaml) for general parsing (e.g., `action.yml` files for `inputs` auto-completion)
--  [yaml-ast-parser](https://github.com/mulesoft-labs/yaml-ast-parser) for parsing the workflow into an AST for validation/auto-completion
+- [yaml-ast-parser](https://github.com/mulesoft-labs/yaml-ast-parser) for parsing the workflow into an AST for validation/auto-completion
 - [chevrotain](https://github.com/SAP/chevrotain) for parsing and running expressions
