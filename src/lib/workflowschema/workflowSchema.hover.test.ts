@@ -121,5 +121,16 @@ jobs:
     name: \${{ env.W|F2 }}`,
         "Evaluates to: `refs/tags/simple-tag`"
       ));
+
+    it("evaluates steps conext", () =>
+      hoverSimple(
+        `on: push
+jobs:
+  build:
+    steps:
+      - run: echo 123
+      - run: echo \${{ steps['1'].ou|tcome }}`,
+        "Evaluates to: `echo success`"
+      ));
   });
 });

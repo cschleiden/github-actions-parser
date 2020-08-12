@@ -169,16 +169,14 @@ export class EditContextProvider implements ContextProvider {
 
       case "strategy": {
         const job = getJob(this.workflow, this.path);
-        if (!job) {
-          return {};
-        }
-
-        return job.strategy || {};
+        return job?.strategy || {};
       }
 
       case "steps": {
         // Check if we are in a step
-        const stepsIdx = this.path.indexOf("steps");
+        const stepsIdx = this.path
+          .map((x) => (Array.isArray(x) ? x[0] : x))
+          .indexOf("steps");
         if (stepsIdx === -1) {
           return {};
         }
