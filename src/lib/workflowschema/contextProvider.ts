@@ -173,7 +173,7 @@ export class EditContextProvider implements ContextProvider {
           return {};
         }
 
-        return job.strategy;
+        return job.strategy || {};
       }
 
       case "steps": {
