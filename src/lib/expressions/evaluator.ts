@@ -194,9 +194,14 @@ export class ExpressionEvaluator extends BaseCstVisitor {
       case !!ctx.toJson:
         return Functions.toJson(parameters[0]);
 
-      // TODO: Implement other functions
-      // case !!tokenMatcher(f, fromJson):
-      //   return Functions.fromJson(parameters[0]);
+      case !!ctx.fromJson:
+        return Functions.fromJson(parameters[0]);
+
+      case !!ctx.hashFiles:
+        return Functions.hashFiles(parameters);
+
+      case !!ctx.format:
+        return Functions.format(parameters[0], ...parameters.slice(1));
     }
   }
 

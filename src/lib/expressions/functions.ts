@@ -37,3 +37,17 @@ export function join<T>(arr: T[], separator?: string): string {
 export function toJson(input: unknown): string {
   return JSON.stringify(input);
 }
+
+export function fromJson(input: string): unknown {
+  return JSON.parse(input);
+}
+
+export function hashFiles(path: string[]): string {
+  return `sha-256-hash-for-${path.join()}`;
+}
+
+export function format(format: string, ...params: string[]): string {
+  let idx = 0;
+  format = format.replace(/(\{\d+\})/gm, () => params[idx++]);
+  return format.replace("{{", "{").replace("}}", "}");
+}

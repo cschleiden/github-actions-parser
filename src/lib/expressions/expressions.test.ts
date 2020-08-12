@@ -209,6 +209,23 @@ describe("expression parser", () => {
       expect(ev("toJson(true)")).toBe("true");
       expect(ev("toJson(false)")).toBe("false");
     });
+
+    it("fromJson", () => {
+      expect(ev("fromJson('{ \"foo\": true }')")).toEqual({ foo: true });
+    });
+
+    it("hashFiles", () => {
+      expect(ev("hashFiles('foo.txt')")).toBe("sha-256-hash-for-foo.txt");
+      expect(ev("hashFiles('foo.txt', 'bar.txt')")).toBe(
+        "sha-256-hash-for-foo.txt,bar.txt"
+      );
+    });
+
+    it("format", () => {
+      expect(
+        ev("format('{{Hello {0} {1} {2}}}', 'Mona', 'the', 'Octocat')")
+      ).toBe("{Hello Mona the Octocat}");
+    });
   });
 
   describe("context", () => {
