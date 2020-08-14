@@ -65,10 +65,29 @@ async function doHover(
         );
         if (mapping) {
           const key = mapping.key?.value;
-          if (key && desc.keys?.[key]?.description) {
-            return {
-              description: desc.keys[key].description,
-            };
+          if (key) {
+            // We're hovering on a key
+
+            // Key is in schema
+            if (desc.keys?.[key]?.description) {
+              return {
+                description: desc.keys[key].description,
+              };
+            }
+
+            if (desc.customValueProvider) {
+              const customValues = await desc.customValueProvider(
+                desc,
+                workflow,
+                getPathFromNode(node)
+              );
+              const matchingValue = customValues?.find((x) => x.value === key);
+              if (matchingValue?.description) {
+                return {
+                  description: matchingValue.description,
+                };
+              }
+            }
           }
         }
       }

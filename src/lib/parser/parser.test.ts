@@ -191,9 +191,11 @@ describe("Validation", () => {
             return [
               {
                 value: "foo",
+                description: "this is foo",
               },
               {
                 value: "bar",
+                description: "this is bar",
               },
             ];
           },
@@ -488,7 +490,16 @@ const dynamicSchema: NodeDesc = {
     dynamic: {
       type: "value",
       customValueProvider: async () => {
-        return [{ value: "foo" }, { value: "bar" }];
+        return [
+          {
+            value: "foo",
+            description: "this is foo",
+          },
+          {
+            value: "bar",
+            description: "this is bar",
+          },
+        ];
       },
     },
     path: {
