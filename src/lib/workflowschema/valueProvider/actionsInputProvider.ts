@@ -14,29 +14,31 @@ async function getActionYamlContent(
   context: Context,
   uses: RemoteUses
 ): Promise<string | undefined> {
-  // TODO: CS: Think about how to surface API errors to consumers of the library. E.g., the token might
-  // be invalid, or it might not meet SSO requirements
-  let contentResp = await context.client.repos.getContent({
-    owner: uses.owner,
-    repo: uses.repository,
-    path: "action.yml",
-    ref: uses.ref,
-  });
-
-  if (contentResp.status === 404) {
-    contentResp = await context.client.repos.getContent({
+  if (context?.client?.repos) {
+    // TODO: CS: Think about how to surface API errors to consumers of the library. E.g., the token might
+    // be invalid, or it might not meet SSO requirements
+    let contentResp = await context.client.repos.getContent({
       owner: uses.owner,
       repo: uses.repository,
-      path: "action.yaml",
+      path: "action.yml",
       ref: uses.ref,
     });
-  }
 
-  if (contentResp?.data?.content) {
-    // Response is base64 encoded, so decode
-    const buff = new Buffer(contentResp.data.content, "base64");
-    const text = buff.toString("ascii");
-    return text;
+    if (contentResp.status === 404) {
+      contentResp = await context.client.repos.getContent({
+        owner: uses.owner,
+        repo: uses.repository,
+        path: "action.yaml",
+        ref: uses.ref,
+      });
+    }
+
+    if (contentResp?.data?.content) {
+      // Response is base64 encoded, so decode
+      const buff = new Buffer(contentResp.data.content, "base64");
+      const text = buff.toString("ascii");
+      return text;
+    }
   }
 
   return undefined;

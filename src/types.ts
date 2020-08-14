@@ -88,6 +88,12 @@ export interface Context {
   ownerIsOrg?: boolean;
 
   /**
+   * Are org features enabled, i.e., is the client authenticated for making org calls, which
+   * means does it have the admin:org scope
+   */
+  orgFeaturesEnabled?: boolean;
+
+  /**
    * Dynamic auto-completion/validations are cached for a certain time to speed up successive
    * operations.
    *
