@@ -1,13 +1,13 @@
 {
   "name": "github-actions-parser",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "author": "Christopher Schleiden <cschleiden@live.de>",
   "license": "MIT",
   "source": "src/index.ts",
   "main": "dist/index.js",
   "umd:main": "dist/index.umd.js",
   "module": "dist/index.modern.js",
-  "types": "dist/src/index.d.ts",
+  "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cschleiden/github-actions-hero.git"
