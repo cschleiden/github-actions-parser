@@ -12,6 +12,9 @@
     "type": "git",
     "url": "git+https://github.com/cschleiden/github-actions-hero.git"
   },
+  "files": [
+    "./dist"
+  ],
   "scripts": {
     "dev": "microbundle watch -f modern,umd,es,cjs --tsconfig ./tsconfig.json",
     "build": "microbundle -f modern,umd,es,cjs --tsconfig ./tsconfig.json",
