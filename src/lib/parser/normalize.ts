@@ -41,6 +41,8 @@ function normalizeJob(job: Job) {
     job.steps = [];
   }
 
+  job.steps = job.steps.filter((x) => typeof x === "object");
+
   for (const step of job.steps) {
     // Uses
     if ("uses" in step && typeof step.uses === "string") {

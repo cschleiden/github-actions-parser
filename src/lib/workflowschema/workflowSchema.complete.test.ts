@@ -163,6 +163,25 @@ describe("Completion", () => {
         ]
       );
     });
+
+    it("complete steps ", async () => {
+      await completeSimple(
+        "jobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - |",
+        [
+          "continue-on-error",
+          "env",
+          "id",
+          "if",
+          "name",
+          "run",
+          "shell",
+          "timeout-minutes",
+          "uses",
+          "with",
+          "working-directory",
+        ]
+      );
+    });
   });
 
   describe("expressions", () => {
