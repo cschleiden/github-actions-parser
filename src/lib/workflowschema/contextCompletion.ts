@@ -21,7 +21,7 @@ export function _getContextProviderFactory(
             // Use a set to dedupe repo and org secrets
             const secrets = new Set<string>(["GITHUB_TOKEN"]);
 
-            if (context?.client?.actio) {
+            if (context?.client?.actions) {
               // Get repo secrets
               const p: Promise<unknown>[] = [];
               p.push(
