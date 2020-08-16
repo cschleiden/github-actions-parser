@@ -1,6 +1,6 @@
 import { safeLoad as jsYamlSafeLoad } from "js-yaml";
 import { safeLoad, YAMLNode } from "yaml-ast-parser";
-import { Diagnostic, DiagnosticKind } from "../../types";
+import { Diagnostic, DiagnosticKind, Position } from "../../types";
 import { Workflow } from "../workflow";
 import { ContextProviderFactory } from "./complete";
 import { normalizeWorkflow } from "./normalize";
@@ -30,7 +30,13 @@ export async function parse(
   const diagnostics: Diagnostic[] = [];
 
   // First, parse workflow using js-yaml
-  let workflow = jsYamlSafeLoad(input);
+  let workflow: Workflow | undefined;
+
+  try {
+    workflow = jsYamlSafeLoad(input);
+  } catch {
+    // Ignore error here, will be reported below
+  }
 
   // Normalize the resulting JSON object, e.g., make sure options that can be specified in
   // multiple ways in the YAML (scalar/sequence/map) are always represented in the same way.
@@ -47,6 +53,16 @@ export async function parse(
   // Long term it's obviously wasteful to parse the input twice and the workflow JSON should be derived
   // from the AST, but for now this is the easiest option.
   const yamlRoot = safeLoad(input);
+  if (yamlRoot.errors.length > 0) {
+    diagnostics.push(
+      ...yamlRoot.errors.map((e) => ({
+        kind: e.isWarning ? DiagnosticKind.Warning : DiagnosticKind.Error,
+        message: e.reason,
+        pos: [e.mark.position, e.mark.position + 1] as Position,
+      }))
+    );
+  }
+
   const validationResult = await validate(
     yamlRoot,
     schema,
