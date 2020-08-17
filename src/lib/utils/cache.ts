@@ -18,12 +18,18 @@ export class TTLCache<T> {
       return e.content;
     }
 
-    const content = await getter();
-    this.cache.set(key, {
-      cachedAt: Date.now(),
-      content,
-    });
+    try {
+      const content = await getter();
 
-    return content;
+      this.cache.set(key, {
+        cachedAt: Date.now(),
+        content,
+      });
+
+      return content;
+    } catch (e) {
+      this.cache.delete(key);
+      throw e;
+    }
   }
 }
