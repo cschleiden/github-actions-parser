@@ -58,6 +58,10 @@ const result = evaluateExpression("${{ env.TEST == 42 }}, {
 - `lib/parser/schema` - TypeScript based YAML schema
 - `lib/workflowschema` - GitHub Actions workflow specific parse/complete/hover functions, this is the main exported functionality
 
+## Caching
+
+In order to auto-complete and validate parts of the workflow depending on the state of other repositories (Actions being used) or some data in the repository the parser needs to make API calls. The results of the API calls are cached for some time to avoid making too many calls. The cache lives in the imported module, which works well for VS Code, for example, where switching repositories means reloading the editor but could lead to issues if the same instance of the module is used for different repositories.
+
 ## Acknowledgements
 
 This library is built on some great open-source projects:

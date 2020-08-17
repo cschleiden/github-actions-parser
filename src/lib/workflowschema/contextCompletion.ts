@@ -15,7 +15,7 @@ export function _getContextProviderFactory(
         workflow,
         path,
         await cache.get(
-          "secrets",
+          `${context.owner}/${context.repository}/secrets`,
           context.timeToCacheResponsesInMS,
           async () => {
             // Use a set to dedupe repo and org secrets

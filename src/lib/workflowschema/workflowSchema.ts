@@ -81,34 +81,38 @@ const runsOn = (context: Context): NodeDesc => ({
     "The type of machine to run the job on. The machine can be either a GitHub-hosted runner, or a self-hosted runner.",
 
   customValueProvider: async () =>
-    cache.get("runs-on-labels", context.timeToCacheResponsesInMS, async () => {
-      const labels = new Set<string>();
-      labels.add("ubuntu-latest");
-      labels.add("windows-latest");
-      labels.add("macos-latest");
-      labels.add("self-hosted");
+    cache.get(
+      `${context.owner}/${context.repository}/runs-on-labels`,
+      context.timeToCacheResponsesInMS,
+      async () => {
+        const labels = new Set<string>();
+        labels.add("ubuntu-latest");
+        labels.add("windows-latest");
+        labels.add("macos-latest");
+        labels.add("self-hosted");
 
-      if (context?.client?.actions) {
-        const runnersResp = await context.client.actions.listSelfHostedRunnersForRepo(
-          {
-            owner: context.owner,
-            repo: context.repository,
-          }
-        );
-
-        if (runnersResp && runnersResp.data.runners) {
-          runnersResp.data.runners.forEach((r) =>
-            (r as any)?.labels?.forEach((l: { name: string }) =>
-              labels.add(l.name)
-            )
+        if (context?.client?.actions) {
+          const runnersResp = await context.client.actions.listSelfHostedRunnersForRepo(
+            {
+              owner: context.owner,
+              repo: context.repository,
+            }
           );
-        }
-      }
 
-      return Array.from(labels.values()).map((x) => ({
-        value: x,
-      }));
-    }),
+          if (runnersResp && runnersResp.data.runners) {
+            runnersResp.data.runners.forEach((r) =>
+              (r as any)?.labels?.forEach((l: { name: string }) =>
+                labels.add(l.name)
+              )
+            );
+          }
+        }
+
+        return Array.from(labels.values()).map((x) => ({
+          value: x,
+        }));
+      }
+    ),
 });
 
 export function _getSchema(context: Context): NodeDesc {
