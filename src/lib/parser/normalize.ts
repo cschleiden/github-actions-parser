@@ -45,7 +45,7 @@ function normalizeJob(job: Job) {
 
   for (const step of job.steps) {
     // Uses
-    if ("uses" in step && typeof step.uses === "string") {
+    if (step && "uses" in step && typeof step.uses === "string") {
       step.uses = parseUses(step.uses);
     }
   }
