@@ -6,9 +6,14 @@ export const NeedsCustomValueProvider: CustomValueProvider = async (
   path
 ) => {
   const jobId = path[path.length - 2];
-  return Object.keys(workflow.jobs)
-    .filter((x) => x !== jobId)
-    .map((x) => ({
-      value: x,
-    }));
+  return (
+    (jobId &&
+      workflow.jobs &&
+      Object.keys(workflow.jobs)
+        .filter((x) => x !== jobId)
+        .map((x) => ({
+          value: x,
+        }))) ||
+    []
+  );
 };

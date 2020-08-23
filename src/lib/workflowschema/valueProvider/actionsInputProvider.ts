@@ -46,7 +46,7 @@ async function getActionYamlContent(
 
 export const actionsInputProvider = (
   context: Context,
-  cache: TTLCache<any>
+  cache: TTLCache
 ): CustomValueProvider => async (
   desc: NodeDesc,
   workflow: Workflow | undefined,
@@ -75,34 +75,31 @@ export const actionsInputProvider = (
 
   const uses = step.uses;
 
-  try {
-    return cache.get(
-      `${uses.owner}/${uses.repository}@${uses.ref}`,
-      undefined,
-      async () => {
-        const text = await getActionYamlContent(context, uses);
-        if (text) {
-          const { inputs } = safeLoad(text);
-          if (inputs) {
-            return Object.keys(inputs).map((key) => ({
-              value: key,
-              description: `${
-                inputs[key].description || ""
-              } \n\nrequired: \`${!!inputs[key].required}\` \n\n${
-                (inputs[key].default && `default:\`${inputs[key].default}\``) ||
-                ""
-              }`,
-              validation: !!inputs[key].required
-                ? CustomValueValidation.Required
-                : CustomValueValidation.None,
-            }));
-          }
+  return cache.get<CustomValue[]>(
+    `${uses.owner}/${uses.repository}@${uses.ref}`,
+    // Cache actions parameters for a long time
+    1_000 * 60 * 60,
+    async () => {
+      const text = await getActionYamlContent(context, uses);
+      if (text) {
+        const { inputs } = safeLoad(text);
+        if (inputs) {
+          return Object.keys(inputs).map((key) => ({
+            value: key,
+            description: `${
+              inputs[key].description || ""
+            } \n\nrequired: \`${!!inputs[key].required}\` \n\n${
+              (inputs[key].default && `default:\`${inputs[key].default}\``) ||
+              ""
+            }`,
+            validation: !!inputs[key].required
+              ? CustomValueValidation.Required
+              : CustomValueValidation.None,
+          }));
         }
       }
-    );
-  } catch (e) {
-    console.error(e);
-  }
+    }
+  );
 
   return [];
 };

@@ -53,14 +53,22 @@ export async function parse(
   // Long term it's obviously wasteful to parse the input twice and the workflow JSON should be derived
   // from the AST, but for now this is the easiest option.
   const yamlRoot = safeLoad(input);
-  if (yamlRoot.errors.length > 0) {
-    diagnostics.push(
-      ...yamlRoot.errors.map((e) => ({
-        kind: e.isWarning ? DiagnosticKind.Warning : DiagnosticKind.Error,
-        message: e.reason,
-        pos: [e.mark.position, e.mark.position + 1] as Position,
-      }))
-    );
+  if (yamlRoot) {
+    if (yamlRoot.errors.length > 0) {
+      diagnostics.push(
+        ...yamlRoot.errors.map((e) => ({
+          kind: e.isWarning ? DiagnosticKind.Warning : DiagnosticKind.Error,
+          message: e.reason,
+          pos: [e.mark.position, e.mark.position + 1] as Position,
+        }))
+      );
+    }
+  } else {
+    diagnostics.push({
+      message: "Could not parse input",
+      pos: [0, input?.length || 0],
+      kind: DiagnosticKind.Error,
+    });
   }
 
   const validationResult = await validate(
@@ -69,13 +77,7 @@ export async function parse(
     workflow,
     contextProviderFactory
   );
-  diagnostics.push(
-    ...validationResult.errors.map(({ pos, message }) => ({
-      kind: DiagnosticKind.Error,
-      message,
-      pos,
-    }))
-  );
+  diagnostics.push(...validationResult.errors);
 
   return {
     workflow,

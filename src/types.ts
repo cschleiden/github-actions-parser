@@ -121,7 +121,8 @@ export enum DiagnosticKind {
 }
 
 export interface Diagnostic {
-  kind: DiagnosticKind;
+  /** Defaults to error */
+  kind?: DiagnosticKind;
 
   message: string;
 

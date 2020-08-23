@@ -76,16 +76,23 @@ async function doHover(
             }
 
             if (desc.customValueProvider) {
-              const customValues = await desc.customValueProvider(
-                desc,
-                workflow,
-                getPathFromNode(node)
-              );
-              const matchingValue = customValues?.find((x) => x.value === key);
-              if (matchingValue?.description) {
-                return {
-                  description: matchingValue.description,
-                };
+              try {
+                const customValues = await desc.customValueProvider(
+                  desc,
+                  workflow,
+                  getPathFromNode(node)
+                );
+                const matchingValue = customValues?.find(
+                  (x) => x.value === key
+                );
+                if (matchingValue?.description) {
+                  return {
+                    description: matchingValue.description,
+                  };
+                }
+              } catch (e) {
+                // Log, but ignore custom values in case of error
+                console.error(e);
               }
             }
           }

@@ -52,6 +52,12 @@ describe("Completion", () => {
         "name: test\non:\n  pull_request:\n    types:\n    - assigned\n|",
         ["env", "jobs"]
       ));
+
+    it("complete top level key in workflow with trailing whitespace", () =>
+      completeSimple(
+        "name: test\non:\n  pull_request:\n    types:\n    - assigned\n|     ",
+        ["env", "jobs"]
+      ));
   });
 
   describe("on", () => {

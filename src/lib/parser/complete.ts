@@ -7,7 +7,7 @@ import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
 import { findNode, getPathFromNode } from "./ast";
 import { parse, WorkflowDocument } from "./parser";
-import { MapNodeDesc, NodeDesc } from "./schema";
+import { CustomValue, MapNodeDesc, NodeDesc } from "./schema";
 
 export interface ContextProviderFactory {
   get(workflow: Workflow, path: PropertyPath): Promise<ContextProvider>;
@@ -39,13 +39,17 @@ async function completeMapKeys(
   let options: CompletionOption[] = [];
 
   if ((mapDesc as NodeDesc).customValueProvider) {
-    options.push(
-      ...(await (mapDesc as NodeDesc).customValueProvider(
+    try {
+      const customValues = await (mapDesc as NodeDesc).customValueProvider(
         mapDesc,
         doc.workflow,
         getPathFromNode(node)
-      ))
-    );
+      );
+      options.push(...customValues);
+    } catch (e) {
+      // Log, but ignore custom values in case of error
+      console.error(e);
+    }
   }
 
   if (mapDesc.keys) {
@@ -99,13 +103,22 @@ async function doComplete(
 
       // Does the value node has auto-complete information?
       if (desc.customValueProvider) {
-        return filterAndSortCompletionOptions(
-          searchInput,
-          await desc.customValueProvider(
+        let customValues: CustomValue[] = [];
+
+        try {
+          customValues = await desc.customValueProvider(
             desc,
             doc.workflow,
             getPathFromNode(node)
-          ),
+          );
+        } catch (e) {
+          // Log, but ignore custom values in case of error
+          console.error(e);
+        }
+
+        return filterAndSortCompletionOptions(
+          searchInput,
+          customValues,
           new Set<string>(existingValues)
         );
       } else if (desc.allowedValues) {
@@ -228,7 +241,11 @@ function getValidOneOfTypes(node: YNode, pos: number, input: string) {
   return validTypes;
 }
 
-function getCurrentLine(pos: number, input: string): [string, number] {
+function getCurrentLine(
+  pos: number,
+  input: string,
+  trim = true
+): [string, number] {
   let s = pos;
   while (s > 0 && input[s] !== "\n") {
     --s;
@@ -239,7 +256,8 @@ function getCurrentLine(pos: number, input: string): [string, number] {
     }
   }
 
-  return [input.substring(s, pos + 1).trim(), pos - s];
+  const line = input.substring(s, pos + 1);
+  return [trim ? line.trim() : line, pos - s];
 }
 
 async function expressionComplete(
@@ -287,12 +305,14 @@ async function expressionComplete(
 function _transform(input: string, pos: number): [string, number, string] {
   // TODO: Optimize this...
   const lines = input.split("\n");
-  const posLine = input
+  const lineNo = input
     .substring(0, pos)
     .split("")
     .filter((x) => x === "\n").length;
+  const linePos =
+    pos - lines.slice(0, lineNo).reduce((p, l) => p + l.length + 1, 0);
+  const line = lines[lineNo];
 
-  const line = lines[posLine];
   let partialInput = line.trim();
 
   const colon = line.indexOf(":");
@@ -306,14 +326,18 @@ function _transform(input: string, pos: number): [string, number, string] {
         pos++;
       }
 
-      lines[posLine] =
-        line + spacer + "dummy" + (trimmedLine === "-" ? "" : ":");
+      lines[lineNo] =
+        line.substring(0, linePos) +
+        spacer +
+        "dummy" +
+        (trimmedLine === "-" ? "" : ":") +
+        line.substring(linePos);
 
       // Adjust pos by one to prevent a sequence node being marked as active
       pos++;
     } else if (!trimmedLine.startsWith("-")) {
       // Add `:` to end of line
-      lines[posLine] = line + ":";
+      lines[lineNo] = line + ":";
     }
 
     if (trimmedLine.startsWith("-")) {

@@ -7,14 +7,14 @@ import { EditContextProvider } from "./contextProvider";
 
 export function _getContextProviderFactory(
   context: Context,
-  cache: TTLCache<any>
+  cache: TTLCache
 ): ContextProviderFactory {
   return {
-    get: async (workflow: Workflow, path: PropertyPath) =>
-      new EditContextProvider(
-        workflow,
-        path,
-        await cache.get(
+    get: async (workflow: Workflow, path: PropertyPath) => {
+      let secrets: string[];
+
+      try {
+        secrets = await cache.get(
           `${context.owner}/${context.repository}/secrets`,
           context.timeToCacheResponsesInMS,
           async () => {
@@ -62,7 +62,13 @@ export function _getContextProviderFactory(
 
             return Array.from(secrets.values());
           }
-        )
-      ),
+        );
+      } catch (e) {
+        console.log(e);
+        secrets = [`-- Could not load secrets: ${e?.message}`];
+      }
+
+      return new EditContextProvider(workflow, path, secrets);
+    },
   };
 }

@@ -3,19 +3,25 @@ interface CacheEntry<T> {
   content: T;
 }
 
-export class TTLCache<T> {
-  private cache = new Map<string, CacheEntry<T>>();
+export class TTLCache {
+  private cache = new Map<string, CacheEntry<unknown>>();
 
   constructor(private defaultTTLinMS: number = 10 * 60 * 1000) {}
 
-  async get(
+  /**
+   *
+   * @param key Key to cache value under
+   * @param ttlInMS How long is the content valid. If optional, default value will be used
+   * @param getter Function to retrieve content if not in cache
+   */
+  async get<T>(
     key: string,
     ttlInMS: number | undefined,
     getter: () => Promise<T>
   ): Promise<T> {
     const e = this.cache.get(key);
     if (e && e.cachedAt > Date.now() - (ttlInMS || this.defaultTTLinMS)) {
-      return e.content;
+      return e.content as T;
     }
 
     try {

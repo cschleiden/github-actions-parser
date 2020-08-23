@@ -1,5 +1,4 @@
-import { Position } from "../../types";
-import { ValidationError } from "../parser/validator";
+import { Diagnostic, Position } from "../../types";
 import { iteratePath, PropertyPath } from "../utils/path";
 import { iterateExpressions, removeExpressionMarker } from "./embedding";
 import { ExpressionContext, ExpressionEvaluator } from "./evaluator";
@@ -9,7 +8,7 @@ import { ContextProvider } from "./types";
 class ExpressionValidator extends ExpressionEvaluator {
   constructor(
     private contextProvider: ContextProvider,
-    private errors: ValidationError[],
+    private errors: Diagnostic[],
     private pos: Position
   ) {
     super();
@@ -33,7 +32,7 @@ class ExpressionValidator extends ExpressionEvaluator {
 export function validateExpression(
   input: string,
   posOffset: number,
-  errors: ValidationError[],
+  errors: Diagnostic[],
   contextProvider: ContextProvider
 ) {
   const expressionPosition: Position = [posOffset, posOffset + input.length];
@@ -79,7 +78,7 @@ export function validateExpression(
 export function validateExpressions(
   input: string,
   posOffset: number,
-  errors: ValidationError[],
+  errors: Diagnostic[],
   contextProvider: ContextProvider
 ) {
   iterateExpressions(input, (expr, pos) => {

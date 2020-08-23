@@ -9,7 +9,7 @@ import { eventMap, events } from "./schema/events";
 import { NeedsCustomValueProvider } from "./schema/needs";
 import { actionsInputProvider } from "./valueProvider/actionsInputProvider";
 
-const cache = new TTLCache<ValueDesc[]>();
+const cache = new TTLCache();
 
 const value = (description?: string): NodeDesc => ({
   type: "value",
@@ -81,7 +81,7 @@ const runsOn = (context: Context): NodeDesc => ({
     "The type of machine to run the job on. The machine can be either a GitHub-hosted runner, or a self-hosted runner.",
 
   customValueProvider: async () =>
-    cache.get(
+    cache.get<ValueDesc[]>(
       `${context.owner}/${context.repository}/runs-on-labels`,
       context.timeToCacheResponsesInMS,
       async () => {

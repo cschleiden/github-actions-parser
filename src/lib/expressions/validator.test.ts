@@ -1,4 +1,4 @@
-import { ValidationError } from "../parser/validator";
+import { Diagnostic } from "../../types";
 import { ContextProvider } from "./types";
 import { validateExpressions } from "./validator";
 
@@ -21,8 +21,8 @@ const contextProvider: ContextProvider = {
   },
 };
 
-const testValidation = async (input: string, expected: ValidationError[]) => {
-  const errors: ValidationError[] = [];
+const testValidation = async (input: string, expected: Diagnostic[]) => {
+  const errors: Diagnostic[] = [];
   validateExpressions(input, 0, errors, contextProvider);
   expect(errors).toEqual(expected);
 };
