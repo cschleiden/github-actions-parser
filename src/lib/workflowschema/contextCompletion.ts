@@ -41,18 +41,27 @@ export function _getContextProviderFactory(
 
               // Get org secrets
               if (context.ownerIsOrg && context.orgFeaturesEnabled) {
+                // Org secrets need more permissions and are more likely to fail. If we cannot get org secrets
+                // we still want to return the repo secrets.
                 p.push(
                   (async () => {
-                    const orgSecretsResponse = await context.client.actions.listOrgSecrets(
-                      {
-                        org: context.owner,
-                        repo: context.repository,
-                      }
-                    );
+                    try {
+                      const orgSecretsResponse = await context.client.actions.listOrgSecrets(
+                        {
+                          org: context.owner,
+                          repo: context.repository,
+                        }
+                      );
 
-                    orgSecretsResponse.data.secrets.forEach((x) =>
-                      secrets.add(x.name)
-                    );
+                      orgSecretsResponse.data.secrets.forEach((x) =>
+                        secrets.add(x.name)
+                      );
+                    } catch (e) {
+                      console.error(e);
+                      secrets.add(
+                        `:: Could not retrieve org secrets {e.?message}`
+                      );
+                    }
                   })()
                 );
               }
@@ -64,8 +73,8 @@ export function _getContextProviderFactory(
           }
         );
       } catch (e) {
-        console.log(e);
-        secrets = [`-- Could not load secrets: ${e?.message}`];
+        console.error(e);
+        secrets = ["GITHUB_TOKEN", `:: Could not load secrets: ${e?.message}`];
       }
 
       return new EditContextProvider(workflow, path, secrets);
