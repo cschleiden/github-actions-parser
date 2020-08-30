@@ -10,7 +10,7 @@
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cschleiden/github-actions-hero.git"
+    "url": "git+https://github.com/cschleiden/github-actions-parser.git"
   },
   "files": [
     "dist"
