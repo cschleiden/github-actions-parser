@@ -1,6 +1,5 @@
-import { Context, DiagnosticKind } from "../../types";
+import { Context } from "../../types";
 import { complete, ContextProviderFactory } from "../parser/complete";
-import { parse } from "../parser/parser";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
 import { EditContextProvider } from "./contextProvider";
@@ -208,12 +207,31 @@ describe("Completion", () => {
       );
     });
 
+    it("expression completion in multi-line string", async () => {
+      let input = `jobs:
+  build:
+    name: |
+      This is a multi-line
+      string\${{ g@`;
+      const pos = input.indexOf("@");
+      input = input.replace("@", "");
+      const suggestions = await complete(
+        "workflow.yaml",
+        input,
+        pos,
+        WorkflowSchema,
+        ExpressionContextProviderFactory
+      );
+
+      expect(suggestions.map((x) => x.value)).toEqual(["github"]);
+    });
+
     it("if", async () => {
       // `if` is always an expression
       await completeSimple("jobs:\n  build:\n    if: g|", ["github"]);
     });
 
-    describe("context", () => {
+    describe("contexts", () => {
       describe("multi-level", () => {
         it("github.event.action", () =>
           completeSimple(`name: \${{ github.event.r| }}`, [
