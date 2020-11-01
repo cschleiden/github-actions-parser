@@ -314,15 +314,13 @@ function _transform(input: string, pos: number): [string, number, string] {
   const line = lines[lineNo];
 
   let partialInput = line.trim();
-
-  const colon = line.indexOf(":");
-  if (colon === -1) {
-    const trimmedLine = line.trim();
-
-    // Special case for Actions, if this line contains an expression marker, do _not_ transform. This is
-    // an ugly fix for auto-completion in multi-line YAML strings. At this point in the process, we cannot
-    // determine if a line is in such a multi-line string.
-    if (trimmedLine.indexOf("${{") === -1) {
+  // Special case for Actions, if this line contains an expression marker, do _not_ transform. This is
+  // an ugly fix for auto-completion in multi-line YAML strings. At this point in the process, we cannot
+  // determine if a line is in such a multi-line string.
+  if (partialInput.indexOf("${{") === -1) {
+    const colon = line.indexOf(":");
+    if (colon === -1) {
+      const trimmedLine = line.trim();
       if (trimmedLine === "" || trimmedLine === "-") {
         // Node in sequence or empty line
         let spacer = "";
@@ -349,16 +347,15 @@ function _transform(input: string, pos: number): [string, number, string] {
         partialInput = trimmedLine
           .substring(trimmedLine.indexOf("-") + 1)
           .trim();
-      } else {
-        partialInput = (pos > colon
-          ? line.substring(colon + 1)
-          : line.substring(0, colon)
-        ).trim();
-        pos = pos - 1;
       }
+    } else {
+      partialInput = (pos > colon
+        ? line.substring(colon + 1)
+        : line.substring(0, colon)
+      ).trim();
+      pos = pos - 1;
     }
   }
-
   // console.log(`partialInput '${partialInput}'`);
   return [lines.join("\n"), pos, partialInput];
 }

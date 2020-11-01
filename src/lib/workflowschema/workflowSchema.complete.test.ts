@@ -1,5 +1,6 @@
-import { Context } from "../../types";
+import { Context, DiagnosticKind } from "../../types";
 import { complete, ContextProviderFactory } from "../parser/complete";
+import { parse } from "../parser/parser";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
 import { EditContextProvider } from "./contextProvider";
