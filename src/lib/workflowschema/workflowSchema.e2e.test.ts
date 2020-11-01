@@ -16,7 +16,7 @@ const ExpressionContextProviderFactory: ContextProviderFactory = {
 };
 
 describe("E2E", () => {
-  it("completes top level keys", async () => {
+  it("no validation errors for valid workflow", async () => {
     const result = await parse(
       context,
       "workflow.yml",
@@ -47,5 +47,33 @@ jobs:
     );
 
     expect(result.diagnostics).toEqual([]);
+  });
+
+  it("no validation errors for valid workflow", async () => {
+    const result = await parse(
+      context,
+      "workflow.yml",
+      `on: push
+
+jobs:
+  build:
+    runs-on: [ubuntu-latest]
+    steps:
+    - run: echo "Hello $FOO"
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - run: echo
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    steps:
+    - run: echo`
+    );
+
+    expect(result.workflow.jobs["build"].needs).toBeUndefined();
+    expect(result.workflow.jobs["test"].needs).toEqual(["build"]);
+    expect(result.workflow.jobs["deploy"].needs).toEqual(["build", "test"]);
   });
 });

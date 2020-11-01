@@ -51,6 +51,6 @@ function normalizeJob(job: Job) {
   }
 
   // Other properties
-  job.needs = toArray(job.needs);
+  job.needs = job.needs && toArray(job.needs);
   job["timeout-minutes"] = job["timeout-minutes"] || 360;
 }
