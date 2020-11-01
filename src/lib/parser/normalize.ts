@@ -1,5 +1,6 @@
 import { Job, Workflow } from "../workflow";
 import { parseUses } from "../workflowschema/uses";
+import { DUMMY_KEY } from "./ast";
 
 function toArray(input: string | string[]): string[] {
   if (Array.isArray(input)) {
@@ -30,7 +31,9 @@ export function normalizeWorkflow(filename: string, workflow: Workflow) {
     workflow.jobs = {};
   }
 
-  for (const jobId of Object.keys(workflow.jobs)) {
+  for (const jobId of Object.keys(workflow.jobs).filter(
+    (x) => x !== DUMMY_KEY
+  )) {
     normalizeJob(workflow.jobs[jobId]);
   }
 }

@@ -268,6 +268,17 @@ jobs:
       });
     });
   });
+
+  describe("jobs", () => {
+    test("empty option for job map", async () => {
+      await completeSimple(
+        `on: push
+jobs:
+  |`,
+        []
+      );
+    });
+  });
 });
 
 describe("validation", () => {

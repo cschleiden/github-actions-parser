@@ -1,6 +1,8 @@
 import { Kind, Position, YAMLNode, YNode } from "../../types";
 import { PropertyPath } from "../utils/path";
 
+export const DUMMY_KEY = "dummy";
+
 export function inPos(position: Position, pos: number): boolean {
   return position[0] <= pos && pos <= position[1];
 }
@@ -33,7 +35,7 @@ export function findNode(node: YAMLNode, pos: number): YAMLNode {
       if (node.key) {
         if (
           inPos([n.key.startPosition, n.key.endPosition], pos) ||
-          node.key.value === "dummy"
+          node.key.value === DUMMY_KEY
         ) {
           return node.parent;
         }
@@ -71,7 +73,7 @@ export function findNode(node: YAMLNode, pos: number): YAMLNode {
     }
 
     case Kind.SCALAR: {
-      if (n.value && n.value === "dummy") {
+      if (n.value && n.value === DUMMY_KEY) {
         return n.parent;
       }
 

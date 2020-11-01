@@ -5,7 +5,7 @@ import { expressionMarker, iterateExpressions } from "../expressions/embedding";
 import { ContextProvider } from "../expressions/types";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
-import { findNode, getPathFromNode } from "./ast";
+import { DUMMY_KEY, findNode, getPathFromNode } from "./ast";
 import { parse, WorkflowDocument } from "./parser";
 import { CustomValue, MapNodeDesc, NodeDesc } from "./schema";
 
@@ -83,7 +83,7 @@ async function doComplete(
   switch (desc.type) {
     case "value": {
       let searchInput = node.value || "";
-      searchInput = searchInput !== "dummy" ? searchInput : "";
+      searchInput = searchInput !== DUMMY_KEY ? searchInput : "";
 
       const parent = node.parent as YNode;
 
@@ -332,7 +332,7 @@ function _transform(input: string, pos: number): [string, number, string] {
         lines[lineNo] =
           line.substring(0, linePos) +
           spacer +
-          "dummy" +
+          DUMMY_KEY +
           (trimmedLine === "-" ? "" : ":") +
           line.substring(linePos);
 
