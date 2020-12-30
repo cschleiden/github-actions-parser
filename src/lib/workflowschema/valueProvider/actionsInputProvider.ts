@@ -25,6 +25,9 @@ async function getActionYamlContent(
     });
 
     if (contentResp.status === 404) {
+      // There isn't an API to easily get two different files, when we cannot find `action.yml`, look
+      // for `action.yaml`, too.
+      // It might be okay to make two calls in parallel but for now this seems to work.
       contentResp = await context.client.repos.getContent({
         owner: uses.owner,
         repo: uses.repository,
