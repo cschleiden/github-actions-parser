@@ -1,10 +1,10 @@
 import { Context } from "../../types";
 import { ContextProviderFactory } from "../parser/complete";
-import { hover } from "../parser/hover";
+import { EditContextProvider } from "./contextProvider";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
-import { EditContextProvider } from "./contextProvider";
 import { _getSchema } from "./workflowSchema";
+import { hover } from "../parser/hover";
 
 const context: Context = {
   client: null,
@@ -122,7 +122,34 @@ jobs:
         "Evaluates to: `refs/tags/simple-tag`"
       ));
 
-    it("evaluates steps conext", () =>
+    it("evaluates workflow_dispatch default inputs", () =>
+      hoverSimple(
+        `on:
+  workflow_dispatch:
+    inputs:
+      bar:
+        default: 42
+jobs:
+  build:
+    steps:
+      - run: echo \${{ github.event.inputs.b|ar }}`,
+        "Evaluates to: `echo 42`"
+      ));
+
+    it("evaluates workflow_dispatch inputs", () =>
+      hoverSimple(
+        `on:
+  workflow_dispatch:
+    inputs:
+      foo:
+jobs:
+  build:
+    steps:
+      - run: echo \${{ github.event.inputs.fo|o }}`,
+        "Evaluates to: `echo <provided input>`"
+      ));
+
+    it("evaluates steps context", () =>
       hoverSimple(
         `on: push
 jobs:

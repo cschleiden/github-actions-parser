@@ -152,7 +152,19 @@ export type JobMap = { [jobId: string]: Job };
 export interface Workflow {
   name?: string;
 
-  on: { [key: string]: {} };
+  on: {
+    workflow_dispatch?: {
+      inputs?: {
+        [inputName: string]: {
+          required?: boolean;
+          description?: string;
+          default?: string;
+        };
+      };
+    };
+
+    [eventName: string]: {};
+  };
 
   jobs: JobMap;
 }

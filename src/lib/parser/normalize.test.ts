@@ -51,6 +51,27 @@ describe("normalize on", () => {
       pull_request: {},
     });
   });
+
+  describe("workflow_dispatch", () => {
+    const r = testNormalize({
+      on: {
+        workflow_dispatch: {
+          inputs: {
+            foo: {
+              required: true,
+            },
+
+            bar: {
+              default: 42,
+            },
+          },
+        },
+      },
+    });
+
+    expect(r.on.workflow_dispatch.inputs["foo"].required).toBe(true);
+    expect(r.on.workflow_dispatch.inputs["bar"].default).toBe(42);
+  });
 });
 
 describe("normalize job", () => {

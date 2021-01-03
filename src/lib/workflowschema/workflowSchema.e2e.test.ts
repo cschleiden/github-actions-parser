@@ -1,8 +1,8 @@
 import { Context } from "../../types";
 import { ContextProviderFactory } from "../parser/complete";
+import { EditContextProvider } from "./contextProvider";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
-import { EditContextProvider } from "./contextProvider";
 import { parse } from "./workflowSchema";
 
 const context: Context = {
@@ -16,7 +16,7 @@ const ExpressionContextProviderFactory: ContextProviderFactory = {
 };
 
 describe("E2E", () => {
-  it("no validation errors for valid workflow", async () => {
+  it("no validation errors for valid workflow 1", async () => {
     const result = await parse(
       context,
       "workflow.yml",
@@ -49,7 +49,7 @@ jobs:
     expect(result.diagnostics).toEqual([]);
   });
 
-  it("no validation errors for valid workflow", async () => {
+  it("no validation errors for valid workflow with dependencies", async () => {
     const result = await parse(
       context,
       "workflow.yml",
@@ -75,5 +75,51 @@ jobs:
     expect(result.workflow.jobs["build"].needs).toBeUndefined();
     expect(result.workflow.jobs["test"].needs).toEqual(["build"]);
     expect(result.workflow.jobs["deploy"].needs).toEqual(["build", "test"]);
+  });
+
+  it("supports ", async () => {
+    const result = await parse(
+      context,
+      "workflow.yml",
+      `name: "Update dependencies"
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Also create pull request if only developer dependencies changed'
+        default: 'false'
+  schedule:
+    - cron: '37 4 * * 6'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Update dependencies
+      run: yarn upgrade --latest
+    - name: Build
+      run: make
+    - name: Detect changes in distributed code
+      if: \${{ github.event.inputs.force != 'true' }}
+      id: changes
+      run: |
+        if [[ $(git status --porcelain ./dist) != "" ]]; then
+          echo "::set-output name=dist::true"
+        fi
+    - name: Create Pull Request
+      if: \${{ steps.changes.outputs.dist || github.event.inputs.force == 'true' }}
+      uses: peter-evans/create-pull-request@v3
+      with:
+        commit-message: "Update dependencies"
+        branch: yarn-upgrade-latest
+        delete-branch: true
+        title: "Update dependencies"
+        body: "Automatically created by the 'Update Dependencies' workflow"`
+    );
+
+    expect(result.diagnostics).toHaveLength(0);
+    expect(result.workflow.jobs["update"].needs).toBeUndefined();
   });
 });

@@ -1,13 +1,30 @@
+import { Job, Step, Workflow } from "../workflow";
+import { PropertyPath, iteratePath } from "../utils/path";
+
+import { ContextProvider } from "../expressions/types";
+import { containsExpression } from "../expressions/embedding";
 import { getEventPayload } from "../events/eventPayload";
 import { replaceExpressions } from "../expressions";
-import { containsExpression } from "../expressions/embedding";
-import { ContextProvider } from "../expressions/types";
-import { iteratePath, PropertyPath } from "../utils/path";
-import { Job, Step, Workflow } from "../workflow";
 
 function getEvent(workflow: Workflow) {
   if (workflow && workflow.on) {
-    return getEventPayload(Object.keys(workflow.on));
+    const events = Object.keys(workflow.on);
+    const eventPayload = getEventPayload(events);
+
+    // Add dynamic properties
+    if (workflow?.on.workflow_dispatch) {
+      eventPayload["inputs"] = {};
+
+      for (const inputName of Object.keys(
+        workflow.on.workflow_dispatch.inputs
+      )) {
+        eventPayload["inputs"][inputName] =
+          workflow.on.workflow_dispatch.inputs[inputName]?.default ||
+          "<provided input>";
+      }
+    }
+
+    return eventPayload;
   }
 
   // Default to push, since it's one of the most common payloads
