@@ -77,7 +77,7 @@ jobs:
     expect(result.workflow.jobs["deploy"].needs).toEqual(["build", "test"]);
   });
 
-  it("supports ", async () => {
+  it("supports workflow_dispatch inputs", async () => {
     const result = await parse(
       context,
       "workflow.yml",
@@ -109,7 +109,7 @@ jobs:
           echo "::set-output name=dist::true"
         fi
     - name: Create Pull Request
-      if: \${{ steps.changes.outputs.dist || github.event.inputs.force == 'true' }}
+      if: \${{ github.event.inputs.force == 'true' }}
       uses: peter-evans/create-pull-request@v3
       with:
         commit-message: "Update dependencies"

@@ -163,6 +163,10 @@ export interface Workflow {
       };
     };
 
+    repository_dispatch?: {
+      types?: string[];
+    };
+
     [eventName: string]: {};
   };
 

@@ -72,6 +72,18 @@ describe("normalize on", () => {
     expect(r.on.workflow_dispatch.inputs["foo"].required).toBe(true);
     expect(r.on.workflow_dispatch.inputs["bar"].default).toBe(42);
   });
+
+  describe("repository_dispatch types", () => {
+    const r = testNormalize({
+      on: {
+        repository_dispatch: {
+          types: ["a", "b"],
+        },
+      },
+    });
+
+    expect(r.on.repository_dispatch.types).toEqual(["a", "b"]);
+  });
 });
 
 describe("normalize job", () => {
