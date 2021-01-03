@@ -16,10 +16,10 @@ function getEvent(workflow: Workflow) {
       eventPayload["inputs"] = {};
 
       for (const inputName of Object.keys(
-        workflow.on.workflow_dispatch.inputs
+        workflow.on.workflow_dispatch.inputs || {}
       )) {
         eventPayload["inputs"][inputName] =
-          workflow.on.workflow_dispatch.inputs[inputName]?.default ||
+          workflow.on.workflow_dispatch.inputs![inputName]?.default ||
           "<provided input>";
       }
     }
@@ -155,15 +155,17 @@ export class EditContextProvider implements ContextProvider {
           return {};
         }
 
-        return job.needs.reduce(
-          (r, jobId) => ({
-            ...r,
-            [jobId]: {
-              result: "success",
-              outputs: this.workflow.jobs[jobId].outputs || {},
-            },
-          }),
-          {}
+        return (
+          job.needs?.reduce(
+            (r, jobId) => ({
+              ...r,
+              [jobId]: {
+                result: "success",
+                outputs: this.workflow.jobs[jobId].outputs || {},
+              },
+            }),
+            {}
+          ) || {}
         );
       }
 
@@ -176,7 +178,7 @@ export class EditContextProvider implements ContextProvider {
         if (job.strategy?.matrix) {
           // For each key in the matrix definition, return the first value
           return Object.keys(job.strategy.matrix).reduce(
-            (r, v) => ({ ...r, [v]: job.strategy.matrix?.[v]?.[0] }),
+            (r, v) => ({ ...r, [v]: job.strategy!.matrix?.[v]?.[0] }),
             {}
           );
         }

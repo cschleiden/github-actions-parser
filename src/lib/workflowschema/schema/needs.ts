@@ -8,7 +8,7 @@ export const NeedsCustomValueProvider: CustomValueProvider = async (
   const jobId = path[path.length - 2];
   return (
     (jobId &&
-      workflow.jobs &&
+      workflow?.jobs &&
       Object.keys(workflow.jobs)
         .filter((x) => x !== jobId)
         .map((x) => ({

@@ -1,17 +1,18 @@
-import { tokenMatcher } from "chevrotain";
-import { CompletionOption } from "../../types";
-import { iteratePath, PropertyPath } from "../utils/path";
-import { getFunctionDescription } from "./functions";
 import {
   Context,
   ContextMember,
-  defaultRule,
   Dot,
   ExpressionLexer,
   Function,
+  defaultRule,
   parser,
 } from "./parser";
+import { PropertyPath, iteratePath } from "../utils/path";
+
+import { CompletionOption } from "../../types";
 import { ContextProvider } from "./types";
+import { getFunctionDescription } from "./functions";
+import { tokenMatcher } from "chevrotain";
 
 export function inExpression(input: string, pos: number) {
   return input.substring(0, pos).indexOf("${{") !== -1;
@@ -106,8 +107,8 @@ export async function completeExpression(
     return syntacticSuggestions
       .filter((x) => {
         return (
-          Function.categoryMatchesMap[x.nextTokenType.tokenTypeIdx] ||
-          Context.categoryMatchesMap[x.nextTokenType.tokenTypeIdx]
+          Function.categoryMatchesMap?.[x.nextTokenType.tokenTypeIdx!] ||
+          Context.categoryMatchesMap?.[x.nextTokenType.tokenTypeIdx!]
         );
       })
       .map((x) => (x.nextTokenType.PATTERN as RegExp).source)

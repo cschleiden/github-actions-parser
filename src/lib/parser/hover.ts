@@ -1,17 +1,18 @@
 import { Hover, Kind, YNode } from "../../types";
-import { replaceExpressions } from "../expressions";
-import { containsExpression } from "../expressions/embedding";
-import { Workflow } from "../workflow";
 import { findNode, getPathFromNode, inPos } from "./ast";
+
 import { ContextProviderFactory } from "./complete";
-import { parse } from "./parser";
 import { NodeDesc } from "./schema";
+import { Workflow } from "../workflow";
+import { containsExpression } from "../expressions/embedding";
+import { parse } from "./parser";
+import { replaceExpressions } from "../expressions";
 
 async function doHover(
   node: YNode,
   desc: NodeDesc,
   pos: number,
-  workflow: Workflow,
+  workflow: Workflow | undefined,
   contextProviderFactory: ContextProviderFactory
 ): Promise<Hover | undefined> {
   switch (desc.type) {
@@ -71,7 +72,7 @@ async function doHover(
             // Key is in schema
             if (desc.keys?.[key]?.description) {
               return {
-                description: desc.keys[key].description,
+                description: desc.keys![key].description || "",
               };
             }
 

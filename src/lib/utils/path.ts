@@ -2,8 +2,8 @@ export type PropertyPath = (string | [string, number])[];
 
 export function iteratePath(
   path: PropertyPath,
-  obj: unknown,
-  f?: (x: unknown) => void
+  obj: any,
+  f?: (x: any) => void
 ) {
   for (const p of path) {
     if (p == "$") continue;

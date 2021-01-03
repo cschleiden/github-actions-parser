@@ -1,6 +1,5 @@
-import { tokenMatcher } from "chevrotain";
-import { iteratePath, PropertyPath } from "../utils/path";
 import * as Functions from "./functions";
+
 import {
   And,
   BaseCstVisitor,
@@ -13,7 +12,10 @@ import {
   NEq,
   Or,
 } from "./parser";
+import { PropertyPath, iteratePath } from "../utils/path";
+
 import { ContextProvider } from "./types";
+import { tokenMatcher } from "chevrotain";
 
 export interface ExpressionContext {
   contextProvider: ContextProvider;
@@ -166,7 +168,7 @@ export class ExpressionEvaluator extends BaseCstVisitor {
   }
 
   array(ctx: any) {
-    const result = [];
+    const result: any[] = [];
 
     if (ctx.subExpression) {
       result.push(...ctx.subExpression.map((se) => this.visit(se)));
@@ -231,6 +233,7 @@ export class ExpressionEvaluator extends BaseCstVisitor {
         result = true;
         break;
 
+      default:
       case !!ctx.False:
         result = false;
         break;

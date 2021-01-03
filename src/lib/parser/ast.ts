@@ -1,4 +1,5 @@
 import { Kind, Position, YAMLNode, YNode } from "../../types";
+
 import { PropertyPath } from "../utils/path";
 
 export const DUMMY_KEY = "dummy";
@@ -7,7 +8,7 @@ export function inPos(position: Position, pos: number): boolean {
   return position[0] <= pos && pos <= position[1];
 }
 
-export function findNode(node: YAMLNode, pos: number): YAMLNode {
+export function findNode(node: YAMLNode, pos: number): YAMLNode | null {
   if (!inPos([node.startPosition, node.endPosition], pos)) {
     return null;
   }
@@ -87,7 +88,7 @@ export function findNode(node: YAMLNode, pos: number): YAMLNode {
   return node;
 }
 
-export function getPathFromNode(node: YNode): PropertyPath {
+export function getPathFromNode(node: YNode | null): PropertyPath {
   // Build up node path
   const nodePath: YNode[] = [];
   let x = node;
@@ -101,7 +102,7 @@ export function getPathFromNode(node: YNode): PropertyPath {
   while (nodePath.length) {
     const x = nodePath.shift();
 
-    switch (x.kind) {
+    switch (x?.kind) {
       case Kind.MAPPING:
         if (x.key) {
           path.push(x.key.value);

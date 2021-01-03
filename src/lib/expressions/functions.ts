@@ -7,17 +7,14 @@ export function getFunctionDescription(f: string): string | undefined {
   return funcDescription[f];
 }
 
-export function contains<S extends T[] | string, T>(
-  haystack: S,
-  needle: T
-): boolean {
+export function contains<T>(haystack: T | T[], needle: T): boolean {
   if (Array.isArray(haystack)) {
     return haystack.indexOf(needle) !== -1;
-  } else if (typeof haystack === "string") {
+  } else {
     return (
       ("" + haystack)
         .toLocaleLowerCase()
-        .indexOf((needle as any).toLocaleLowerCase()) !== -1
+        .indexOf(("" + needle).toLocaleLowerCase()) !== -1
     );
   }
 }

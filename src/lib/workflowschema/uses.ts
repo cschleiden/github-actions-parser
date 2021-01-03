@@ -1,12 +1,12 @@
 import { Uses } from "../workflow";
 
-export function parseUses(input: string): Uses | undefined {
+export function parseUses(input: string): Uses {
   if (input.indexOf("@") !== -1) {
     // Remote uses
     const [x, ref] = input.split("@");
     const [_, owner, repository, subdirectory] = x.match(
       /([^\/]*)\/([^\/]*)\/?(.*)?/
-    );
+    )!;
 
     return {
       type: "remote",
@@ -26,6 +26,4 @@ export function parseUses(input: string): Uses | undefined {
       type: "local",
     };
   }
-
-  return undefined;
 }

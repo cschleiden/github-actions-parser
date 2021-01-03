@@ -1,21 +1,22 @@
+import { CustomValue, CustomValueValidation, NodeDesc } from "./schema";
+import { Diagnostic, DiagnosticKind, Position, YNode } from "../../types";
 import {
   Kind,
-  YamlMap,
   YAMLMapping,
   YAMLNode,
   YAMLScalar,
+  YamlMap,
 } from "yaml-ast-parser";
-import { Diagnostic, DiagnosticKind, Position, YNode } from "../../types";
 import {
   containsExpression,
   iterateExpressions,
 } from "../expressions/embedding";
+
 import { ContextProvider } from "../expressions/types";
-import { validateExpression } from "../expressions/validator";
+import { ContextProviderFactory } from "./complete";
 import { Workflow } from "../workflow";
 import { getPathFromNode } from "./ast";
-import { ContextProviderFactory } from "./complete";
-import { CustomValue, CustomValueValidation, NodeDesc } from "./schema";
+import { validateExpression } from "../expressions/validator";
 
 function kindToString(kind: Kind): string {
   switch (kind) {
@@ -30,6 +31,9 @@ function kindToString(kind: Kind): string {
 
     case Kind.SEQ:
       return "sequence";
+
+    default:
+      throw new Error("Unexpected node kind");
   }
 }
 
@@ -48,7 +52,7 @@ async function validateNode(
   node: YAMLNode,
   nodeDesc: NodeDesc,
   nodeToDesc: Map<YAMLNode, NodeDesc>,
-  workflow: Workflow,
+  workflow: Workflow | undefined,
   contextProviderFactory: ContextProviderFactory,
   diagnostics: Diagnostic[]
 ): Promise<boolean> {
@@ -84,7 +88,7 @@ async function validateNode(
           message: `'${node.value}' is not in the list of allowed values`,
         });
       } else if (nodeDesc.customValueProvider) {
-        let customValues: CustomValue[];
+        let customValues: CustomValue[] | undefined;
 
         try {
           customValues = await nodeDesc.customValueProvider(
@@ -334,12 +338,12 @@ export interface ValidationResult {
 export async function validate(
   root: YAMLNode,
   schema: NodeDesc,
-  workflow: Workflow,
+  workflow: Workflow | undefined,
   contextProviderFactory: ContextProviderFactory
 ): Promise<ValidationResult> {
   const diagnostics: Diagnostic[] = [];
   const nodeToDesc = new Map<YAMLNode, NodeDesc>();
-  nodeToDesc.set(null, schema);
+  // nodeToDesc.set(null, schema);
 
   await validateNode(
     root,

@@ -1,14 +1,15 @@
-import { safeLoad } from "js-yaml";
-import { Context } from "../../../types";
 import {
   CustomValue,
   CustomValueProvider,
   CustomValueValidation,
   NodeDesc,
 } from "../../parser/schema";
-import { TTLCache } from "../../utils/cache";
-import { iteratePath, PropertyPath } from "../../utils/path";
+import { PropertyPath, iteratePath } from "../../utils/path";
 import { RemoteUses, Step, Workflow } from "../../workflow";
+
+import { Context } from "../../../types";
+import { TTLCache } from "../../utils/cache";
+import { safeLoad } from "js-yaml";
 
 async function getActionYamlContent(
   context: Context,
@@ -38,7 +39,7 @@ async function getActionYamlContent(
 
     if (contentResp?.data?.content) {
       // Response is base64 encoded, so decode
-      const buff = new Buffer(contentResp.data.content, "base64");
+      const buff = Buffer.from(contentResp.data.content, "base64");
       const text = buff.toString("ascii");
       return text;
     }
@@ -51,10 +52,10 @@ export const actionsInputProvider = (
   context: Context,
   cache: TTLCache
 ): CustomValueProvider => async (
-  desc: NodeDesc,
+  _: NodeDesc,
   workflow: Workflow | undefined,
   path: PropertyPath
-): Promise<CustomValue[]> => {
+): Promise<CustomValue[] | undefined> => {
   if (!workflow) {
     return [];
   }
@@ -78,11 +79,11 @@ export const actionsInputProvider = (
 
   const uses = step.uses;
 
-  return cache.get<CustomValue[]>(
+  return cache.get<CustomValue[] | undefined>(
     `${uses.owner}/${uses.repository}@${uses.ref}`,
     // Cache actions parameters for a long time
     1_000 * 60 * 60,
-    async () => {
+    async (): Promise<CustomValue[] | undefined> => {
       const text = await getActionYamlContent(context, uses);
       if (text) {
         const { inputs } = safeLoad(text);
@@ -101,8 +102,8 @@ export const actionsInputProvider = (
           }));
         }
       }
+
+      return undefined;
     }
   );
-
-  return [];
 };

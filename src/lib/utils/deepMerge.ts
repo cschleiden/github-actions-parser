@@ -14,15 +14,15 @@ export function isObject(item) {
  * @param target
  * @param ...sources
  */
-export function mergeDeep<T = any>(target: T, ...sources: T[]) {
+export function mergeDeep<Q extends {}, T = any>(target: Q, ...sources: T[]) {
   if (!sources.length) return target;
   const source = sources.shift();
 
   if (isObject(target) && isObject(source)) {
     for (const key in source) {
       if (isObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
-        mergeDeep(target[key], source[key]);
+        if (!target[key as string]) Object.assign(target, { [key]: {} });
+        mergeDeep(target[key as string], source[key]);
       } else {
         Object.assign(target, { [key]: source[key] });
       }

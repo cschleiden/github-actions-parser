@@ -3,11 +3,25 @@ import { Workflow } from "../workflow";
 
 export type NodeDescMap = { [key: string]: NodeDesc };
 
+type Desc = {
+  /** Description for this node, can contain markdown */
+  description?: string;
+
+  /**
+   * Custom value provider, used for auto-complete and validation
+   *
+   * @param desc Description for node to provide value for
+   * @param workflow Workflow if it could be parsed
+   * @param path Path in the workflow
+   */
+  customValueProvider?: CustomValueProvider;
+};
+
 type OneOfNodeDesc = {
   type: "oneOf";
 
   oneOf: NodeDesc[];
-};
+} & Desc;
 
 export type MapNodeDesc = {
   type: "map";
@@ -26,18 +40,18 @@ export type MapNodeDesc = {
    * Required keys for the map
    */
   required?: string[];
-};
+} & Desc;
 
 type SequenceNodeDesc = {
   type: "sequence";
 
   itemDesc?: NodeDesc;
-};
+} & Desc;
 
 export type ValueDesc = {
   value: string;
   description?: string;
-};
+} & Desc;
 
 export type ValueNodeDesc = {
   type: "value";
@@ -47,26 +61,13 @@ export type ValueNodeDesc = {
 
   /** If the node allows omitting ${{ }} to enter an expression */
   isExpression?: boolean;
-};
+} & Desc;
 
-export type NodeDesc = (
+export type NodeDesc =
   | ValueNodeDesc
   | SequenceNodeDesc
   | MapNodeDesc
-  | OneOfNodeDesc
-) & {
-  /** Description for this node, can contain markdown */
-  description?: string;
-
-  /**
-   * Custom value provider, used for auto-complete and validation
-   *
-   * @param desc Description for node to provide value for
-   * @param workflow Workflow if it could be parsed
-   * @param path Path in the workflow
-   */
-  customValueProvider?: CustomValueProvider;
-};
+  | OneOfNodeDesc;
 
 export enum CustomValueValidation {
   /** Default, no special handling */
@@ -92,4 +93,4 @@ export type CustomValueProvider = (
   desc: NodeDesc,
   workflow: Workflow | undefined,
   path: PropertyPath
-) => Promise<CustomValue[]>;
+) => Promise<CustomValue[] | undefined>;

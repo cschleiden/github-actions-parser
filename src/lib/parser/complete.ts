@@ -1,16 +1,20 @@
-import { YAMLNode } from "yaml-ast-parser";
 import { CompletionOption, Kind, YNode } from "../../types";
+import { CustomValue, MapNodeDesc, NodeDesc } from "./schema";
+import { DUMMY_KEY, findNode, getPathFromNode } from "./ast";
+import { WorkflowDocument, parse } from "./parser";
 import { completeExpression, inExpression } from "../expressions/completion";
 import { expressionMarker, iterateExpressions } from "../expressions/embedding";
+
 import { ContextProvider } from "../expressions/types";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
-import { DUMMY_KEY, findNode, getPathFromNode } from "./ast";
-import { parse, WorkflowDocument } from "./parser";
-import { CustomValue, MapNodeDesc, NodeDesc } from "./schema";
+import { YAMLNode } from "yaml-ast-parser";
 
 export interface ContextProviderFactory {
-  get(workflow: Workflow, path: PropertyPath): Promise<ContextProvider>;
+  get(
+    workflow: Workflow | undefined,
+    path: PropertyPath
+  ): Promise<ContextProvider>;
 }
 
 function filterAndSortCompletionOptions(
@@ -38,14 +42,16 @@ async function completeMapKeys(
 
   let options: CompletionOption[] = [];
 
-  if ((mapDesc as NodeDesc).customValueProvider) {
+  if (mapDesc.customValueProvider) {
     try {
-      const customValues = await (mapDesc as NodeDesc).customValueProvider(
+      const customValues = await mapDesc.customValueProvider(
         mapDesc,
         doc.workflow,
         getPathFromNode(node)
       );
-      options.push(...customValues);
+      if (customValues) {
+        options.push(...customValues);
+      }
     } catch (e) {
       // Log, but ignore custom values in case of error
       console.error(e);
@@ -56,7 +62,7 @@ async function completeMapKeys(
     options.push(
       ...Object.keys(mapDesc.keys).map((key) => ({
         value: key,
-        description: mapDesc.keys[key].description,
+        description: mapDesc.keys![key].description,
       }))
     );
   }
@@ -103,7 +109,7 @@ async function doComplete(
 
       // Does the value node has auto-complete information?
       if (desc.customValueProvider) {
-        let customValues: CustomValue[] = [];
+        let customValues: CustomValue[] | undefined;
 
         try {
           customValues = await desc.customValueProvider(
@@ -118,7 +124,7 @@ async function doComplete(
 
         return filterAndSortCompletionOptions(
           searchInput,
-          customValues,
+          customValues || [],
           new Set<string>(existingValues)
         );
       } else if (desc.allowedValues) {
@@ -135,7 +141,7 @@ async function doComplete(
           node,
           pos,
           getPathFromNode(node),
-          doc.workflow,
+          doc.workflow!,
           contextProviderFactory,
           desc.isExpression
         );
@@ -166,7 +172,7 @@ async function doComplete(
         // We should be in a mapping, try to find it
         const mapping = findNode(doc.workflowST, pos) as YNode;
         if (mapping.kind === Kind.MAPPING) {
-          const mapDesc = doc.nodeToDesc.get(mapping.parent);
+          const mapDesc = doc.nodeToDesc.get(mapping.parent) as MapNodeDesc;
           if (mapDesc.type !== "map") {
             throw new Error("Could not find map node");
           }
@@ -174,7 +180,7 @@ async function doComplete(
           const key = mapping.key.value;
           return doComplete(
             mapping,
-            mapDesc.keys[key],
+            mapDesc.keys![key],
             input,
             partialInput,
             pos,
@@ -190,7 +196,7 @@ async function doComplete(
     case "oneOf": {
       const validTypes = getValidOneOfTypes(node, pos, input);
 
-      const result = [];
+      const result: CompletionOption[] = [];
 
       for (const one of desc.oneOf.filter((one) => validTypes.has(one.type))) {
         const c = await doComplete(
@@ -372,6 +378,9 @@ export async function complete(
 
   // Parse with fixed text
   const doc = await parse(filename, newInput, schema, contextProviderFactory);
+  if (!doc.workflow) {
+    return [];
+  }
 
   const node = findNode(doc.workflowST, newPos) as YNode;
   const desc = doc.nodeToDesc.get(node);
