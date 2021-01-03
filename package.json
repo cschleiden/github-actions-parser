@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@octokit/rest": "^18.0.3",
-    "chevrotain": "^7.0.1",
+    "chevrotain": "7.1.0",
     "js-yaml": "^3.14.0",
     "micromatch": "^4.0.2",
     "yaml-ast-parser": "^0.0.43"
@@ -39,6 +39,6 @@
     "@types/js-yaml": "^3.12.4",
     "@types/micromatch": "^4.0.1",
     "jest": "^26.0.1",
-    "microbundle": "0.12.3"
+    "microbundle": "0.13.0"
   }
 }
