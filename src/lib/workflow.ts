@@ -22,16 +22,27 @@ export interface OnPaths {
   "paths-ignore"?: string[];
 }
 
-export type On =
-  | string
-  | string[]
-  | {
-      issues?: null | OnTypes<IssueActivities>;
-      push?: null | (OnBranches & OnPaths);
-      pull_request?:
-        | null
-        | (OnBranches & OnTypes<PullRequestActivities> & OnPaths);
+export type On = {
+  issues?: OnTypes<IssueActivities>;
+
+  push?: OnBranches & OnPaths;
+
+  pull_request?: OnBranches & OnTypes<PullRequestActivities> & OnPaths;
+
+  repository_dispatch?: OnTypes<string>;
+
+  workflow_dispatch?: {
+    inputs?: {
+      [inputName: string]: {
+        required?: boolean;
+        description?: string;
+        default?: string;
+      };
     };
+  };
+} & {
+  [eventName: string]: {};
+};
 
 export interface RunStep {
   run: string;
@@ -152,23 +163,7 @@ export type JobMap = { [jobId: string]: Job };
 export interface Workflow {
   name?: string;
 
-  on: {
-    workflow_dispatch?: {
-      inputs?: {
-        [inputName: string]: {
-          required?: boolean;
-          description?: string;
-          default?: string;
-        };
-      };
-    };
-
-    repository_dispatch?: {
-      types?: string[];
-    };
-
-    [eventName: string]: {};
-  };
+  on: On;
 
   jobs: JobMap;
 }
