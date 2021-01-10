@@ -1,13 +1,14 @@
 import { CompletionOption, Context, Hover } from "../../types";
-import { complete as genericComplete } from "../parser/complete";
-import { hover as genericHover } from "../parser/hover";
-import { parse as genericParse, WorkflowDocument } from "../parser/parser";
 import { MapNodeDesc, NodeDesc, ValueDesc } from "../parser/schema";
+import { WorkflowDocument, parse as genericParse } from "../parser/parser";
+import { eventMap, events } from "./schema/events";
+
+import { NeedsCustomValueProvider } from "./schema/needs";
 import { TTLCache } from "../utils/cache";
 import { _getContextProviderFactory } from "./contextCompletion";
-import { eventMap, events } from "./schema/events";
-import { NeedsCustomValueProvider } from "./schema/needs";
 import { actionsInputProvider } from "./valueProvider/actionsInputProvider";
+import { complete as genericComplete } from "../parser/complete";
+import { hover as genericHover } from "../parser/hover";
 
 const cache = new TTLCache();
 
@@ -172,6 +173,31 @@ export function _getSchema(context: Context): NodeDesc {
             },
             outputs: {
               type: "map",
+            },
+            environment: {
+              description: `The environment that the job references. All environment protection rules must pass before a job referencing the environment is sent to a runner. For more information, see [Environments](https://docs.github.com/en/free-pro-team@latest/actions/reference/environments).
+
+You can provide the environment as only the environment \`name\`, or as an environment object with the \`name\` and \`url\`.`,
+              type: "oneOf",
+              oneOf: [
+                {
+                  type: "value",
+                  description:
+                    "The environment that the job references. All environment protection rules must pass before a job referencing the environment is sent to a runner.",
+                },
+                {
+                  type: "map",
+                  keys: {
+                    name: value(
+                      "The environment that the job references. All environment protection rules must pass before a job referencing the environment is sent to a runner."
+                    ),
+                    url: value(`The URL maps to \`environment_url\` in the deployments API. For more information about the deployments API, see [Deployments](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#deployments).
+
+The URL can be an expression and can use any context except for the \`secrets\` context.`),
+                  },
+                  required: ["name"],
+                },
+              ],
             },
             defaults,
             if: {

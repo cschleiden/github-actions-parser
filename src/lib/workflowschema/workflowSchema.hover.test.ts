@@ -75,6 +75,12 @@ describe("Hover", () => {
         "on: push\njobs:\n  build:\n    runs|-on: ubuntu-latest",
         "The type of machine to run the job on. The machine can be either a GitHub-hosted runner, or a self-hosted runner."
       ));
+
+    it("description for job using environment", () =>
+      hoverSimple(
+        "on: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    environmen|t: prod",
+        "The environment that the job references. All environment protection rules must pass before a job referencing the environment is sent to a runner. For more information, see [Environments](https://docs.github.com/en/free-pro-team@latest/actions/reference/environments).\n\nYou can provide the environment as only the environment `name`, or as an environment object with the `name` and `url`."
+      ));
   });
 
   describe("expressions", () => {
