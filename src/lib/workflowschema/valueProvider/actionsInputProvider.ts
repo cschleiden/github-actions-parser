@@ -40,7 +40,9 @@ async function getActionYamlContent(
     if (contentResp?.data?.content) {
       // Response is base64 encoded, so decode
       const buff = Buffer.from(contentResp.data.content, "base64");
-      const text = buff.toString("ascii");
+      let text = buff.toString("ascii");
+      // Remove any null bytes - see https://github.com/cschleiden/vscode-github-actions/issues/42
+      text = text.replace("\0", "");
       return text;
     }
   }
