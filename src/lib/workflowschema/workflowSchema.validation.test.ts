@@ -151,34 +151,35 @@ jobs:
         },
       ]);
     });
+  });
 
-    describe("step outputs", () => {
-      it("validates referenced step exists", async () => {
-        expect(
-          await testValidation(`on: push
+  describe("step outputs", () => {
+    it("validates referenced step exists", async () => {
+      expect(
+        await testValidation(`on: push
 jobs:
   test:
     runs-on: [ubuntu-latest]
     steps:
       - run: echo 1
         if: \${{ steps.build.outputs.did_warn }}`)
-        ).toEqual([
-          {
-            kind: DiagnosticKind.Error,
-            message: "Unknown context access: 'steps.build.outputs.did_warn'",
-            pos: [95, 130],
-          },
-          {
-            kind: 0,
-            message: "Invalid expression",
-            pos: [95, 130],
-          },
-        ]);
-      });
+      ).toEqual([
+        {
+          kind: DiagnosticKind.Error,
+          message: "Unknown context access: 'steps.build.outputs.did_warn'",
+          pos: [95, 130],
+        },
+        {
+          kind: 0,
+          message: "Invalid expression",
+          pos: [95, 130],
+        },
+      ]);
+    });
 
-      it("validates dynamic output", async () => {
-        expect(
-          await testValidation(`on: push
+    it("validates dynamic output", async () => {
+      expect(
+        await testValidation(`on: push
 jobs:
   test:
     runs-on: [ubuntu-latest]
@@ -187,8 +188,7 @@ jobs:
         run: echo
       - if: \${{ steps.build.outputs.did_warn }}
         run: echo 1`)
-        ).toEqual([]);
-      });
+      ).toEqual([]);
     });
   });
 });
