@@ -3,6 +3,8 @@ const funcDescription = {
     "Returns a pretty-print JSON representation of `value`. You can use this function to debug the information provided in contexts.",
 };
 
+export const Undetermined = {};
+
 export function getFunctionDescription(f: string): string | undefined {
   return funcDescription[f];
 }
@@ -47,4 +49,20 @@ export function format(format: string, ...params: string[]): string {
   let idx = 0;
   format = format.replace(/(\{\d+\})/gm, () => params[idx++]);
   return format.replace("{{", "{").replace("}}", "}");
+}
+
+export function always(): boolean {
+  return true;
+}
+
+export function failure() {
+  return Undetermined;
+}
+
+export function success() {
+  return Undetermined;
+}
+
+export function cancelled() {
+  return Undetermined;
 }

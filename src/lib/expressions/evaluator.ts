@@ -204,7 +204,21 @@ export class ExpressionEvaluator extends BaseCstVisitor {
 
       case !!ctx.format:
         return Functions.format(parameters[0], ...parameters.slice(1));
+
+      case !!ctx.always:
+        return Functions.always();
+
+      case !!ctx.failure:
+        return Functions.failure();
+
+      case !!ctx.success:
+        return Functions.success();
+
+      case !!ctx.cancelled:
+        return Functions.cancelled();
     }
+
+    return undefined;
   }
 
   value(ctx: any) {

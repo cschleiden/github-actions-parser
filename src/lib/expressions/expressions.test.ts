@@ -1,5 +1,7 @@
 import { evaluateExpression, replaceExpressions } from ".";
+
 import { ContextProvider } from "./types";
+import { Undetermined } from "./functions";
 
 const ctx: ContextProvider = {
   get: (context: string) => {
@@ -225,6 +227,18 @@ describe("expression parser", () => {
       expect(
         ev("format('{{Hello {0} {1} {2}}}', 'Mona', 'the', 'Octocat')")
       ).toBe("{Hello Mona the Octocat}");
+    });
+
+    it("always", () => {
+      expect(ev("always()")).toBe(true);
+    });
+
+    it("failure", () => {
+      expect(ev("failure()")).toBe(Undetermined);
+    });
+
+    it("success", () => {
+      expect(ev("success()")).toBe(Undetermined);
     });
   });
 

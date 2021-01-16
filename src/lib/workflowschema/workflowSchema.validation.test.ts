@@ -46,6 +46,22 @@ jobs:
         run: echo "::set-env name=secret_value::\${{ env[env.secret_name] }}"`)
       ).toEqual([]);
     });
+
+    it("failure() in steps", async () => {
+      expect(
+        await testValidation(`on: push
+env:
+  secret_name: test
+  test: 42
+jobs:
+  first:
+    runs-on: [ubuntu-latest]
+    steps:
+      - run: ./doSomething
+      - if: \${{ failure() }}
+        run: echo "Previous step failed"`)
+      ).toEqual([]);
+    });
   });
 
   describe("environments", () => {
