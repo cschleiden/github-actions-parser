@@ -1,4 +1,5 @@
 import { NodeDescMap, ValueDesc } from "../../parser/schema";
+
 import { mergeDeep } from "../../utils/deepMerge";
 
 const _events: [string, string, ([string, string] | string)[]][] = [
@@ -140,6 +141,26 @@ const _events: [string, string, ([string, string] | string)[]][] = [
     ["created", "edited", "deleted"],
   ],
   [
+    "pull_request_target",
+    "This event runs in the context of the base of the pull request, rather than in the merge commit as the `pull_request` event does. This prevents executing unsafe workflow code from the head of the pull request that could alter your repository or steal any secrets you use in your workflow. This event allows you to do things like create workflows that label and comment on pull requests based on the contents of the event payload.",
+    [
+      ["assigned", ""],
+      ["unassigned", ""],
+      ["labeled", ""],
+      ["unlabeled", ""],
+      ["opened", ""],
+      ["edited", ""],
+      ["closed", ""],
+      ["reopened", ""],
+      ["synchronize", ""],
+      ["ready_for_review", ""],
+      ["locked", ""],
+      ["unlocked", ""],
+      ["review_requested", ""],
+      ["review_request_removed", ""],
+    ],
+  ],
+  [
     "push",
     "Runs your workflow when someone pushes to a repository branch, which triggers the push event.\nNote: The webhook payload available to GitHub Actions does not include the added, removed, and modified attributes in the commit object. You can retrieve the full commit object using the REST API. For more information, see https://developer.github.com/v3/repos/commits/#get-a-single-commit.",
     [],
@@ -254,6 +275,12 @@ export const eventMap: NodeDescMap = mergeDeep(
       },
     },
     pull_request: {
+      type: "map",
+      keys: {
+        ...tagBranchPathFilters,
+      },
+    },
+    pull_request_target: {
       type: "map",
       keys: {
         ...tagBranchPathFilters,

@@ -4,24 +4,25 @@ import commit_comment from "../../events/commit_comment.json";
 import content_reference from "../../events/content_reference.json";
 import create from "../../events/create.json";
 import deletePayload from "../../events/delete.json";
+import deploy_key from "../../events/deploy_key.json";
 import deployment from "../../events/deployment.json";
 import deployment_status from "../../events/deployment_status.json";
-import deploy_key from "../../events/deploy_key.json";
 import fork from "../../events/fork.json";
 import github_app_authorization from "../../events/github_app_authorization.json";
 import gollum from "../../events/gollum.json";
 import installation from "../../events/installation.json";
 import installation_repositories from "../../events/installation_repositories.json";
-import issues from "../../events/issues.json";
 import issue_comment from "../../events/issue_comment.json";
+import issues from "../../events/issues.json";
 import label from "../../events/label.json";
 import marketplace_purchase from "../../events/marketplace_purchase.json";
 import member from "../../events/member.json";
 import membership from "../../events/membership.json";
+import { mergeDeep } from "../utils/deepMerge";
 import meta from "../../events/meta.json";
 import milestone from "../../events/milestone.json";
-import organization from "../../events/organization.json";
 import org_block from "../../events/org_block.json";
+import organization from "../../events/organization.json";
 import packagePayload from "../../events/package.json";
 import page_build from "../../events/page_build.json";
 import ping from "../../events/ping.json";
@@ -47,7 +48,6 @@ import team_add from "../../events/team_add.json";
 import watch from "../../events/watch.json";
 import workflow_dispatch from "../../events/workflow_dispatch.json";
 import workflow_run from "../../events/workflow_run.json";
-import { mergeDeep } from "../utils/deepMerge";
 
 const eventPayloads = {
   check_run,
@@ -84,6 +84,7 @@ const eventPayloads = {
   pull_request,
   pull_request_review,
   pull_request_review_comment,
+  pull_request_target: pull_request,
   push,
   release,
   repository,
