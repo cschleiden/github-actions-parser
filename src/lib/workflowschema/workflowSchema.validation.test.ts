@@ -1,6 +1,7 @@
 import { Context, DiagnosticKind } from "../../types";
 
 import { ContextProviderFactory } from "../parser/complete";
+import { DynamicContext } from "../expressions/types";
 import { EditContextProvider } from "./contextProvider";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
@@ -188,6 +189,31 @@ jobs:
         run: echo
       - if: \${{ steps.build.outputs.did_warn }}
         run: echo 1`)
+      ).toEqual([]);
+    });
+  });
+
+  describe("secrets without API client", () => {
+    it("does not report error", async () => {
+      const dynamicSecretsExpressionContextProviderFactory: ContextProviderFactory = {
+        get: async (workflow: Workflow, path: PropertyPath) =>
+          new EditContextProvider(workflow, path, DynamicContext),
+      };
+
+      expect(
+        (
+          await parse(
+            "workflow.yml",
+            `on: push
+jobs:
+  test:
+    runs-on: [ubuntu-latest]
+    steps:
+      - run: echo \${{ secrets.TEST }}`,
+            WorkflowSchema,
+            dynamicSecretsExpressionContextProviderFactory
+          )
+        ).diagnostics
       ).toEqual([]);
     });
   });

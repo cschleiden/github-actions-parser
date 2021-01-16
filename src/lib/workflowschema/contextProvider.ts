@@ -47,7 +47,7 @@ export class EditContextProvider implements ContextProvider {
   constructor(
     private workflow: Workflow,
     private path: PropertyPath,
-    private secrets: string[]
+    private secrets: string[] | typeof DynamicContext
   ) {}
 
   get(
@@ -232,6 +232,10 @@ export class EditContextProvider implements ContextProvider {
       }
 
       case "secrets":
+        if (!Array.isArray(this.secrets)) {
+          return DynamicContext;
+        }
+
         return this.secrets.reduce((s, name) => {
           s[name] = "***";
           return s;
