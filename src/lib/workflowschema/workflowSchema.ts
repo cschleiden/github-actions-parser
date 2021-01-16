@@ -86,11 +86,18 @@ const runsOn = (context: Context): NodeDesc => ({
       `${context.owner}/${context.repository}/runs-on-labels`,
       context.timeToCacheResponsesInMS,
       async () => {
-        const labels = new Set<string>();
-        labels.add("ubuntu-latest");
-        labels.add("windows-latest");
-        labels.add("macos-latest");
-        labels.add("self-hosted");
+        const labels = new Set<string>([
+          "ubuntu-latest",
+          "ubuntu-20.04",
+          "ubuntu-18.04",
+          "ubuntu-16.04",
+          "windows-latest",
+          "windows-2019",
+          "macos-latest",
+          "macos-11.0",
+          "macos-10.15",
+          "self-hosted",
+        ]);
 
         if (context?.client?.actions) {
           const runnersResp = await context.client.actions.listSelfHostedRunnersForRepo(
