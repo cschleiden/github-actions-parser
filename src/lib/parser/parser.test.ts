@@ -1,8 +1,9 @@
 import { Diagnostic, DiagnosticKind } from "../../types";
-import { complete } from "./complete";
-import { parse } from "./parser";
+
 import { NodeDesc } from "./schema";
 import { NullCompletion } from "./test/fixtures";
+import { complete } from "./complete";
+import { parse } from "./parser";
 
 /** | in string denotes cursor position */
 const _testComplete = async (input: string, schema: NodeDesc) => {
@@ -405,7 +406,7 @@ describe("OneOf", () => {
       await testValidation(`on:\n  foo2:\n`, [
         {
           kind: DiagnosticKind.Error,
-          pos: [6, 11],
+          pos: [6, 10],
           message: `Key 'foo2' is not allowed`,
         },
       ]);

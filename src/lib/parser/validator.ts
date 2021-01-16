@@ -223,16 +223,20 @@ async function validateNode(
       }
 
       if (nodeDesc.keys || customValues) {
+        // Calculate list of allowed keys from schema and dynamic values
         const allowedKeys = new Set<string>([
           ...((nodeDesc.keys && Object.keys(nodeDesc.keys)) || []),
           ...(customValues || []).map((x) => x.value),
         ]);
-        for (const extraKey of Array.from(seenKeys.keys()).filter(
-          (key) => !allowedKeys.has(key)
-        )) {
+
+        // Compare allowed and seen keys
+        const unknownKeys = Array.from(seenKeys).filter(
+          ([key]) => !allowedKeys.has(key)
+        );
+        for (const [unknownKey, mappingNode] of unknownKeys) {
           diagnostics.push({
-            pos: [node.startPosition, node.endPosition],
-            message: `Key '${extraKey}' is not allowed`,
+            pos: [mappingNode.key.startPosition, mappingNode.key.endPosition],
+            message: `Key '${unknownKey}' is not allowed`,
           });
         }
       }

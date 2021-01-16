@@ -90,7 +90,7 @@ jobs:
         {
           kind: 0,
           message: "Key 'url2' is not allowed",
-          pos: [76, 121],
+          pos: [93, 97],
         },
       ]);
     });
