@@ -1,9 +1,27 @@
+import { ContextProvider, DynamicContext } from "./types";
 import { Diagnostic, Position } from "../../types";
-import { iteratePath, PropertyPath } from "../utils/path";
-import { iterateExpressions, removeExpressionMarker } from "./embedding";
 import { ExpressionContext, ExpressionEvaluator } from "./evaluator";
 import { ExpressionLexer, parser } from "./parser";
-import { ContextProvider } from "./types";
+import { PropertyPath, iteratePath } from "../utils/path";
+import { iterateExpressions, removeExpressionMarker } from "./embedding";
+
+function iterateContextPath(path: PropertyPath, context: Object): any {
+  let dynamicNode = false;
+
+  const result = iteratePath(path, context, (x) => {
+    if (x === DynamicContext) {
+      dynamicNode = true;
+    }
+  });
+
+  if (dynamicNode) {
+    // We have encountered at least one DynamicContext while iterating. Dynamic contexts
+    // are built up at runtime, and we cannot reliably reason about those.
+    return DynamicContext;
+  }
+
+  return result;
+}
 
 class ExpressionValidator extends ExpressionEvaluator {
   constructor(
@@ -17,8 +35,8 @@ class ExpressionValidator extends ExpressionEvaluator {
   protected getContextValue(contextName: string, path: PropertyPath) {
     const ctx = this.contextProvider.get(contextName as any);
 
-    const value = ctx && iteratePath(path, ctx);
-    if (!ctx || value === undefined) {
+    const value = ctx && iterateContextPath(path, ctx);
+    if (!ctx || (value !== DynamicContext && value === undefined)) {
       this.errors.push({
         message: `Unknown context access: '${contextName}.${path.join(".")}'`,
         pos: this.pos,

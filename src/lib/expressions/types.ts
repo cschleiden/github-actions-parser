@@ -12,3 +12,5 @@ export interface ContextProvider {
       | "needs"
   ): Object;
 }
+
+export const DynamicContext = {};

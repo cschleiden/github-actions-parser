@@ -1,7 +1,7 @@
+import { ContextProvider, DynamicContext } from "../expressions/types";
 import { Job, Step, Workflow } from "../workflow";
 import { PropertyPath, iteratePath } from "../utils/path";
 
-import { ContextProvider } from "../expressions/types";
 import { containsExpression } from "../expressions/embedding";
 import { getEventPayload } from "../events/eventPayload";
 import { replaceExpressions } from "../expressions";
@@ -200,11 +200,13 @@ export class EditContextProvider implements ContextProvider {
           return {};
         }
 
+        // Find the current job
         const job = getJob(this.workflow, this.path);
         if (!job) {
           return {};
         }
 
+        // Find the current step
         const step = iteratePath(
           this.path.slice(0, stepsIdx + 1),
           this.workflow
@@ -215,11 +217,12 @@ export class EditContextProvider implements ContextProvider {
           return {};
         }
 
+        // Iterate over all previous steps
         return job.steps.slice(0, stepIdx + 1).reduce(
-          (r, s, si) => ({
+          (r, step, stepIdx) => ({
             ...r,
-            [s.id || `${si}`]: {
-              outputs: {}, // They might come from an action, we cannot determine those
+            [step.id || `${stepIdx}`]: {
+              outputs: DynamicContext, // They might come from an action, we cannot determine those
               outcome: "success",
               conclusion: "success",
             },
