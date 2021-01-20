@@ -1,10 +1,10 @@
-import { ContextProvider, DynamicContext } from "../expressions/types";
-import { Job, Step, Workflow } from "../workflow";
-import { PropertyPath, iteratePath } from "../utils/path";
-
-import { containsExpression } from "../expressions/embedding";
 import { getEventPayload } from "../events/eventPayload";
 import { replaceExpressions } from "../expressions";
+import { containsExpression } from "../expressions/embedding";
+import { Undetermined } from "../expressions/functions";
+import { ContextProvider, DynamicContext } from "../expressions/types";
+import { iteratePath, PropertyPath } from "../utils/path";
+import { Job, Step, Workflow } from "../workflow";
 
 function getEvent(workflow: Workflow) {
   if (workflow && workflow.on) {
@@ -156,16 +156,25 @@ export class EditContextProvider implements ContextProvider {
         }
 
         return (
-          job.needs?.reduce(
-            (r, jobId) => ({
+          job.needs?.reduce((r, jobId) => {
+            const outputs: { [key: string]: any } =
+              this.workflow.jobs[jobId].outputs || {};
+
+            for (const output of Object.keys(outputs)) {
+              if (containsExpression(outputs[output])) {
+                // If the output reference another expression, mark it as undetermined for now.
+                outputs[output] = Undetermined;
+              }
+            }
+
+            return {
               ...r,
               [jobId]: {
                 result: "success",
-                outputs: this.workflow.jobs[jobId].outputs || {},
+                outputs,
               },
-            }),
-            {}
-          ) || {}
+            };
+          }, {}) || {}
         );
       }
 
@@ -176,6 +185,11 @@ export class EditContextProvider implements ContextProvider {
         }
 
         if (job.strategy?.matrix) {
+          if (typeof job.strategy.matrix === "string" /* Expression */) {
+            // Matrix is an expression, mark this as a dynamic context. Currently we cannot reason about those
+            return DynamicContext;
+          }
+
           // For each key in the matrix definition, return the first value
           return Object.keys(job.strategy.matrix).reduce(
             (r, v) => ({ ...r, [v]: job.strategy!.matrix?.[v]?.[0] }),

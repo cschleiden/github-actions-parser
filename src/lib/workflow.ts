@@ -143,7 +143,7 @@ export interface Job {
 export type MatrixValues = string[] | number[];
 
 export interface Strategy {
-  matrix: { [key: string]: MatrixValues };
+  matrix: { [key: string]: MatrixValues } | Expression;
 
   "fail-fast"?: boolean;
 

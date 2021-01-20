@@ -37,8 +37,16 @@ export function toJson(input: unknown): string {
   return JSON.stringify(input);
 }
 
-export function fromJson(input: string): unknown {
-  return JSON.parse(input);
+export function fromJson(input: string | typeof Undetermined): unknown {
+  if (typeof input === "string") {
+    return JSON.parse(input);
+  }
+
+  if (input === Undetermined) {
+    return Undetermined;
+  }
+
+  throw new Error("Unknown input for `fromJson`");
 }
 
 export function hashFiles(path: string[]): string {

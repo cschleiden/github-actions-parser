@@ -1,8 +1,8 @@
 import { Context } from "../../types";
 import { ContextProviderFactory } from "../parser/complete";
-import { EditContextProvider } from "./contextProvider";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
+import { EditContextProvider } from "./contextProvider";
 import { parse } from "./workflowSchema";
 
 const context: Context = {
@@ -75,6 +75,33 @@ jobs:
     expect(result.workflow.jobs["build"].needs).toBeUndefined();
     expect(result.workflow.jobs["test"].needs).toEqual(["build"]);
     expect(result.workflow.jobs["deploy"].needs).toEqual(["build", "test"]);
+  });
+
+  it("no validation errors for dynamic matrix stratgies", async () => {
+    const result = await parse(
+      context,
+      "workflow.yml",
+      `on: push
+
+jobs:
+  build:
+    runs-on: [ubuntu-latest]
+    outputs:
+      webpack-matrix: \${{ steps.set-matrix.outputs.webpack-matrix }}
+    steps:
+    - name: Determine matrixes
+      id: set-matrix
+      run: echo 'could set a matrix'
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix: \${{ fromJson(needs.build.outputs.webpack-matrix) }}
+    steps:
+    - run: echo \${{ matrix.foo }}`
+    );
+
+    expect(result.diagnostics).toHaveLength(0);
   });
 
   it("supports workflow_dispatch inputs", async () => {
