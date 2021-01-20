@@ -1,10 +1,11 @@
-import { safeLoad as jsYamlSafeLoad } from "js-yaml";
-import { safeLoad, YAMLNode } from "yaml-ast-parser";
 import { Diagnostic, DiagnosticKind, Position } from "../../types";
-import { Workflow } from "../workflow";
+import { YAMLNode, safeLoad } from "yaml-ast-parser";
+
 import { ContextProviderFactory } from "./complete";
-import { normalizeWorkflow } from "./normalize";
 import { NodeDesc } from "./schema";
+import { Workflow } from "../workflow";
+import { load as jsYamlLoad } from "js-yaml";
+import { normalizeWorkflow } from "./normalize";
 import { validate } from "./validator";
 
 export interface WorkflowDocument {
@@ -33,7 +34,7 @@ export async function parse(
   let workflow: Workflow | undefined;
 
   try {
-    workflow = jsYamlSafeLoad(input);
+    workflow = jsYamlLoad(input);
   } catch {
     // Ignore error here, will be reported below
   }

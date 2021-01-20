@@ -9,7 +9,7 @@ import { RemoteUses, Step, Workflow } from "../../workflow";
 
 import { Context } from "../../../types";
 import { TTLCache } from "../../utils/cache";
-import { safeLoad } from "js-yaml";
+import { load } from "js-yaml";
 
 async function getActionYamlContent(
   context: Context,
@@ -40,7 +40,7 @@ async function getActionYamlContent(
     if (contentResp?.data?.content) {
       // Response is base64 encoded, so decode
       const buff = Buffer.from(contentResp.data.content, "base64");
-      let text = buff.toString("ascii");
+      let text = buff.toString("utf-8");
       // Remove any null bytes - see https://github.com/cschleiden/vscode-github-actions/issues/42
       text = text.replace("\0", "");
       return text;
@@ -88,20 +88,26 @@ export const actionsInputProvider = (
     async (): Promise<CustomValue[] | undefined> => {
       const text = await getActionYamlContent(context, uses);
       if (text) {
-        const { inputs } = safeLoad(text);
-        if (inputs) {
-          return Object.keys(inputs).map((key) => ({
-            value: key,
-            description: `${
-              inputs[key].description || ""
-            } \n\nrequired: \`${!!inputs[key].required}\` \n\n${
-              (inputs[key].default && `default:\`${inputs[key].default}\``) ||
-              ""
-            }`,
-            validation: !!inputs[key].required
-              ? CustomValueValidation.Required
-              : CustomValueValidation.None,
-          }));
+        try {
+          const { inputs } = load(text, {
+            json: true, // Support unicode characters in unquoted strings
+          });
+          if (inputs) {
+            return Object.keys(inputs).map((key) => ({
+              value: key,
+              description: `${
+                inputs[key].description || ""
+              } \n\nrequired: \`${!!inputs[key].required}\` \n\n${
+                (inputs[key].default && `default:\`${inputs[key].default}\``) ||
+                ""
+              }`,
+              validation: !!inputs[key].required
+                ? CustomValueValidation.Required
+                : CustomValueValidation.None,
+            }));
+          }
+        } catch (e) {
+          console.error(e);
         }
       }
 
