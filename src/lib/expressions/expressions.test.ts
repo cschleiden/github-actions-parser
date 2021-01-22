@@ -78,12 +78,6 @@ describe("expression parser", () => {
   });
 
   describe("operators", () => {
-    it("!", () => {
-      // Booleans
-      expect(ev("!true")).toBe(false);
-      expect(ev("!false")).toBe(true);
-    });
-
     it("==", () => {
       // Numbers
       expect(ev("1 == 2")).toBe(false);
@@ -166,6 +160,18 @@ describe("expression parser", () => {
       expect(ev("1 >= 2")).toBe(false);
       expect(ev("1 >= 1")).toBe(true);
       expect(ev("2 >= 1")).toBe(true);
+    });
+
+    it("!", () => {
+      expect(ev("!false")).toBe(true);
+      expect(ev("!true")).toBe(false);
+      expect(ev("!0")).toBe(true);
+
+      expect(ev("!(true == true)")).toBe(false);
+      expect(ev("!(true == false)")).toBe(true);
+
+      expect(ev("!always()")).toBe(false);
+      expect(ev("!startsWith('Hello world', 'He')")).toBe(false);
     });
   });
 

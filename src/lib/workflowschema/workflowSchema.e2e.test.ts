@@ -1,8 +1,8 @@
 import { Context } from "../../types";
 import { ContextProviderFactory } from "../parser/complete";
+import { EditContextProvider } from "./contextProvider";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
-import { EditContextProvider } from "./contextProvider";
 import { parse } from "./workflowSchema";
 
 const context: Context = {
@@ -44,6 +44,62 @@ jobs:
       - uses: "actions/cache@main"
         with:
           path: '123'`
+    );
+
+    expect(result.diagnostics).toEqual([]);
+  });
+
+  it("no validation errors for valid workflow with if at step level", async () => {
+    const result = await parse(
+      context,
+      "workflow.yml",
+      `on:
+  schedule:
+    - cron: '20 19 * * *' #
+
+env:
+  FREEZE: \${{ secrets.FREEZE }}
+
+jobs:
+  prepare:
+    if: github.repository == 'github/docs-internal'
+    runs-on: ubuntu-latest
+    steps:
+      - if: \${{ env.FREEZE == 'true' }}
+        run: echo
+      - uses: juliangruber/find-pull-request-action@2fc55e82a6d5d36fe1e7f1848f7e64fd02d99de9
+        id: pr
+      - if: \${{ steps.pr.outputs.number }}
+        name: Check if already labeled
+        uses: actions/github-script@626af12fe9a53dc2972b48385e7fe7dec79145c9
+        id: has-label
+        with:
+          script: |
+            const { data: labels } = await github.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: \${{ steps.pr.outputs.number }}
+            })
+            if (labels.find(label => label.name === 'automerge')) {
+              return 'ok'
+            }
+      - if: \${{ !steps.has-label.outputs.result }}
+        uses: juliangruber/approve-pull-request-action@c530832d4d346c597332e20e03605aa94fa150a8
+        with:
+          github-token: \${{ secrets.GITHUB_TOKEN }}
+          number: \${{ steps.pr.outputs.number }}
+      - if: \${{ !steps.has-label.outputs.result }}
+        name: Add automerge label
+        uses: actions/github-script@626af12fe9a53dc2972b48385e7fe7dec79145c9
+        with:
+          github-token: \${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: \${{ steps.pr.outputs.number }},
+              labels: ['automerge']
+            })`
     );
 
     expect(result.diagnostics).toEqual([]);

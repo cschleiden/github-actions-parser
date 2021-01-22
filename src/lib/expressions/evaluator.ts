@@ -87,22 +87,35 @@ export class ExpressionEvaluator extends BaseCstVisitor {
   }
 
   subExpression(ctx: any, context: ExpressionContext) {
+    let result: any;
+
     switch (true) {
       case !!ctx.value:
-        return this.visit(ctx.value, context);
+        result = this.visit(ctx.value, context);
+        break;
 
       case !!ctx.logicalGrouping:
-        return this.visit(ctx.logicalGrouping, context);
+        result = this.visit(ctx.logicalGrouping, context);
+        break;
 
       case !!ctx.array:
-        return this.visit(ctx.array, context);
+        result = this.visit(ctx.array, context);
+        break;
 
       case !!ctx.functionCall:
-        return this.visit(ctx.functionCall, context);
+        result = this.visit(ctx.functionCall, context);
+        break;
 
       case !!ctx.contextAccess:
-        return this.visit(ctx.contextAccess, context);
+        result = this.visit(ctx.contextAccess, context);
+        break;
     }
+
+    if (!!ctx.Not) {
+      result = !result;
+    }
+
+    return result;
   }
 
   contextAccess(ctx: any, context: ExpressionContext) {
@@ -240,24 +253,14 @@ export class ExpressionEvaluator extends BaseCstVisitor {
   }
 
   booleanValue(ctx: any) {
-    let result: boolean;
-
     switch (true) {
       case !!ctx.True:
-        result = true;
-        break;
+        return true;
 
       default:
       case !!ctx.False:
-        result = false;
-        break;
+        return false;
     }
-
-    if (!!ctx.Not) {
-      result = !result;
-    }
-
-    return result;
   }
 
   private _coerceValue(val: any): any {

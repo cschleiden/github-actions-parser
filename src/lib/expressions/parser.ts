@@ -264,6 +264,7 @@ export class ExpressionParser extends chevrotain.CstParser {
   });
 
   subExpression = this.RULE("subExpression", () => {
+    this.OPTION(() => this.CONSUME(Not));
     this.OR([
       { ALT: () => this.SUBRULE(this.logicalGrouping) },
       { ALT: () => this.SUBRULE(this.functionCall) },
@@ -349,7 +350,6 @@ export class ExpressionParser extends chevrotain.CstParser {
   });
 
   booleanValue = this.RULE("booleanValue", () => {
-    this.OPTION(() => this.CONSUME(Not));
     this.OR([
       { ALT: () => this.CONSUME(True) },
       { ALT: () => this.CONSUME(False) },
