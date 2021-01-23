@@ -49,6 +49,27 @@ jobs:
     expect(result.diagnostics).toEqual([]);
   });
 
+  it("no validation errors for valid workflow with nested if", async () => {
+    const result = await parse(
+      context,
+      "workflow.yml",
+      `on: push
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - id: filter
+        run: echo
+      - run: echo
+        id: requested-change
+      - if: \${{ steps.filter.outputs.notAllowed == 'true' && (!steps.requested-change.outputs.result || fromJson(steps.requested-change.outputs.result).state != 'CHANGES_REQUESTED') }}
+        run: echo`
+    );
+
+    expect(result.diagnostics).toEqual([]);
+  });
+
   it("no validation errors for valid workflow with if at step level", async () => {
     const result = await parse(
       context,
@@ -62,7 +83,7 @@ env:
 
 jobs:
   prepare:
-    if: github.repository == 'github/docs-internal'
+    if: github.repository == 'github/docs'
     runs-on: ubuntu-latest
     steps:
       - if: \${{ env.FREEZE == 'true' }}

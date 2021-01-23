@@ -5,6 +5,8 @@ import { ExpressionLexer, parser } from "./parser";
 import { PropertyPath, iteratePath } from "../utils/path";
 import { iterateExpressions, removeExpressionMarker } from "./embedding";
 
+import { Undetermined } from "./functions";
+
 function iterateContextPath(path: PropertyPath, context: Object): any {
   let dynamicNode = false;
 
@@ -17,7 +19,7 @@ function iterateContextPath(path: PropertyPath, context: Object): any {
   if (dynamicNode) {
     // We have encountered at least one DynamicContext while iterating. Dynamic contexts
     // are built up at runtime, and we cannot reliably reason about those.
-    return DynamicContext;
+    return Undetermined;
   }
 
   return result;
@@ -36,7 +38,7 @@ class ExpressionValidator extends ExpressionEvaluator {
     const ctx = this.contextProvider.get(contextName as any);
 
     const value = ctx && iterateContextPath(path, ctx);
-    if (!ctx || (value !== DynamicContext && value === undefined)) {
+    if (!ctx || (value !== Undetermined && value === undefined)) {
       this.errors.push({
         message: `Unknown context access: '${contextName}.${path.join(".")}'`,
         pos: this.pos,
@@ -50,7 +52,7 @@ class ExpressionValidator extends ExpressionEvaluator {
 export function validateExpression(
   input: string,
   posOffset: number,
-  errors: Diagnostic[],
+  diagnostics: Diagnostic[],
   contextProvider: ContextProvider
 ) {
   const expressionPosition: Position = [posOffset, posOffset + input.length];
@@ -60,8 +62,8 @@ export function validateExpression(
   // Check for parser errors
   const lexResult = ExpressionLexer.tokenize(input);
   parser.input = lexResult.tokens;
-  if (lexResult.errors.length > 0 || parser.errors.length > 0) {
-    errors.push({
+  if (lexResult.errors.length > 0) {
+    diagnostics.push({
       message: "Invalid expression",
       pos: expressionPosition,
     });
@@ -70,23 +72,29 @@ export function validateExpression(
   }
 
   const cst = parser.expression();
+  if (parser.errors.length > 0) {
+    diagnostics.push({
+      message: "Invalid expression",
+      pos: expressionPosition,
+    });
+
+    // console.log(JSON.stringify(parser.errors));
+
+    return;
+  }
 
   try {
     const result = new ExpressionValidator(
       contextProvider,
-      errors,
+      diagnostics,
       expressionPosition
     ).visit(cst, {} as ExpressionContext);
 
-    // TODO: CS: Should this be invalid?
-    if (result === undefined) {
-      errors.push({
-        message: "Invalid expression",
-        pos: expressionPosition,
-      });
-    }
-  } catch {
-    errors.push({
+    return result;
+  } catch (e) {
+    console.error(e);
+
+    diagnostics.push({
       message: "Error evaluating expression",
       pos: expressionPosition,
     });

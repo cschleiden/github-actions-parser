@@ -1,3 +1,8 @@
+## 0.17.0
+
+- Better support for accessing objects created with `fromJson`
+- Improved validation for dynamic contexts (e.g., `outputs` from `steps`)
+
 ## 0.12.0
 
 - Various bugfixes

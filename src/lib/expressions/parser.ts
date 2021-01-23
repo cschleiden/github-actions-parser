@@ -254,13 +254,13 @@ export class ExpressionParser extends chevrotain.CstParser {
   }
 
   expression = this.RULE("expression", () => {
-    this.OPTION(() => {
-      this.SUBRULE(this.subExpression, { LABEL: "lhs" });
-      this.MANY(() => {
-        this.CONSUME(Operator);
-        this.SUBRULE2(this.subExpression, { LABEL: "rhs" });
-      });
+    //this.OPTION(() => {
+    this.SUBRULE1(this.subExpression, { LABEL: "lhs" });
+    this.MANY(() => {
+      this.CONSUME(Operator);
+      this.SUBRULE2(this.subExpression, { LABEL: "rhs" });
     });
+    //});
   });
 
   subExpression = this.RULE("subExpression", () => {
@@ -300,7 +300,7 @@ export class ExpressionParser extends chevrotain.CstParser {
 
   contextBoxMember = this.RULE("contextBoxMember", () => {
     this.CONSUME(LSquare);
-    this.SUBRULE(this.subExpression);
+    this.SUBRULE(this.expression);
     this.CONSUME(RSquare);
   });
 
@@ -322,14 +322,30 @@ export class ExpressionParser extends chevrotain.CstParser {
   });
 
   functionCall = this.RULE("functionCall", () => {
-    // Consume one of the functions
-    this.OR(
-      Functions.map((f) => ({
-        ALT: () => this.CONSUME(f),
-      }))
-    );
+    this.OR1([
+      // fromJson is the only function that might return an object, and then allow context access
+      {
+        ALT: () => {
+          this.CONSUME(fromJson);
+          this.SUBRULE1(this.functionParameters);
+          this.OPTION(() => this.SUBRULE(this.contextMember));
+        },
+      },
+      {
+        ALT: () => {
+          this.OR2(
+            Functions.filter((f) => f !== fromJson).map((f) => ({
+              ALT: () => this.CONSUME(f),
+            }))
+          );
 
-    // Parse parameters
+          this.SUBRULE2(this.functionParameters);
+        },
+      },
+    ]);
+  });
+
+  functionParameters = this.RULE("functionParameters", () => {
     this.CONSUME(LParens);
     this.MANY_SEP({
       SEP: Comma,

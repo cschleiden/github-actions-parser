@@ -1,4 +1,4 @@
-export type PropertyPath = (string | [string, number])[];
+export type PropertyPath = (string | number | [string, number])[];
 
 export function iteratePath(
   path: PropertyPath,
@@ -11,7 +11,7 @@ export function iteratePath(
 
     f && f(obj);
 
-    if (typeof p === "string") {
+    if (typeof p === "string" || typeof p === "number") {
       obj = obj[p];
     } else {
       // Sequence

@@ -118,6 +118,7 @@ export interface CompletionOption {
 export enum DiagnosticKind {
   Error,
   Warning,
+  Information,
 }
 
 export interface Diagnostic {

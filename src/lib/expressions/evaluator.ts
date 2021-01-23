@@ -25,6 +25,12 @@ export interface ExpressionContext {
  * This evaluates an expression by operation on the CST produced by the parser.
  */
 export class ExpressionEvaluator extends BaseCstVisitor {
+  constructor() {
+    super();
+
+    this.validateVisitor();
+  }
+
   expression(ctx: any, context: ExpressionContext) {
     let result = this.visit(ctx.lhs, context);
 
@@ -171,9 +177,8 @@ export class ExpressionEvaluator extends BaseCstVisitor {
     ctx: any,
     { path, context }: { path: PropertyPath; context: ExpressionContext }
   ) {
-    //const p = this._removeQuotes(ctx.StringLiteral[0].image);
-    const p = this.visit(ctx.subExpression, context);
-    path.push(p);
+    const p = this.visit(ctx.expression, context);
+    path.push(this._coerceValue(p, true));
   }
 
   logicalGrouping(ctx: any) {
@@ -191,7 +196,7 @@ export class ExpressionEvaluator extends BaseCstVisitor {
   }
 
   functionCall(ctx: any, context: ExpressionContext) {
-    const parameters = ctx.expression.map((p) => this.visit(p, context));
+    const parameters = this.visit(ctx.functionParameters, context);
 
     switch (true) {
       case !!ctx.contains:
@@ -209,8 +214,19 @@ export class ExpressionEvaluator extends BaseCstVisitor {
       case !!ctx.toJson:
         return Functions.toJson(parameters[0]);
 
-      case !!ctx.fromJson:
-        return Functions.fromJson(parameters[0]);
+      case !!ctx.fromJson: {
+        const result = Functions.fromJson(parameters[0]);
+
+        if (!!ctx.contextMember) {
+          const p: PropertyPath = [];
+          for (const cM of ctx.contextMember as any[]) {
+            this.visit(cM, { path: p, context });
+          }
+          return iteratePath(p, result);
+        }
+
+        return result;
+      }
 
       case !!ctx.hashFiles:
         return Functions.hashFiles(parameters);
@@ -232,6 +248,10 @@ export class ExpressionEvaluator extends BaseCstVisitor {
     }
 
     return undefined;
+  }
+
+  functionParameters(ctx: any, context: ExpressionContext) {
+    return (ctx.expression || []).map((p) => this.visit(p, context));
   }
 
   value(ctx: any) {
@@ -263,12 +283,19 @@ export class ExpressionEvaluator extends BaseCstVisitor {
     }
   }
 
-  private _coerceValue(val: any): any {
+  private _coerceValue(
+    val: number | string | boolean | null,
+    keepString = false
+  ): number | string {
     if (typeof val === "number") {
       return val;
     }
 
     if (typeof val === "string") {
+      if (keepString) {
+        return val;
+      }
+
       if (val === "") {
         return 0;
       }

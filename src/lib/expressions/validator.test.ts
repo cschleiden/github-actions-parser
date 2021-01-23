@@ -1,5 +1,5 @@
-import { Diagnostic } from "../../types";
 import { ContextProvider } from "./types";
+import { Diagnostic } from "../../types";
 import { validateExpressions } from "./validator";
 
 const contextProvider: ContextProvider = {
@@ -54,7 +54,6 @@ describe("validation", () => {
     it("unknown context acesss", async () => {
       await testValidation("${{ github.test }}", [
         { message: "Unknown context access: 'github.test'", pos: [0, 18] },
-        { message: "Invalid expression", pos: [0, 18] },
       ]);
     });
   });

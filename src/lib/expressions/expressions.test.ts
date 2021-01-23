@@ -218,8 +218,23 @@ describe("expression parser", () => {
       expect(ev("toJson(false)")).toBe("false");
     });
 
-    it("fromJson", () => {
-      expect(ev("fromJson('{ \"foo\": true }')")).toEqual({ foo: true });
+    describe("fromJson", () => {
+      it("basic", () => {
+        expect(ev("fromJson('{ \"foo\": true }')")).toEqual({ foo: true });
+      });
+
+      it("object access", () => {
+        expect(ev("fromJson('{ \"foo\": true }').foo")).toEqual(true);
+        expect(ev("fromJson('{ \"foo\": true }')['foo']")).toEqual(true);
+      });
+
+      it("array access", () => {
+        expect(ev("fromJson('[24, 32]')[0]")).toEqual(24);
+        expect(ev("fromJson('[24, 32]')[1]")).toEqual(32);
+
+        expect(ev("fromJson('[42, \"test\"]')[1 == 2]")).toEqual(42);
+        expect(ev("fromJson('[42, \"test\"]')[1 == 1]")).toEqual("test");
+      });
     });
 
     it("hashFiles", () => {
@@ -253,13 +268,16 @@ describe("expression parser", () => {
       expect(ev("github.event_name")).toBe("push");
       expect(ev("github['event_name']")).toBe("push");
     });
+
     it("nested access", () => {
       expect(ev("github.event['ref']")).toBe("refs/heads/master");
       expect(ev("github.event.ref")).toBe("refs/heads/master");
       expect(ev("github['event']['ref']")).toBe("refs/heads/master");
     });
+
     it("indirect access", () => {
       expect(ev("github[env.foo]")).toBe("thisisasecrettoken");
+      expect(ev("github[format('{0}', 'event_name')]")).toBe("push");
     });
   });
 });

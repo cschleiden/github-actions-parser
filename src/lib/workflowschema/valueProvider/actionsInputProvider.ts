@@ -25,7 +25,7 @@ async function getActionYamlContent(
       ref: uses.ref,
     });
 
-    if (contentResp.status === 404) {
+    if ((contentResp.status as any) === 404) {
       // There isn't an API to easily get two different files, when we cannot find `action.yml`, look
       // for `action.yaml`, too.
       // It might be okay to make two calls in parallel but for now this seems to work.
@@ -37,9 +37,9 @@ async function getActionYamlContent(
       });
     }
 
-    if (contentResp?.data?.content) {
+    if ((contentResp as any)?.data?.content) {
       // Response is base64 encoded, so decode
-      const buff = Buffer.from(contentResp.data.content, "base64");
+      const buff = Buffer.from((contentResp as any).data.content, "base64");
       let text = buff.toString("utf-8");
       // Remove any null bytes - see https://github.com/cschleiden/vscode-github-actions/issues/42
       text = text.replace("\0", "");

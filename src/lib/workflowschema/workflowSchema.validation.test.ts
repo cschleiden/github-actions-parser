@@ -186,11 +186,6 @@ jobs:
           message: "Unknown context access: 'steps.build.outputs.did_warn'",
           pos: [95, 130],
         },
-        {
-          kind: 0,
-          message: "Invalid expression",
-          pos: [95, 130],
-        },
       ]);
     });
 
