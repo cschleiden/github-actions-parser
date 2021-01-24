@@ -5,7 +5,7 @@ import { ContextProviderFactory } from "./complete";
 import { NodeDesc } from "./schema";
 import { Workflow } from "../workflow";
 import { load as jsYamlLoad } from "js-yaml";
-import { normalizeWorkflow } from "./normalize";
+import { normalizeWorkflow } from "../workflow/normalize";
 import { validate } from "./validator";
 
 export interface WorkflowDocument {

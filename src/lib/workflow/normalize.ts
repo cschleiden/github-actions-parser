@@ -1,6 +1,7 @@
 import { Job, Workflow } from "../workflow";
+
+import { DUMMY_KEY } from "../parser/ast";
 import { parseUses } from "../workflowschema/uses";
-import { DUMMY_KEY } from "./ast";
 
 function toArray(input: string | string[]): string[] {
   if (Array.isArray(input)) {

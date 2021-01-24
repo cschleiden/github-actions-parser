@@ -1,5 +1,6 @@
-import { hover } from "./hover";
+import { NodeDesc } from "./schema";
 import { NullCompletion } from "./test/fixtures";
+import { hover } from "./hover";
 
 const dynamicSchema: NodeDesc = {
   type: "map",
