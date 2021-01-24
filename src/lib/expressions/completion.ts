@@ -28,8 +28,9 @@ export async function completeExpression(
 
   const lexResult = ExpressionLexer.tokenize(input);
   if (lexResult.errors.length > 0) {
-    throw new Error("sad sad panda, lexing errors detected");
+    return [];
   }
+
   let partialTokenVector = lexResult.tokens;
   if (!partialTokenVector || partialTokenVector.length === 0) {
     // Nothing to suggest in this case, abort
