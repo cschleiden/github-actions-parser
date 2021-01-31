@@ -28,6 +28,7 @@
     "chevrotain": "7.1.0",
     "js-yaml": "^4.0.0",
     "micromatch": "^4.0.2",
+    "vscode-languageserver-types": "^3.16.0",
     "yaml-ast-parser": "^0.0.43"
   },
   "devDependencies": {

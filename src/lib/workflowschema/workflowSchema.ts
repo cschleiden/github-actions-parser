@@ -1,13 +1,15 @@
 import { CompletionOption, Context, Hover } from "../../types";
-import { complete as genericComplete } from "../parser/complete";
-import { hover as genericHover } from "../parser/hover";
-import { parse as genericParse, WorkflowDocument } from "../parser/parser";
 import { MapNodeDesc, NodeDesc, ValueDesc } from "../parser/schema";
+import { WorkflowDocument, parse as genericParse } from "../parser/parser";
+import { eventMap, events } from "./schema/events";
+
+import { NeedsCustomValueProvider } from "./schema/needs";
 import { TTLCache } from "../utils/cache";
 import { _getContextProviderFactory } from "./contextCompletion";
-import { eventMap, events } from "./schema/events";
-import { NeedsCustomValueProvider } from "./schema/needs";
 import { actionsInputProvider } from "./valueProvider/actionsInputProvider";
+import { complete as genericComplete } from "../parser/complete";
+import { hover as genericHover } from "../parser/hover";
+import { usesCodeActionProvider } from "./codeActionProvider/usesCodeActionProvider";
 
 const cache = new TTLCache();
 
@@ -244,7 +246,10 @@ The URL can be an expression and can use any context except for the \`secrets\` 
                     isExpression: true,
                   },
                   name: value("Optional custom name for the step"),
-                  uses: value(),
+                  uses: {
+                    type: "value",
+                    codeActionsProvider: usesCodeActionProvider(context, cache),
+                  },
                   run: value(
                     "Runs command-line programs using the operating system's shell. If you do not provide a `name`, the step name will default to the text specified in the `run` command."
                   ),

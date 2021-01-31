@@ -1,3 +1,5 @@
+import { CodeAction, Range } from "vscode-languageserver-types";
+
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
 
@@ -15,6 +17,8 @@ type Desc = {
    * @param path Path in the workflow
    */
   customValueProvider?: CustomValueProvider;
+
+  codeActionsProvider?: CodeActionProvider;
 };
 
 type OneOfNodeDesc = {
@@ -94,3 +98,24 @@ export type CustomValueProvider = (
   workflow: Workflow | undefined,
   path: PropertyPath
 ) => Promise<CustomValue[] | undefined>;
+
+export interface WorkflowCodeAction<T = {}> extends CodeAction {
+  data: T & {
+    kind: string;
+
+    documentUri: string;
+    range: Range;
+
+    workflow: Workflow;
+  };
+}
+
+export interface CodeActionProvider {
+  provideCodeActions(
+    documentUri: string,
+    range: Range,
+    desc: NodeDesc,
+    workflow: Workflow | undefined,
+    path: PropertyPath
+  ): Promise<CodeAction[] | undefined>;
+}
