@@ -33,8 +33,52 @@ const schema: NodeDesc = {
         ];
       },
     },
+    withUnknownKeys: {
+      type: "map",
+      keys: {
+        known: {
+          type: "value",
+        },
+      },
+      allowUnknownKeys: true,
+      itemDesc: {
+        type: "sequence",
+      },
+    },
   },
 };
+
+describe("map keys", () => {
+  const testValidation = async (
+    input: string,
+    expected: Diagnostic[],
+    s = schema
+  ) => {
+    const doc = await parse("workflow.yml", input, s, NullCompletion);
+    expect(doc.diagnostics).toEqual(expected);
+  };
+
+  it("unknown keys", () =>
+    testValidation("withUnknownKeys:\n  known: 12\n  foo: [1,2]", []));
+
+  it("unknown keys checked with itemDesc", () =>
+    testValidation("withUnknownKeys:\n  known: 12\n  foo: false", [
+      {
+        kind: 0,
+        message: "Expected sequence, found value",
+        pos: [36, 41],
+      },
+    ]));
+
+  it("known keys checked against their schema", () =>
+    testValidation("withUnknownKeys:\n  known: [1]", [
+      {
+        kind: 0,
+        message: "Expected value, found sequence",
+        pos: [26, 29],
+      },
+    ]));
+});
 
 describe("Dynamic validation", () => {
   const testValidation = async (

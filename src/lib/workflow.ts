@@ -140,10 +140,12 @@ export interface Job {
   services?: { [id: string]: Container };
 }
 
-export type MatrixValues = string[] | number[];
+export type MatrixInvocation = { [key: string]: number | string | boolean };
+
+export type MatrixInvocations = MatrixInvocation[];
 
 export interface Strategy {
-  matrix: { [key: string]: MatrixValues } | Expression;
+  matrix: MatrixInvocations | Expression;
 
   "fail-fast"?: boolean;
 

@@ -1,3 +1,6 @@
+## 0.18.0
+- Support include/exclude for matrix strategies
+
 ## 0.17.0
 
 - Better support for accessing objects created with `fromJson`

@@ -222,7 +222,7 @@ async function validateNode(
         }
       }
 
-      if (nodeDesc.keys || customValues) {
+      if (!nodeDesc.allowUnknownKeys && (nodeDesc.keys || customValues)) {
         // Calculate list of allowed keys from schema and dynamic values
         const allowedKeys = new Set<string>([
           ...((nodeDesc.keys && Object.keys(nodeDesc.keys)) || []),

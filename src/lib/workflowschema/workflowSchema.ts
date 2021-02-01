@@ -1,13 +1,14 @@
 import { CompletionOption, Context, Hover } from "../../types";
-import { complete as genericComplete } from "../parser/complete";
-import { hover as genericHover } from "../parser/hover";
-import { parse as genericParse, WorkflowDocument } from "../parser/parser";
 import { MapNodeDesc, NodeDesc, ValueDesc } from "../parser/schema";
+import { WorkflowDocument, parse as genericParse } from "../parser/parser";
+import { eventMap, events } from "./schema/events";
+
+import { NeedsCustomValueProvider } from "./schema/needs";
 import { TTLCache } from "../utils/cache";
 import { _getContextProviderFactory } from "./contextCompletion";
-import { eventMap, events } from "./schema/events";
-import { NeedsCustomValueProvider } from "./schema/needs";
 import { actionsInputProvider } from "./valueProvider/actionsInputProvider";
+import { complete as genericComplete } from "../parser/complete";
+import { hover as genericHover } from "../parser/hover";
 
 const cache = new TTLCache();
 
@@ -268,12 +269,32 @@ The URL can be an expression and can use any context except for the \`secrets\` 
                   oneOf: [
                     {
                       type: "map",
+                      // A matrix can use user-defined keys
+                      allowUnknownKeys: true,
+                      // Generic matrix description
                       itemDesc: {
                         type: "sequence",
+                      },
+                      // Handle `include` and `exclude` specifically
+                      keys: {
+                        include: {
+                          type: "sequence",
+                          itemDesc: {
+                            type: "map",
+                          },
+                        },
+                        exclude: {
+                          type: "sequence",
+                          itemDesc: {
+                            type: "map",
+                          },
+                        },
                       },
                     },
                     {
                       type: "value",
+                      description:
+                        "A matrix strategy can also be set using an expression. For example: `matrix: ${{fromJSON(needs.job1.outputs.matrix)}}`",
                     },
                   ],
                   description:

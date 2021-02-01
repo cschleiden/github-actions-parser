@@ -154,7 +154,7 @@ jobs:
     expect(result.workflow.jobs["deploy"].needs).toEqual(["build", "test"]);
   });
 
-  it("no validation errors for dynamic matrix stratgies", async () => {
+  it("no validation errors for dynamic matrix strategies", async () => {
     const result = await parse(
       context,
       "workflow.yml",

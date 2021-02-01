@@ -228,4 +228,48 @@ jobs:
       ).toEqual([]);
     });
   });
+
+  describe("matrix", () => {
+    it("matrix allows arbitrary keys", async () => {
+      expect(
+        await testValidation(
+          `on: push
+jobs:
+  test:
+    runs-on: [ubuntu-latest]
+
+    strategy:
+      matrix:
+        os: [win, linux]
+        node: [8, 12]
+
+    steps:
+      - run: echo \${{ matrix.os }}`
+        )
+      ).toEqual([]);
+    });
+
+    it("include defines allowed matrix keys", async () => {
+      expect(
+        await testValidation(
+          `on: push
+jobs:
+  test:
+    runs-on: [ubuntu-latest]
+
+    strategy:
+      matrix:
+        include:
+          - os: win
+            node: 8
+          - os: linux
+            node: 12
+            experimental: true
+
+    steps:
+      - run: echo \${{ matrix.os }} \${{ matrix.node }} \${{ matrix.experimental }}`
+        )
+      ).toEqual([]);
+    });
+  });
 });

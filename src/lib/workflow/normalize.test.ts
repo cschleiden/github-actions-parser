@@ -1,5 +1,6 @@
+import { crossProduct, normalizeMatrix, normalizeWorkflow } from "./normalize";
+
 import { Workflow } from "../workflow";
-import { normalizeWorkflow } from "./normalize";
 
 const testNormalize = (workflow: any): Workflow => {
   normalizeWorkflow("workflow.yaml", workflow);
@@ -97,5 +98,122 @@ describe("normalize job", () => {
         },
       }).jobs.test.needs
     ).toEqual(["build"]);
+  });
+});
+
+describe("cross-product", () => {
+  it("built with mixed inputs", () => {
+    expect(
+      crossProduct({
+        a: [1, 2],
+        b: [3],
+        c: ["4", "5"],
+      })
+    ).toEqual([
+      {
+        a: 1,
+        b: 3,
+        c: "4",
+      },
+      {
+        a: 2,
+        b: 3,
+        c: "4",
+      },
+      {
+        a: 1,
+        b: 3,
+        c: "5",
+      },
+      {
+        a: 2,
+        b: 3,
+        c: "5",
+      },
+    ]);
+  });
+});
+
+describe("normalizeMatrix", () => {
+  it("supports exclude", () => {
+    expect(
+      normalizeMatrix({
+        a: [1, 2],
+        b: ["test"],
+        exclude: [
+          {
+            a: 2,
+            b: "test",
+          },
+        ],
+      } as any)
+    ).toEqual([
+      {
+        a: 1,
+        b: "test",
+      },
+    ]);
+  });
+
+  it("supports include", () => {
+    expect(
+      normalizeMatrix({
+        a: [1, 2],
+        b: ["test"],
+        include: [
+          {
+            a: 3,
+            b: "test2",
+          },
+        ],
+      } as any)
+    ).toEqual([
+      {
+        a: 1,
+        b: "test",
+      },
+      {
+        a: 2,
+        b: "test",
+      },
+      {
+        a: 3,
+        b: "test2",
+      },
+    ]);
+  });
+
+  it("include/exclude mix", () => {
+    expect(
+      normalizeMatrix({
+        a: [1, 2],
+        b: ["test"],
+        exclude: [
+          {
+            a: 2,
+            b: "test",
+          },
+        ],
+        include: [
+          {
+            a: 1,
+            b: "test",
+            experimental: true,
+          },
+          {
+            a: 3,
+          },
+        ],
+      } as any)
+    ).toEqual([
+      {
+        a: 1,
+        b: "test",
+        experimental: true,
+      },
+      {
+        a: 3,
+      },
+    ]);
   });
 });

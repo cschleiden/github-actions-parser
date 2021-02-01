@@ -32,9 +32,14 @@ export type MapNodeDesc = {
   keys?: NodeDescMap;
 
   /**
-   * Alternatively, specify a template to validate children against
+   * Specify a template to validate unknown keys against
    */
   itemDesc?: NodeDesc;
+
+  /**
+   * Should unknown keys be allowed
+   */
+  allowUnknownKeys?: boolean;
 
   /**
    * Required keys for the map

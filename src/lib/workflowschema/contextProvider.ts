@@ -1,10 +1,11 @@
+import { ContextProvider, DynamicContext } from "../expressions/types";
+import { Job, Step, Workflow } from "../workflow";
+import { PropertyPath, iteratePath } from "../utils/path";
+
+import { Undetermined } from "../expressions/functions";
+import { containsExpression } from "../expressions/embedding";
 import { getEventPayload } from "../events/eventPayload";
 import { replaceExpressions } from "../expressions";
-import { containsExpression } from "../expressions/embedding";
-import { Undetermined } from "../expressions/functions";
-import { ContextProvider, DynamicContext } from "../expressions/types";
-import { iteratePath, PropertyPath } from "../utils/path";
-import { Job, Step, Workflow } from "../workflow";
 
 function getEvent(workflow: Workflow) {
   if (workflow && workflow.on) {
@@ -190,11 +191,15 @@ export class EditContextProvider implements ContextProvider {
             return DynamicContext;
           }
 
-          // For each key in the matrix definition, return the first value
-          return Object.keys(job.strategy.matrix).reduce(
-            (r, v) => ({ ...r, [v]: job.strategy!.matrix?.[v]?.[0] }),
-            {}
-          );
+          // Determine keys
+          const allowedKeys: { [key: string]: boolean } = {};
+          for (const inv of job.strategy.matrix) {
+            for (const invKey of Object.keys(inv)) {
+              allowedKeys[invKey] = true;
+            }
+          }
+
+          return allowedKeys;
         }
 
         return {};
