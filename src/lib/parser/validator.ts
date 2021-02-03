@@ -15,6 +15,7 @@ import {
 import { ContextProvider } from "../expressions/types";
 import { ContextProviderFactory } from "./complete";
 import { Workflow } from "../workflow";
+import { evaluateExpression } from "../expressions";
 import { getPathFromNode } from "./ast";
 import { validateExpression } from "../expressions/validator";
 
@@ -77,15 +78,43 @@ async function validateNode(
 
       const scalarNode = node as YAMLScalar;
 
+      // Store for later lookup
       nodeToDesc.set(scalarNode, nodeDesc);
 
+      let input = scalarNode.value;
+
+      if (nodeDesc.isExpression || containsExpression(input)) {
+        const path = getPathFromNode(n);
+
+        const contextProvider = await contextProviderFactory.get(
+          workflow,
+          path
+        );
+
+        // Validate scalar value as expression if it looks like one, or if we always expect one
+        // here.
+        validateExpressions(
+          // Use raw value here to match offsets
+          scalarNode.rawValue,
+          n.startPosition,
+          diagnostics,
+          contextProvider
+        );
+
+        if (nodeDesc.supportsExpression) {
+          input = evaluateExpression(scalarNode.rawValue, contextProvider);
+        }
+      }
+
+      // Value is set using an expression, we cannot check against allowed values
+      // In the future we might try to resolve this but for now don't do any additional checking
       if (
         nodeDesc.allowedValues &&
-        !nodeDesc.allowedValues.find((x) => x.value === scalarNode.value)
+        !nodeDesc.allowedValues.find((x) => x.value === input)
       ) {
         diagnostics.push({
           pos: [scalarNode.startPosition, scalarNode.endPosition],
-          message: `'${node.value}' is not in the list of allowed values`,
+          message: `'${input}' is not in the list of allowed values`,
         });
       } else if (nodeDesc.customValueProvider) {
         let customValues: CustomValue[] | undefined;
@@ -104,26 +133,12 @@ async function validateNode(
           });
         }
 
-        if (!customValues?.find((x) => x.value === scalarNode.value)) {
+        if (!customValues?.find((x) => x.value === input)) {
           diagnostics.push({
             pos: [scalarNode.startPosition, scalarNode.endPosition],
-            message: `'${node.value}' is not in the list of allowed values`,
+            message: `'${input}' is not in the list of allowed values`,
           });
         }
-      }
-
-      const input = scalarNode.value;
-      if (nodeDesc.isExpression || containsExpression(input)) {
-        // Validate scalar value as expression if it looks like one, or if we always expect one
-        // here.
-        const path = getPathFromNode(n);
-        validateExpressions(
-          // Use raw value here to match offsets
-          scalarNode.rawValue,
-          n.startPosition,
-          diagnostics,
-          await contextProviderFactory.get(workflow, path)
-        );
       }
 
       break;

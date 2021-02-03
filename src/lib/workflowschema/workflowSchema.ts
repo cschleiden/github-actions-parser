@@ -81,6 +81,8 @@ const runsOn = (context: Context): NodeDesc => ({
   description:
     "The type of machine to run the job on. The machine can be either a GitHub-hosted runner, or a self-hosted runner.",
 
+  supportsExpression: true,
+
   customValueProvider: async () =>
     cache.get<ValueDesc[]>(
       `${context.owner}/${context.repository}/runs-on-labels`,

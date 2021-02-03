@@ -229,6 +229,87 @@ jobs:
     });
   });
 
+  describe("runs-on", () => {
+    it("runs-on allows expressions", async () => {
+      expect(
+        await testValidation(
+          `on: push
+env:
+  R: ubuntu-latest
+
+jobs:
+  test:
+    runs-on: \${{ env.R }}
+
+    steps:
+      - run: echo hello`
+        )
+      ).toEqual([]);
+    });
+
+    it("runs-on expressions have to match allowed value", async () => {
+      expect(
+        await testValidation(
+          `on: push
+env:
+  R: does-not-exist
+
+jobs:
+  test:
+    runs-on: \${{ env.R }}
+
+    steps:
+      - run: echo hello`
+        )
+      ).toEqual([
+        {
+          kind: 0,
+          message: "'does-not-exist' is not in the list of allowed values",
+          pos: [62, 74],
+        },
+      ]);
+    });
+
+    it("runs-on expressions support fromJson", async () => {
+      expect(
+        await testValidation(
+          `on: push
+
+jobs:
+  test:
+    runs-on: \${{ fromJson('["ubuntu-latest", "self-hosted"]')[1 == 2] }}
+
+    steps:
+      - run: echo hello`
+        )
+      ).toEqual([]);
+    });
+
+    it("runs-on expressions checks fromJson for valid values", async () => {
+      expect(
+        await testValidation(
+          `on: push
+
+env:
+  R: 2
+
+jobs:
+  test:
+    runs-on: \${{ fromJson('["ubuntu-latest", "does-not-exist"]')[env.R == 2] }}
+
+    steps:
+      - run: echo hello`
+        )
+      ).toEqual([
+        {
+          kind: 0,
+          message: "'does-not-exist' is not in the list of allowed values",
+          pos: [50, 116],
+        },
+      ]);
+    });
+  });
+
   describe("matrix", () => {
     it("matrix allows arbitrary keys", async () => {
       expect(

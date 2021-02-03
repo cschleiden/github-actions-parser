@@ -66,6 +66,12 @@ export type ValueNodeDesc = {
 
   /** If the node allows omitting ${{ }} to enter an expression */
   isExpression?: boolean;
+
+  /**
+   * If a value can be set using an expression, this will disable checking
+   * against `allowedValues` when set
+   */
+  supportsExpression?: boolean;
 } & Desc;
 
 export type NodeDesc =
