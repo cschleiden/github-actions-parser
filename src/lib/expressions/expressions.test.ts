@@ -40,6 +40,8 @@ const ctx: ContextProvider = {
       case "env": {
         return {
           foo: "token",
+          contains: "test",
+          jobBar: "test",
         };
       }
     }
@@ -260,6 +262,16 @@ describe("expression parser", () => {
 
     it("success", () => {
       expect(ev("success()")).toBe(Undetermined);
+    });
+  });
+
+  describe("ambiguity", () => {
+    it("context member keyword prefix", () => {
+      expect(ev("env.jobBar")).toBe("test");
+    });
+
+    it("context member keyword match", () => {
+      expect(ev("env.contains")).toBe("test");
     });
   });
 

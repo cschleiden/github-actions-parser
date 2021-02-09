@@ -169,7 +169,7 @@ export class ExpressionEvaluator extends BaseCstVisitor {
   }
 
   contextDotMember(ctx: any, path: PropertyPath) {
-    const p = ctx.ContextMember[0].image;
+    const p = ctx.ContextMemberOrKeyword[0].image;
     path.push(p);
   }
 

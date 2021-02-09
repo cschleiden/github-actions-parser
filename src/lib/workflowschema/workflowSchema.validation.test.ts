@@ -1,12 +1,11 @@
 import { Context, DiagnosticKind } from "../../types";
-
-import { ContextProviderFactory } from "../parser/complete";
 import { DynamicContext } from "../expressions/types";
-import { EditContextProvider } from "./contextProvider";
+import { ContextProviderFactory } from "../parser/complete";
+import { parse } from "../parser/parser";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
+import { EditContextProvider } from "./contextProvider";
 import { _getSchema } from "./workflowSchema";
-import { parse } from "../parser/parser";
 
 const context: Context = {
   client: null,
@@ -349,6 +348,30 @@ jobs:
 
     steps:
       - run: echo \${{ matrix.os }} \${{ matrix.node }} \${{ matrix.experimental }}`
+        )
+      ).toEqual([]);
+    });
+
+    it("matrix supports fromJson", async () => {
+      expect(
+        await testValidation(
+          `name: build
+on: workflow_dispatch
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: \${{ steps.set-matrix.outputs.matrix }}
+    steps:
+    - id: set-matrix
+      run: echo "::set-output name=matrix::{\"include\":[{\"project\":\"foo\",\"config\":\"Debug\"},{\"project\":\"bar\",\"config\":\"Release\"}]}"
+  job2:
+    needs: job1
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: \${{ fromJson(needs.job1.outputs.matrix) }}
+    steps:
+    - run: build`
         )
       ).toEqual([]);
     });

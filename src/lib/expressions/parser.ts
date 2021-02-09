@@ -17,10 +17,20 @@ const Comma = chevrotain.createToken({ name: "Comma", pattern: /,/ });
  * so define all supported ones.
  * see https://help.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#contexts
  */
+export const Dot = chevrotain.createToken({ name: "Dot", pattern: /\./ });
+export const ContextMemberOrKeyword = chevrotain.createToken({
+  name: "ContextMemberOrKeyword",
+  pattern: chevrotain.Lexer.NA,
+});
+export const ContextMember = chevrotain.createToken({
+  name: "ContextMember",
+  pattern: /[a-zA-Z_][a-zA-Z0-9-_]*/,
+  categories: ContextMemberOrKeyword,
+});
 export const Context = chevrotain.createToken({
   name: "Context",
-  //pattern: /github|env|job|steps|runner|secrets|strategy|matrix|needs/,
   pattern: chevrotain.Lexer.NA,
+  longer_alt: ContextMember,
 });
 export const Contexts = [
   "github",
@@ -36,14 +46,10 @@ export const Contexts = [
   chevrotain.createToken({
     name: `Context${c}`,
     pattern: new RegExp(`${c}`),
-    categories: Context,
+    categories: [Context, ContextMemberOrKeyword],
+    longer_alt: ContextMember,
   })
 );
-export const Dot = chevrotain.createToken({ name: "Dot", pattern: /\./ });
-export const ContextMember = chevrotain.createToken({
-  name: "ContextMember",
-  pattern: /[a-zA-Z_][a-zA-Z0-9-_]*/,
-});
 
 //
 // Operators
@@ -51,6 +57,7 @@ export const ContextMember = chevrotain.createToken({
 export const Operator = chevrotain.createToken({
   name: "Operator",
   pattern: chevrotain.Lexer.NA,
+  longer_alt: ContextMember,
 });
 export const And = chevrotain.createToken({
   name: "And",
@@ -105,66 +112,79 @@ export const Not = chevrotain.createToken({
 export const Function = chevrotain.createToken({
   name: "Function",
   pattern: chevrotain.Lexer.NA,
+  longer_alt: ContextMember,
 });
 export const contains = chevrotain.createToken({
   name: "contains",
   pattern: /contains/,
-  categories: Function,
+  categories: [Function, ContextMemberOrKeyword],
+  longer_alt: ContextMember,
 });
 export const startsWith = chevrotain.createToken({
   name: "startsWith",
   pattern: /startsWith/,
-  categories: Function,
+  categories: [Function, ContextMemberOrKeyword],
+  longer_alt: ContextMember,
 });
 export const endsWith = chevrotain.createToken({
   name: "endsWith",
   pattern: /endsWith/,
-  categories: Function,
+  categories: [Function, ContextMemberOrKeyword],
+  longer_alt: ContextMember,
 });
 export const join = chevrotain.createToken({
   name: "join",
   pattern: /join/,
-  categories: Function,
+  categories: [Function, ContextMemberOrKeyword],
+  longer_alt: ContextMember,
 });
 export const toJson = chevrotain.createToken({
   name: "toJson",
   pattern: /toJson/,
-  categories: Function,
+  categories: [Function, ContextMemberOrKeyword],
+  longer_alt: ContextMember,
 });
 export const fromJson = chevrotain.createToken({
   name: "fromJson",
   pattern: /fromJson/,
-  categories: Function,
+  categories: [Function, ContextMemberOrKeyword],
+  longer_alt: ContextMember,
 });
 export const hashFiles = chevrotain.createToken({
   name: "hashFiles",
   pattern: /hashFiles/,
-  categories: Function,
+  categories: [Function, ContextMemberOrKeyword],
+  longer_alt: ContextMember,
 });
 export const success = chevrotain.createToken({
   name: "success",
   pattern: /success/,
-  categories: Function,
+  categories: [Function, ContextMemberOrKeyword],
+  longer_alt: ContextMember,
 });
 export const always = chevrotain.createToken({
   name: "always",
   pattern: /always/,
-  categories: Function,
+  categories: [Function, ContextMemberOrKeyword],
+  longer_alt: ContextMember,
 });
 export const failure = chevrotain.createToken({
   name: "failure",
   pattern: /failure/,
-  categories: Function,
+  categories: [Function, ContextMemberOrKeyword],
+  longer_alt: ContextMember,
 });
 export const format = chevrotain.createToken({
   name: "format",
   pattern: /format/,
-  categories: Function,
+  categories: [Function, ContextMemberOrKeyword],
+  longer_alt: ContextMember,
 });
 export const cancelled = chevrotain.createToken({
   name: "cancelled",
   pattern: /cancelled/,
-  categories: Function,
+  categories: [Function, ContextMemberOrKeyword],
+  longer_alt: ContextMember,
 });
 const Functions = [
   contains,
@@ -243,6 +263,7 @@ const allTokens = [
   Context,
   ...Contexts,
   Dot,
+  ContextMemberOrKeyword,
   ContextMember,
 ];
 const ExpressionLexer = new chevrotain.Lexer(allTokens);
@@ -295,7 +316,7 @@ export class ExpressionParser extends chevrotain.CstParser {
 
   contextDotMember = this.RULE("contextDotMember", () => {
     this.CONSUME(Dot);
-    this.CONSUME(ContextMember);
+    this.CONSUME(ContextMemberOrKeyword);
   });
 
   contextBoxMember = this.RULE("contextBoxMember", () => {
