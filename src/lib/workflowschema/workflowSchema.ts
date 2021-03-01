@@ -102,18 +102,25 @@ const runsOn = (context: Context): NodeDesc => ({
         ]);
 
         if (context?.client?.actions) {
-          const runnersResp = await context.client.actions.listSelfHostedRunnersForRepo(
-            {
-              owner: context.owner,
-              repo: context.repository,
-            }
-          );
+          try {
+            const runnersResp = await context.client.actions.listSelfHostedRunnersForRepo(
+              {
+                owner: context.owner,
+                repo: context.repository,
+              }
+            );
 
-          if (runnersResp && runnersResp.data.runners) {
-            runnersResp.data.runners.forEach((r) =>
-              (r as any)?.labels?.forEach((l: { name: string }) =>
-                labels.add(l.name)
-              )
+            if (runnersResp && runnersResp.data.runners) {
+              runnersResp.data.runners.forEach((r) =>
+                (r as any)?.labels?.forEach((l: { name: string }) =>
+                  labels.add(l.name)
+                )
+              );
+            }
+          } catch (e) {
+            console.log(
+              `Error while retrieving runner labels, falling back to defaults`,
+              e
             );
           }
         }
