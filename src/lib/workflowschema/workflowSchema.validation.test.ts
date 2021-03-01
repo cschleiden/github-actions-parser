@@ -1,11 +1,12 @@
 import { Context, DiagnosticKind } from "../../types";
-import { DynamicContext } from "../expressions/types";
+
 import { ContextProviderFactory } from "../parser/complete";
-import { parse } from "../parser/parser";
+import { DynamicContext } from "../expressions/types";
+import { EditContextProvider } from "./contextProvider";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
-import { EditContextProvider } from "./contextProvider";
 import { _getSchema } from "./workflowSchema";
+import { parse } from "../parser/parser";
 
 const context: Context = {
   client: null,
@@ -269,14 +270,14 @@ jobs:
       ]);
     });
 
-    it("runs-on expressions support fromJson", async () => {
+    it("runs-on expressions support fromJSON", async () => {
       expect(
         await testValidation(
           `on: push
 
 jobs:
   test:
-    runs-on: \${{ fromJson('["ubuntu-latest", "self-hosted"]')[1 == 2] }}
+    runs-on: \${{ fromJSON('["ubuntu-latest", "self-hosted"]')[1 == 2] }}
 
     steps:
       - run: echo hello`
@@ -284,7 +285,7 @@ jobs:
       ).toEqual([]);
     });
 
-    it("runs-on expressions checks fromJson for valid values", async () => {
+    it("runs-on expressions checks fromJSON for valid values", async () => {
       expect(
         await testValidation(
           `on: push
@@ -294,7 +295,7 @@ env:
 
 jobs:
   test:
-    runs-on: \${{ fromJson('["ubuntu-latest", "does-not-exist"]')[env.R == 2] }}
+    runs-on: \${{ fromJSON('["ubuntu-latest", "does-not-exist"]')[env.R == 2] }}
 
     steps:
       - run: echo hello`
@@ -352,7 +353,7 @@ jobs:
       ).toEqual([]);
     });
 
-    it("matrix supports fromJson", async () => {
+    it("matrix supports fromJSON", async () => {
       expect(
         await testValidation(
           `name: build
@@ -369,7 +370,7 @@ jobs:
     needs: job1
     runs-on: ubuntu-latest
     strategy:
-      matrix: \${{ fromJson(needs.job1.outputs.matrix) }}
+      matrix: \${{ fromJSON(needs.job1.outputs.matrix) }}
     steps:
     - run: build`
         )

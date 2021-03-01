@@ -1,5 +1,5 @@
-import { completeExpression } from "./completion";
 import { ContextProvider } from "./types";
+import { completeExpression } from "./completion";
 
 const contextProvider: ContextProvider = {
   get: (context) => {
@@ -37,10 +37,10 @@ const testComplete = async (input: string, expected: string[]) => {
 
 describe("auto-complete", () => {
   describe("functions", () => {
-    it("toJson", async () => {
-      await testComplete("toJs", ["toJson"]);
-      await testComplete("1 == toJs", ["toJson"]);
-      await testComplete("toJs| == 1", ["toJson"]);
+    it("toJSON", async () => {
+      await testComplete("toJS", ["toJSON"]);
+      await testComplete("1 == toJS", ["toJSON"]);
+      await testComplete("toJS| == 1", ["toJSON"]);
     });
   });
 
@@ -59,7 +59,7 @@ describe("auto-complete", () => {
     it("provides suggestions for secrets", async () => {
       await testComplete("secrets.A", ["AWS_TOKEN"]);
       await testComplete("1 == secrets.F", []);
-      await testComplete("toJson(secrets.", ["AWS_TOKEN"]);
+      await testComplete("toJSON(secrets.", ["AWS_TOKEN"]);
     });
   });
 });

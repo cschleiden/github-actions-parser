@@ -213,29 +213,29 @@ describe("expression parser", () => {
       expect(ev("join([1,'2'], '')")).toBe("12");
     });
 
-    it("toJson", () => {
-      expect(ev("toJson([1,2,3])")).toBe("[1,2,3]");
-      expect(ev("toJson(github.event_name)")).toBe('"push"');
-      expect(ev("toJson(true)")).toBe("true");
-      expect(ev("toJson(false)")).toBe("false");
+    it("toJSON", () => {
+      expect(ev("toJSON([1,2,3])")).toBe("[1,2,3]");
+      expect(ev("toJSON(github.event_name)")).toBe('"push"');
+      expect(ev("toJSON(true)")).toBe("true");
+      expect(ev("toJSON(false)")).toBe("false");
     });
 
-    describe("fromJson", () => {
+    describe("fromJSON", () => {
       it("basic", () => {
-        expect(ev("fromJson('{ \"foo\": true }')")).toEqual({ foo: true });
+        expect(ev("fromJSON('{ \"foo\": true }')")).toEqual({ foo: true });
       });
 
       it("object access", () => {
-        expect(ev("fromJson('{ \"foo\": true }').foo")).toEqual(true);
-        expect(ev("fromJson('{ \"foo\": true }')['foo']")).toEqual(true);
+        expect(ev("fromJSON('{ \"foo\": true }').foo")).toEqual(true);
+        expect(ev("fromJSON('{ \"foo\": true }')['foo']")).toEqual(true);
       });
 
       it("array access", () => {
-        expect(ev("fromJson('[24, 32]')[0]")).toEqual(24);
-        expect(ev("fromJson('[24, 32]')[1]")).toEqual(32);
+        expect(ev("fromJSON('[24, 32]')[0]")).toEqual(24);
+        expect(ev("fromJSON('[24, 32]')[1]")).toEqual(32);
 
-        expect(ev("fromJson('[42, \"test\"]')[1 == 2]")).toEqual(42);
-        expect(ev("fromJson('[42, \"test\"]')[1 == 1]")).toEqual("test");
+        expect(ev("fromJSON('[42, \"test\"]')[1 == 2]")).toEqual(42);
+        expect(ev("fromJSON('[42, \"test\"]')[1 == 1]")).toEqual("test");
       });
     });
 

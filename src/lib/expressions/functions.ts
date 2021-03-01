@@ -1,5 +1,5 @@
 const funcDescription = {
-  toJson:
+  toJSON:
     "Returns a pretty-print JSON representation of `value`. You can use this function to debug the information provided in contexts.",
 };
 
@@ -33,11 +33,11 @@ export function join<T>(arr: T[], separator?: string): string {
   return arr.join(separator);
 }
 
-export function toJson(input: unknown): string {
+export function toJSON(input: unknown): string {
   return JSON.stringify(input);
 }
 
-export function fromJson(input: string | typeof Undetermined): unknown {
+export function fromJSON(input: string | typeof Undetermined): unknown {
   if (typeof input === "string") {
     return JSON.parse(input);
   }
@@ -46,7 +46,7 @@ export function fromJson(input: string | typeof Undetermined): unknown {
     return Undetermined;
   }
 
-  throw new Error("Unknown input for `fromJson`");
+  throw new Error("Unknown input for `fromJSON`");
 }
 
 export function hashFiles(path: string[]): string {

@@ -63,7 +63,7 @@ jobs:
         run: echo
       - run: echo
         id: requested-change
-      - if: \${{ steps.filter.outputs.notAllowed == 'true' && (!steps.requested-change.outputs.result || fromJson(steps.requested-change.outputs.result).state != 'CHANGES_REQUESTED') }}
+      - if: \${{ steps.filter.outputs.notAllowed == 'true' && (!steps.requested-change.outputs.result || fromJSON(steps.requested-change.outputs.result).state != 'CHANGES_REQUESTED') }}
         run: echo`
     );
 
@@ -173,7 +173,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     strategy:
-      matrix: \${{ fromJson(needs.build.outputs.webpack-matrix) }}
+      matrix: \${{ fromJSON(needs.build.outputs.webpack-matrix) }}
     steps:
     - run: echo \${{ matrix.foo }}`
     );

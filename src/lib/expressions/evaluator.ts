@@ -211,11 +211,11 @@ export class ExpressionEvaluator extends BaseCstVisitor {
       case !!ctx.join:
         return Functions.join(parameters[0], parameters[1]);
 
-      case !!ctx.toJson:
-        return Functions.toJson(parameters[0]);
+      case !!ctx.toJSON:
+        return Functions.toJSON(parameters[0]);
 
-      case !!ctx.fromJson: {
-        const result = Functions.fromJson(parameters[0]);
+      case !!ctx.fromJSON: {
+        const result = Functions.fromJSON(parameters[0]);
 
         if (!!ctx.contextMember) {
           const p: PropertyPath = [];

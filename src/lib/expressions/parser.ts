@@ -138,15 +138,15 @@ export const join = chevrotain.createToken({
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
-export const toJson = chevrotain.createToken({
-  name: "toJson",
-  pattern: /toJson/,
+export const toJSON = chevrotain.createToken({
+  name: "toJSON",
+  pattern: /toJSON/,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
-export const fromJson = chevrotain.createToken({
-  name: "fromJson",
-  pattern: /fromJson/,
+export const fromJSON = chevrotain.createToken({
+  name: "fromJSON",
+  pattern: /fromJSON/,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
@@ -191,8 +191,8 @@ const Functions = [
   startsWith,
   endsWith,
   join,
-  toJson,
-  fromJson,
+  toJSON,
+  fromJSON,
   hashFiles,
   success,
   always,
@@ -227,8 +227,8 @@ const allTokens = [
   format,
   endsWith,
   join,
-  toJson,
-  fromJson,
+  toJSON,
+  fromJSON,
   hashFiles,
   success,
   always,
@@ -344,10 +344,10 @@ export class ExpressionParser extends chevrotain.CstParser {
 
   functionCall = this.RULE("functionCall", () => {
     this.OR1([
-      // fromJson is the only function that might return an object, and then allow context access
+      // fromJSON is the only function that might return an object, and then allow context access
       {
         ALT: () => {
-          this.CONSUME(fromJson);
+          this.CONSUME(fromJSON);
           this.SUBRULE1(this.functionParameters);
           this.OPTION(() => this.SUBRULE(this.contextMember));
         },
@@ -355,7 +355,7 @@ export class ExpressionParser extends chevrotain.CstParser {
       {
         ALT: () => {
           this.OR2(
-            Functions.filter((f) => f !== fromJson).map((f) => ({
+            Functions.filter((f) => f !== fromJSON).map((f) => ({
               ALT: () => this.CONSUME(f),
             }))
           );
