@@ -638,7 +638,8 @@
                       "created",
                       "edited",
                       "deleted",
-                      "prereleased"
+                      "prereleased",
+                      "released"
                     ]
                   },
                   "default": [
@@ -647,7 +648,8 @@
                     "created",
                     "edited",
                     "deleted",
-                    "prereleased"
+                    "prereleased",
+                    "released"
                   ]
                 }
               }
