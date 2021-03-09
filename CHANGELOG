@@ -1,6 +1,9 @@
+## 0.21.0
+- Environment auto-complete
+- Add `released` type for `releases`
+
 ## 0.20.0
 - Correct casing for `fromJSON` and `toJSON`
--
 
 ## 0.18.0
 - Support include/exclude for matrix strategies
