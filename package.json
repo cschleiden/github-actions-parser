@@ -24,7 +24,7 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "@octokit/rest": "18.0.14",
+    "@octokit/rest": "18.3.5",
     "chevrotain": "7.1.0",
     "js-yaml": "^4.0.0",
     "micromatch": "^4.0.2",

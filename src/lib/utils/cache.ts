@@ -19,8 +19,13 @@ export class TTLCache {
     ttlInMS: number | undefined,
     getter: () => Promise<T>
   ): Promise<T> {
-    const e = this.cache.get(key);
-    if (e && e.cachedAt > Date.now() - (ttlInMS || this.defaultTTLinMS)) {
+    const hasEntry = this.cache.has(key);
+    const e = hasEntry && this.cache.get(key);
+    if (
+      hasEntry &&
+      e &&
+      e.cachedAt > Date.now() - (ttlInMS || this.defaultTTLinMS)
+    ) {
       return e.content as T;
     }
 

@@ -1,14 +1,13 @@
 import { CompletionOption, Context, Hover } from "../../types";
-import { MapNodeDesc, NodeDesc, ValueDesc } from "../parser/schema";
-import { WorkflowDocument, parse as genericParse } from "../parser/parser";
-import { eventMap, events } from "./schema/events";
-
-import { NeedsCustomValueProvider } from "./schema/needs";
-import { TTLCache } from "../utils/cache";
-import { _getContextProviderFactory } from "./contextCompletion";
-import { actionsInputProvider } from "./valueProvider/actionsInputProvider";
 import { complete as genericComplete } from "../parser/complete";
 import { hover as genericHover } from "../parser/hover";
+import { parse as genericParse, WorkflowDocument } from "../parser/parser";
+import { MapNodeDesc, NodeDesc, ValueDesc } from "../parser/schema";
+import { TTLCache } from "../utils/cache";
+import { _getContextProviderFactory } from "./contextCompletion";
+import { eventMap, events } from "./schema/events";
+import { NeedsCustomValueProvider } from "./schema/needs";
+import { actionsInputProvider } from "./valueProvider/actionsInputProvider";
 
 const cache = new TTLCache();
 
@@ -132,6 +131,48 @@ const runsOn = (context: Context): NodeDesc => ({
     ),
 });
 
+const environment = (context: Context): NodeDesc => ({
+  type: "value",
+  description:
+    "The environment that the job references. All environment protection rules must pass before a job referencing the environment is sent to a runner.",
+
+  supportsExpression: true,
+
+  customValueProvider: async () =>
+    cache.get<ValueDesc[] | undefined>(
+      `${context.owner}/${context.repository}/environment-names`,
+      context.timeToCacheResponsesInMS,
+      async () => {
+        if (context?.client?.repos) {
+          try {
+            const environmentsResp = await context.client.repos.getAllEnvironments(
+              {
+                owner: context.owner,
+                repo: context.repository,
+              }
+            );
+
+            if (environmentsResp && environmentsResp.data.environments) {
+              return environmentsResp.data.environments.map((e) => ({
+                value: e.name,
+                description: e.protection_rules?.length
+                  ? `Protection rules:\n${e.protection_rules.map(
+                      (pr) => `- ${pr.type}\n`
+                    )}`
+                  : undefined,
+              }));
+            }
+          } catch (e) {
+            console.log(`Error while retrieving environments`, e);
+          }
+        }
+
+        // Return undefined so any value is allowed
+        return undefined;
+      }
+    ),
+});
+
 export function _getSchema(context: Context): NodeDesc {
   return {
     type: "map",
@@ -196,20 +237,14 @@ export function _getSchema(context: Context): NodeDesc {
 You can provide the environment as only the environment \`name\`, or as an environment object with the \`name\` and \`url\`.`,
               type: "oneOf",
               oneOf: [
-                {
-                  type: "value",
-                  description:
-                    "The environment that the job references. All environment protection rules must pass before a job referencing the environment is sent to a runner.",
-                },
+                environment(context),
                 {
                   type: "map",
                   keys: {
-                    name: value(
-                      "The environment that the job references. All environment protection rules must pass before a job referencing the environment is sent to a runner."
+                    name: environment(context),
+                    url: value(
+                      `The URL maps to \`environment_url\` in the deployments API. For more information about the deployments API, see [Deployments](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#deployments).\n\nThe URL can be an expression and can use any context except for the \`secrets\` context.`
                     ),
-                    url: value(`The URL maps to \`environment_url\` in the deployments API. For more information about the deployments API, see [Deployments](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#deployments).
-
-The URL can be an expression and can use any context except for the \`secrets\` context.`),
                   },
                   required: ["name"],
                 },

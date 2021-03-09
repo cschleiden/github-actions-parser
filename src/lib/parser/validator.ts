@@ -1,23 +1,22 @@
-import { CustomValue, CustomValueValidation, NodeDesc } from "./schema";
-import { Diagnostic, DiagnosticKind, Position, YNode } from "../../types";
 import {
   Kind,
+  YamlMap,
   YAMLMapping,
   YAMLNode,
   YAMLScalar,
-  YamlMap,
 } from "yaml-ast-parser";
+import { Diagnostic, DiagnosticKind, Position, YNode } from "../../types";
+import { evaluateExpression } from "../expressions";
 import {
   containsExpression,
   iterateExpressions,
 } from "../expressions/embedding";
-
 import { ContextProvider } from "../expressions/types";
-import { ContextProviderFactory } from "./complete";
-import { Workflow } from "../workflow";
-import { evaluateExpression } from "../expressions";
-import { getPathFromNode } from "./ast";
 import { validateExpression } from "../expressions/validator";
+import { Workflow } from "../workflow";
+import { getPathFromNode } from "./ast";
+import { ContextProviderFactory } from "./complete";
+import { CustomValue, CustomValueValidation, NodeDesc } from "./schema";
 
 function kindToString(kind: Kind): string {
   switch (kind) {
@@ -133,7 +132,7 @@ async function validateNode(
           });
         }
 
-        if (!customValues?.find((x) => x.value === input)) {
+        if (customValues && !customValues?.find((x) => x.value === input)) {
           diagnostics.push({
             pos: [scalarNode.startPosition, scalarNode.endPosition],
             message: `'${input}' is not in the list of allowed values`,
