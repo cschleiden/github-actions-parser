@@ -156,9 +156,11 @@ const environment = (context: Context): NodeDesc => ({
               return environmentsResp.data.environments.map((e) => ({
                 value: e.name,
                 description: e.protection_rules?.length
-                  ? `Protection rules:\n${e.protection_rules.map(
-                      (pr) => `- ${pr.type}\n`
-                    )}`
+                  ? `Protection rules:\n${e.protection_rules
+                      .map((pr) => `- ${pr.type}`)
+                      .join(
+                        "\n"
+                      )}\n\nLearn more: [Protection rules](https://docs.github.com/en/actions/reference/environments#environment-protection-rules)`
                   : undefined,
               }));
             }
