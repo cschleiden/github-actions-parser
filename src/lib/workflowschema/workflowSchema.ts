@@ -95,7 +95,7 @@ const runsOn = (context: Context): NodeDesc => ({
           "windows-latest",
           "windows-2019",
           "macos-latest",
-          "macos-11.0",
+          "macos-11",
           "macos-10.15",
           "self-hosted",
         ]);
