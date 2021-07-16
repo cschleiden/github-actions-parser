@@ -1,6 +1,6 @@
 {
   "name": "github-actions-parser",
-  "version": "0.21.1",
+  "version": "0.22.0",
   "author": "Christopher Schleiden <cschleiden@live.de>",
   "license": "MIT",
   "source": "src/index.ts",
@@ -24,7 +24,7 @@
     "test-watch": "jest --watch"
   },
   "dependencies": {
-    "@octokit/rest": "18.3.5",
+    "@octokit/rest": "18.6.7",
     "chevrotain": "7.1.0",
     "js-yaml": "^4.0.0",
     "micromatch": "^4.0.2",
