@@ -1,5 +1,10 @@
 import { CompletionOption, Context, Hover } from "../../types";
-import { MapNodeDesc, NodeDesc, ValueDesc } from "../parser/schema";
+import {
+  MapNodeDesc,
+  NodeDesc,
+  ValueDesc,
+  ValueNodeDesc,
+} from "../parser/schema";
 import { WorkflowDocument, parse as genericParse } from "../parser/parser";
 import { eventMap, events } from "./schema/events";
 
@@ -16,6 +21,31 @@ const value = (description?: string): NodeDesc => ({
   type: "value",
   description,
 });
+
+const concurrencyGroupKey: ValueNodeDesc = {
+  type: "value",
+  description:
+    "Concurreny group key. Expressions can use the `github` context.",
+  supportsExpression: true,
+};
+
+const concurrency: NodeDesc = {
+  type: "oneOf",
+  description:
+    "Concurrency ensures that only a single job or workflow using the same concurrency group will run at a time.",
+  oneOf: [
+    concurrencyGroupKey,
+    {
+      type: "map",
+      keys: {
+        group: concurrencyGroupKey,
+        "cancel-in-progress": {
+          type: "value",
+        },
+      },
+    },
+  ],
+};
 
 const env: MapNodeDesc = {
   type: "map",
@@ -182,8 +212,9 @@ export function _getSchema(context: Context): NodeDesc {
         type: "value",
         description: `Name of the workflow`,
       },
-      env,
+      concurrency,
       defaults,
+      env,
       on: {
         type: "oneOf",
         oneOf: [
@@ -213,6 +244,7 @@ export function _getSchema(context: Context): NodeDesc {
           type: "map",
           keys: {
             name: value("Optional custom name for this job"),
+            concurrency,
             env,
             needs: {
               type: "oneOf",

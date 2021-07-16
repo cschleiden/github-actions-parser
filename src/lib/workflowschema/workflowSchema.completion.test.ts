@@ -41,10 +41,18 @@ describe("Completion", () => {
 
   describe("map", () => {
     it("completes top level keys", async () => {
-      await completeSimple("|", ["defaults", "env", "jobs", "name", "on"]);
+      await completeSimple("|", [
+        "concurrency",
+        "defaults",
+        "env",
+        "jobs",
+        "name",
+        "on",
+      ]);
       await completeSimple("n|", ["name"]);
 
       await completeSimple("name: workflow\n|", [
+        "concurrency",
         "defaults",
         "env",
         "jobs",
@@ -55,13 +63,13 @@ describe("Completion", () => {
     it("complete top level key in workflow", () =>
       completeSimple(
         "name: test\non:\n  pull_request:\n    types:\n    - assigned\n|",
-        ["defaults", "env", "jobs"]
+        ["concurrency", "defaults", "env", "jobs"]
       ));
 
     it("complete top level key in workflow with trailing whitespace", () =>
       completeSimple(
         "name: test\non:\n  pull_request:\n    types:\n    - assigned\n|     ",
-        ["defaults", "env", "jobs"]
+        ["concurrency", "defaults", "env", "jobs"]
       ));
   });
 
@@ -139,6 +147,7 @@ describe("Completion", () => {
   describe("job", () => {
     it("completes top-level keys", async () => {
       await completeSimple("jobs:\n  build:\n    |", [
+        "concurrency",
         "container",
         "continue-on-error",
         "defaults",
@@ -160,6 +169,7 @@ describe("Completion", () => {
       await completeSimple(
         "jobs:\n  build:\n    runs-on: ubuntu-latest\n    |",
         [
+          "concurrency",
           "container",
           "continue-on-error",
           "defaults",
