@@ -48,7 +48,9 @@ describe("Completion", () => {
         "jobs",
         "name",
         "on",
+        "permissions",
       ]);
+
       await completeSimple("n|", ["name"]);
 
       await completeSimple("name: workflow\n|", [
@@ -57,19 +59,20 @@ describe("Completion", () => {
         "env",
         "jobs",
         "on",
+        "permissions",
       ]);
     });
 
     it("complete top level key in workflow", () =>
       completeSimple(
         "name: test\non:\n  pull_request:\n    types:\n    - assigned\n|",
-        ["concurrency", "defaults", "env", "jobs"]
+        ["concurrency", "defaults", "env", "jobs", "permissions"]
       ));
 
     it("complete top level key in workflow with trailing whitespace", () =>
       completeSimple(
         "name: test\non:\n  pull_request:\n    types:\n    - assigned\n|     ",
-        ["concurrency", "defaults", "env", "jobs"]
+        ["concurrency", "defaults", "env", "jobs", "permissions"]
       ));
   });
 
@@ -157,6 +160,7 @@ describe("Completion", () => {
         "name",
         "needs",
         "outputs",
+        "permissions",
         "runs-on",
         "services",
         "steps",
@@ -179,6 +183,7 @@ describe("Completion", () => {
           "name",
           "needs",
           "outputs",
+          "permissions",
           "services",
           "steps",
           "strategy",

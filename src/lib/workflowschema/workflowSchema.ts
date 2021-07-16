@@ -47,6 +47,38 @@ const concurrency: NodeDesc = {
   ],
 };
 
+const permissionValue: ValueNodeDesc = {
+  type: "value",
+  allowedValues: [{ value: "read" }, { value: "write" }, { value: "none" }],
+};
+
+const permissions: NodeDesc = {
+  type: "oneOf",
+  description:
+    "Concurrency ensures that only a single job or workflow using the same concurrency group will run at a time.",
+  oneOf: [
+    {
+      type: "value",
+      allowedValues: [{ value: "read-all" }, { value: "write-all" }],
+    },
+    {
+      type: "map",
+      keys: {
+        actions: permissionValue,
+        checks: permissionValue,
+        contents: permissionValue,
+        deployments: permissionValue,
+        issues: permissionValue,
+        packages: permissionValue,
+        "pull-requests": permissionValue,
+        "repository-projects": permissionValue,
+        "security-events": permissionValue,
+        statuses: permissionValue,
+      },
+    },
+  ],
+};
+
 const env: MapNodeDesc = {
   type: "map",
   itemDesc: {
@@ -204,17 +236,168 @@ const environment = (context: Context): NodeDesc => ({
     ),
 });
 
+const job = (context: Context): NodeDesc => ({
+  type: "map",
+  keys: {
+    name: value("Optional custom name for this job"),
+    concurrency,
+    permissions,
+    env,
+    needs: {
+      type: "oneOf",
+      oneOf: [
+        {
+          type: "value",
+          customValueProvider: NeedsCustomValueProvider,
+        },
+        {
+          type: "sequence",
+          itemDesc: {
+            type: "value",
+            customValueProvider: NeedsCustomValueProvider,
+          },
+        },
+      ],
+    },
+    outputs: {
+      type: "map",
+    },
+    environment: {
+      description: `The environment that the job references. All environment protection rules must pass before a job referencing the environment is sent to a runner. For more information, see [Environments](https://docs.github.com/en/free-pro-team@latest/actions/reference/environments).
+
+You can provide the environment as only the environment \`name\`, or as an environment object with the \`name\` and \`url\`.`,
+      type: "oneOf",
+      oneOf: [
+        environment(context),
+        {
+          type: "map",
+          keys: {
+            name: environment(context),
+            url: value(
+              `The URL maps to \`environment_url\` in the deployments API. For more information about the deployments API, see [Deployments](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#deployments).\n\nThe URL can be an expression and can use any context except for the \`secrets\` context.`
+            ),
+          },
+          required: ["name"],
+        },
+      ],
+    },
+    defaults,
+    if: {
+      type: "value",
+      isExpression: true,
+    },
+    "timeout-minutes": value(),
+    "continue-on-error": value(),
+    container: container(),
+    services: {
+      type: "map",
+      itemDesc: container(),
+      description:
+        "Additional containers to host services for a job in a workflow. These are useful for creating databases or cache services like redis. The runner on the virtual machine will automatically create a network and manage the life cycle of the service containers.\nWhen you use a service container for a job or your step uses container actions, you don't need to set port information to access the service. Docker automatically exposes all ports between containers on the same network.\nWhen both the job and the action run in a container, you can directly reference the container by its hostname. The hostname is automatically mapped to the service name.\nWhen a step does not use a container action, you must access the service using localhost and bind the ports.",
+    },
+    "runs-on": {
+      type: "oneOf",
+      oneOf: [
+        runsOn(context),
+        {
+          type: "sequence",
+          itemDesc: runsOn(context),
+        },
+      ],
+      description:
+        "The type of machine to run the job on. The machine can be either a GitHub-hosted runner, or a self-hosted runner.",
+    },
+    steps: {
+      type: "sequence",
+      itemDesc: {
+        type: "map",
+        keys: {
+          id: value(
+            "A unique identifier for the step. You can use the id to reference the step in contexts. For more information, see https://help.github.com/en/articles/contexts-and-expression-syntax-for-github-actions."
+          ),
+          if: {
+            type: "value",
+            isExpression: true,
+          },
+          name: value("Optional custom name for the step"),
+          uses: value(),
+          run: value(
+            "Runs command-line programs using the operating system's shell. If you do not provide a `name`, the step name will default to the text specified in the `run` command."
+          ),
+          "working-directory": value(),
+          shell,
+          with: {
+            type: "map",
+            customValueProvider: actionsInputProvider(context, cache),
+          },
+          env,
+          "continue-on-error": value(),
+          "timeout-minutes": value(),
+        },
+      },
+    },
+    strategy: {
+      type: "map",
+      keys: {
+        matrix: {
+          type: "oneOf",
+          oneOf: [
+            {
+              type: "map",
+              // A matrix can use user-defined keys
+              allowUnknownKeys: true,
+              // Generic matrix description
+              itemDesc: {
+                type: "sequence",
+              },
+              // Handle `include` and `exclude` specifically
+              keys: {
+                include: {
+                  type: "sequence",
+                  itemDesc: {
+                    type: "map",
+                  },
+                },
+                exclude: {
+                  type: "sequence",
+                  itemDesc: {
+                    type: "map",
+                  },
+                },
+              },
+            },
+            {
+              type: "value",
+              description:
+                "A matrix strategy can also be set using an expression. For example: `matrix: ${{fromJSON(needs.job1.outputs.matrix)}}`",
+            },
+          ],
+          description:
+            "A build matrix is a set of different configurations of the virtual environment. For example you might run a job against more than one supported version of a language, operating system, or tool. Each configuration is a copy of the job that runs and reports a status.\nYou can specify a matrix by supplying an array for the configuration options. For example, if the GitHub virtual environment supports Node.js versions 6, 8, and 10 you could specify an array of those versions in the matrix.\nWhen you define a matrix of operating systems, you must set the required runs-on keyword to the operating system of the current job, rather than hard-coding the operating system name. To access the operating system name, you can use the matrix.os context parameter to set runs-on. For more information, see https://help.github.com/en/articles/contexts-and-expression-syntax-for-github-actions.",
+        },
+        "fail-fast": value(
+          "When set to true, GitHub cancels all in-progress jobs if any matrix job fails. Default: true"
+        ),
+        "max-parallel": value(
+          "The maximum number of jobs that can run simultaneously when using a matrix job strategy. By default, GitHub will maximize the number of jobs run in parallel depending on the available runners on GitHub-hosted virtual machines."
+        ),
+      },
+      required: ["matrix"],
+    },
+  },
+
+  required: ["runs-on", "steps"],
+});
+
 export function _getSchema(context: Context): NodeDesc {
   return {
     type: "map",
     keys: {
-      name: {
-        type: "value",
-        description: `Name of the workflow`,
-      },
+      name: value(`Name of the workflow`),
       concurrency,
       defaults,
       env,
+      permissions,
       on: {
         type: "oneOf",
         oneOf: [
@@ -240,157 +423,7 @@ export function _getSchema(context: Context): NodeDesc {
       },
       jobs: {
         type: "map",
-        itemDesc: {
-          type: "map",
-          keys: {
-            name: value("Optional custom name for this job"),
-            concurrency,
-            env,
-            needs: {
-              type: "oneOf",
-              oneOf: [
-                {
-                  type: "value",
-                  customValueProvider: NeedsCustomValueProvider,
-                },
-                {
-                  type: "sequence",
-                  itemDesc: {
-                    type: "value",
-                    customValueProvider: NeedsCustomValueProvider,
-                  },
-                },
-              ],
-            },
-            outputs: {
-              type: "map",
-            },
-            environment: {
-              description: `The environment that the job references. All environment protection rules must pass before a job referencing the environment is sent to a runner. For more information, see [Environments](https://docs.github.com/en/free-pro-team@latest/actions/reference/environments).
-
-You can provide the environment as only the environment \`name\`, or as an environment object with the \`name\` and \`url\`.`,
-              type: "oneOf",
-              oneOf: [
-                environment(context),
-                {
-                  type: "map",
-                  keys: {
-                    name: environment(context),
-                    url: value(
-                      `The URL maps to \`environment_url\` in the deployments API. For more information about the deployments API, see [Deployments](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#deployments).\n\nThe URL can be an expression and can use any context except for the \`secrets\` context.`
-                    ),
-                  },
-                  required: ["name"],
-                },
-              ],
-            },
-            defaults,
-            if: {
-              type: "value",
-              isExpression: true,
-            },
-            "timeout-minutes": value(),
-            "continue-on-error": value(),
-            container: container(),
-            services: {
-              type: "map",
-              itemDesc: container(),
-              description:
-                "Additional containers to host services for a job in a workflow. These are useful for creating databases or cache services like redis. The runner on the virtual machine will automatically create a network and manage the life cycle of the service containers.\nWhen you use a service container for a job or your step uses container actions, you don't need to set port information to access the service. Docker automatically exposes all ports between containers on the same network.\nWhen both the job and the action run in a container, you can directly reference the container by its hostname. The hostname is automatically mapped to the service name.\nWhen a step does not use a container action, you must access the service using localhost and bind the ports.",
-            },
-            "runs-on": {
-              type: "oneOf",
-              oneOf: [
-                runsOn(context),
-                {
-                  type: "sequence",
-                  itemDesc: runsOn(context),
-                },
-              ],
-              description:
-                "The type of machine to run the job on. The machine can be either a GitHub-hosted runner, or a self-hosted runner.",
-            },
-            steps: {
-              type: "sequence",
-              itemDesc: {
-                type: "map",
-                keys: {
-                  id: value(
-                    "A unique identifier for the step. You can use the id to reference the step in contexts. For more information, see https://help.github.com/en/articles/contexts-and-expression-syntax-for-github-actions."
-                  ),
-                  if: {
-                    type: "value",
-                    isExpression: true,
-                  },
-                  name: value("Optional custom name for the step"),
-                  uses: value(),
-                  run: value(
-                    "Runs command-line programs using the operating system's shell. If you do not provide a `name`, the step name will default to the text specified in the `run` command."
-                  ),
-                  "working-directory": value(),
-                  shell,
-                  with: {
-                    type: "map",
-                    customValueProvider: actionsInputProvider(context, cache),
-                  },
-                  env,
-                  "continue-on-error": value(),
-                  "timeout-minutes": value(),
-                },
-              },
-            },
-            strategy: {
-              type: "map",
-              keys: {
-                matrix: {
-                  type: "oneOf",
-                  oneOf: [
-                    {
-                      type: "map",
-                      // A matrix can use user-defined keys
-                      allowUnknownKeys: true,
-                      // Generic matrix description
-                      itemDesc: {
-                        type: "sequence",
-                      },
-                      // Handle `include` and `exclude` specifically
-                      keys: {
-                        include: {
-                          type: "sequence",
-                          itemDesc: {
-                            type: "map",
-                          },
-                        },
-                        exclude: {
-                          type: "sequence",
-                          itemDesc: {
-                            type: "map",
-                          },
-                        },
-                      },
-                    },
-                    {
-                      type: "value",
-                      description:
-                        "A matrix strategy can also be set using an expression. For example: `matrix: ${{fromJSON(needs.job1.outputs.matrix)}}`",
-                    },
-                  ],
-                  description:
-                    "A build matrix is a set of different configurations of the virtual environment. For example you might run a job against more than one supported version of a language, operating system, or tool. Each configuration is a copy of the job that runs and reports a status.\nYou can specify a matrix by supplying an array for the configuration options. For example, if the GitHub virtual environment supports Node.js versions 6, 8, and 10 you could specify an array of those versions in the matrix.\nWhen you define a matrix of operating systems, you must set the required runs-on keyword to the operating system of the current job, rather than hard-coding the operating system name. To access the operating system name, you can use the matrix.os context parameter to set runs-on. For more information, see https://help.github.com/en/articles/contexts-and-expression-syntax-for-github-actions.",
-                },
-                "fail-fast": value(
-                  "When set to true, GitHub cancels all in-progress jobs if any matrix job fails. Default: true"
-                ),
-                "max-parallel": value(
-                  "The maximum number of jobs that can run simultaneously when using a matrix job strategy. By default, GitHub will maximize the number of jobs run in parallel depending on the available runners on GitHub-hosted virtual machines."
-                ),
-              },
-              required: ["matrix"],
-            },
-          },
-
-          required: ["runs-on", "steps"],
-        },
+        itemDesc: job(context),
       },
     },
 
