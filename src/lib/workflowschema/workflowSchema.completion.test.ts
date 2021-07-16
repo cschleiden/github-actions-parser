@@ -41,22 +41,27 @@ describe("Completion", () => {
 
   describe("map", () => {
     it("completes top level keys", async () => {
-      await completeSimple("|", ["env", "jobs", "name", "on"]);
+      await completeSimple("|", ["defaults", "env", "jobs", "name", "on"]);
       await completeSimple("n|", ["name"]);
 
-      await completeSimple("name: workflow\n|", ["env", "jobs", "on"]);
+      await completeSimple("name: workflow\n|", [
+        "defaults",
+        "env",
+        "jobs",
+        "on",
+      ]);
     });
 
     it("complete top level key in workflow", () =>
       completeSimple(
         "name: test\non:\n  pull_request:\n    types:\n    - assigned\n|",
-        ["env", "jobs"]
+        ["defaults", "env", "jobs"]
       ));
 
     it("complete top level key in workflow with trailing whitespace", () =>
       completeSimple(
         "name: test\non:\n  pull_request:\n    types:\n    - assigned\n|     ",
-        ["env", "jobs"]
+        ["defaults", "env", "jobs"]
       ));
   });
 

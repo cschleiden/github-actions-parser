@@ -1,13 +1,14 @@
 import { CompletionOption, Context, Hover } from "../../types";
-import { complete as genericComplete } from "../parser/complete";
-import { hover as genericHover } from "../parser/hover";
-import { parse as genericParse, WorkflowDocument } from "../parser/parser";
 import { MapNodeDesc, NodeDesc, ValueDesc } from "../parser/schema";
+import { WorkflowDocument, parse as genericParse } from "../parser/parser";
+import { eventMap, events } from "./schema/events";
+
+import { NeedsCustomValueProvider } from "./schema/needs";
 import { TTLCache } from "../utils/cache";
 import { _getContextProviderFactory } from "./contextCompletion";
-import { eventMap, events } from "./schema/events";
-import { NeedsCustomValueProvider } from "./schema/needs";
 import { actionsInputProvider } from "./valueProvider/actionsInputProvider";
+import { complete as genericComplete } from "../parser/complete";
+import { hover as genericHover } from "../parser/hover";
 
 const cache = new TTLCache();
 
@@ -102,12 +103,11 @@ const runsOn = (context: Context): NodeDesc => ({
 
         if (context?.client?.actions) {
           try {
-            const runnersResp = await context.client.actions.listSelfHostedRunnersForRepo(
-              {
+            const runnersResp =
+              await context.client.actions.listSelfHostedRunnersForRepo({
                 owner: context.owner,
                 repo: context.repository,
-              }
-            );
+              });
 
             if (runnersResp && runnersResp.data.runners) {
               runnersResp.data.runners.forEach((r) =>
@@ -145,12 +145,11 @@ const environment = (context: Context): NodeDesc => ({
       async () => {
         if (context?.client?.repos) {
           try {
-            const environmentsResp = await context.client.repos.getAllEnvironments(
-              {
+            const environmentsResp =
+              await context.client.repos.getAllEnvironments({
                 owner: context.owner,
                 repo: context.repository,
-              }
-            );
+              });
 
             if (environmentsResp && environmentsResp.data.environments) {
               return environmentsResp.data.environments.map((e) => ({
@@ -184,6 +183,7 @@ export function _getSchema(context: Context): NodeDesc {
         description: `Name of the workflow`,
       },
       env,
+      defaults,
       on: {
         type: "oneOf",
         oneOf: [
