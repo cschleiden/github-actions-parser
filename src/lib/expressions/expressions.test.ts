@@ -1,7 +1,6 @@
 import { evaluateExpression, replaceExpressions } from ".";
-
-import { ContextProvider } from "./types";
 import { Undetermined } from "./functions";
+import { ContextProvider } from "./types";
 
 const ctx: ContextProvider = {
   get: (context: string) => {
@@ -295,11 +294,18 @@ describe("expression parser", () => {
 });
 
 describe("expression replacer", () => {
-  it("", () => {
+  it("replaces expressions in strings", () => {
     expect(replaceExpressions("abc", ctx)).toBe("abc");
     expect(replaceExpressions("abc ${{ 'test' }}", ctx)).toBe("abc test");
     expect(replaceExpressions("${{ 123 }} abc ${{ 'test' }}", ctx)).toBe(
       "123 abc test"
     );
+  });
+
+  it("replaces expressions in strings without spaces", () => {
+    expect(replaceExpressions("abc_${{ 'test' }}", ctx)).toBe("abc_test");
+    expect(
+      replaceExpressions("abc_${{ secrets.FOO || github.actor }}", ctx)
+    ).toBe("abc_Bar");
   });
 });
