@@ -6,7 +6,7 @@ import {
   YAMLScalar,
 } from "yaml-ast-parser";
 import { Diagnostic, DiagnosticKind, Position, YNode } from "../../types";
-import { evaluateExpression } from "../expressions";
+import { evaluateExpression, replaceExpressions } from "../expressions";
 import {
   containsExpression,
   iterateExpressions,
@@ -101,7 +101,7 @@ async function validateNode(
         );
 
         if (nodeDesc.supportsExpression) {
-          input = evaluateExpression(scalarNode.rawValue, contextProvider);
+          input = replaceExpressions(scalarNode.rawValue, contextProvider);
         }
       }
 

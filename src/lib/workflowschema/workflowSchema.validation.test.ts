@@ -1,12 +1,11 @@
 import { Context, DiagnosticKind } from "../../types";
-
-import { ContextProviderFactory } from "../parser/complete";
 import { DynamicContext } from "../expressions/types";
-import { EditContextProvider } from "./contextProvider";
+import { ContextProviderFactory } from "../parser/complete";
+import { parse } from "../parser/parser";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
+import { EditContextProvider } from "./contextProvider";
 import { _getSchema } from "./workflowSchema";
-import { parse } from "../parser/parser";
 
 const context: Context = {
   client: null,
@@ -44,6 +43,22 @@ jobs:
     steps:
       - name: pass secret value
         run: echo "::set-env name=secret_value::\${{ env[env.secret_name] }}"`)
+      ).toEqual([]);
+    });
+
+    it("in string without placeholder", async () => {
+      expect(
+        await testValidation(`on: push
+env:
+  secret_name: test
+  test: 42
+jobs:
+  first:
+    runs-on: [ubuntu-latest]
+    concurrency:
+      group: staging_\${{ github.actor }}
+    steps:
+      - run: echo`)
       ).toEqual([]);
     });
 
@@ -206,10 +221,11 @@ jobs:
 
   describe("secrets without API client", () => {
     it("does not report error", async () => {
-      const dynamicSecretsExpressionContextProviderFactory: ContextProviderFactory = {
-        get: async (workflow: Workflow, path: PropertyPath) =>
-          new EditContextProvider(workflow, path, DynamicContext),
-      };
+      const dynamicSecretsExpressionContextProviderFactory: ContextProviderFactory =
+        {
+          get: async (workflow: Workflow, path: PropertyPath) =>
+            new EditContextProvider(workflow, path, DynamicContext),
+        };
 
       expect(
         (

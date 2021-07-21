@@ -1,19 +1,18 @@
 import { CompletionOption, Context, Hover } from "../../types";
+import { complete as genericComplete } from "../parser/complete";
+import { hover as genericHover } from "../parser/hover";
+import { parse as genericParse, WorkflowDocument } from "../parser/parser";
 import {
   MapNodeDesc,
   NodeDesc,
   ValueDesc,
   ValueNodeDesc,
 } from "../parser/schema";
-import { WorkflowDocument, parse as genericParse } from "../parser/parser";
-import { eventMap, events } from "./schema/events";
-
-import { NeedsCustomValueProvider } from "./schema/needs";
 import { TTLCache } from "../utils/cache";
 import { _getContextProviderFactory } from "./contextCompletion";
+import { eventMap, events } from "./schema/events";
+import { NeedsCustomValueProvider } from "./schema/needs";
 import { actionsInputProvider } from "./valueProvider/actionsInputProvider";
-import { complete as genericComplete } from "../parser/complete";
-import { hover as genericHover } from "../parser/hover";
 
 const cache = new TTLCache();
 
