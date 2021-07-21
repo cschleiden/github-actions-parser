@@ -1,3 +1,9 @@
+## 0.23.0
+- Fix #18
+
+## 0.22.0
+- Add some missing keys for recent workflow features
+
 ## 0.21.0
 - Environment auto-complete
 - Add `released` type for `releases`
