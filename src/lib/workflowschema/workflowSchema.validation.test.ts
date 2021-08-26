@@ -392,5 +392,40 @@ jobs:
         )
       ).toEqual([]);
     });
+
+    it("matrix supports fromJSON", async () => {
+      expect(
+        await testValidation(
+          `name: test
+on:
+  push:
+
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        a: [A, AA]
+        b:
+          - first: B
+            second: BB
+          - first: X
+            second: XX
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out this project
+        uses: actions/checkout@v2
+      - name: Var test
+        env:
+          a: \${{ matrix.a }}
+          b0: \${{ matrix.b.first }}
+          b1: \${{ matrix.b.second }}
+        run: |
+          echo "a=$a"
+          echo "b0=$b0"
+          echo "b1=$b1"`
+        )
+      ).toEqual([]);
+    });
   });
 });

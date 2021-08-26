@@ -1,3 +1,7 @@
+
+## 0.24.0
+- Fix validation for matrix invocations with mappings as matrix values
+
 ## 0.23.0
 - Fix #18
 

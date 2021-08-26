@@ -140,7 +140,9 @@ export interface Job {
   services?: { [id: string]: Container };
 }
 
-export type MatrixInvocation = { [key: string]: number | string | boolean };
+export type MatrixInvocation = {
+  [key: string]: number | string | boolean | Object;
+};
 
 export type MatrixInvocations = MatrixInvocation[];
 
