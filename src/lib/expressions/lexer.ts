@@ -1,14 +1,11 @@
 export enum TokenType {
   LEFT_PAREN,
   RIGHT_PAREN,
-  LEFT_BRACE,
-  RIGHT_BRACE,
+  LEFT_BRACKET,
+  RIGHT_BRACKET,
   COMMA,
   DOT,
   MINUS,
-  PLUS,
-  SLASH,
-  STAR,
 
   // 1-2 chars token
   BANG,
@@ -19,11 +16,16 @@ export enum TokenType {
   GREATER_EQUAL,
   LESS,
   LESS_EQUAL,
+  AND,
+  OR,
 
   // Literals
   NUMBER,
   STRING,
   IDENTIFIER,
+  TRUE,
+  FALSE,
+  NULL,
 
   EOF,
 }
@@ -45,6 +47,12 @@ export type Token = {
 export type Result = {
   tokens: Token[];
 };
+
+export class LexerError extends Error {
+  constructor(message: string, public pos: Pos) {
+    super(message);
+  }
+}
 
 export class Lexer {
   private start = 0;
@@ -69,11 +77,11 @@ export class Lexer {
         case ")":
           this.addToken(TokenType.RIGHT_PAREN);
           break;
-        case "{":
-          this.addToken(TokenType.LEFT_BRACE);
+        case "[":
+          this.addToken(TokenType.LEFT_BRACKET);
           break;
-        case "}":
-          this.addToken(TokenType.RIGHT_BRACE);
+        case "]":
+          this.addToken(TokenType.RIGHT_BRACKET);
           break;
         case ",":
           this.addToken(TokenType.COMMA);
@@ -83,15 +91,6 @@ export class Lexer {
           break;
         case "-":
           this.addToken(TokenType.MINUS);
-          break;
-        case "+":
-          this.addToken(TokenType.PLUS);
-          break;
-        case "*":
-          this.addToken(TokenType.STAR);
-          break;
-        case "/":
-          this.addToken(TokenType.SLASH);
           break;
         case "!":
           this.addToken(
@@ -112,6 +111,20 @@ export class Lexer {
           this.addToken(
             this.match("=") ? TokenType.GREATER_EQUAL : TokenType.GREATER
           );
+          break;
+        case "&":
+          if (!this.match("&")) {
+            throw new LexerError("Unexpected token", this.pos());
+          }
+
+          this.addToken(TokenType.AND);
+          break;
+        case "|":
+          if (!this.match("|")) {
+            throw new LexerError("Unexpected token", this.pos());
+          }
+
+          this.addToken(TokenType.OR);
           break;
 
         // Ignore whitespace.
@@ -141,7 +154,7 @@ export class Lexer {
 
             default:
               // TODO: Error
-              throw new Error(`Unexpected input ${c}`);
+              throw new LexerError(`Unexpected input ${c}`, this.pos());
           }
       }
     }
@@ -207,7 +220,7 @@ export class Lexer {
   private addToken(type: TokenType, value?: string | number | boolean) {
     this.tokens.push({
       type,
-      lexeme: this.input.substr(this.start, this.offset),
+      lexeme: this.input.substring(this.start, this.offset),
       pos: this.pos(),
       value,
     });
@@ -256,7 +269,24 @@ export class Lexer {
   private consumeIdentifier() {
     while (isAlphaNumeric(this.peek())) this.next();
 
-    this.addToken(TokenType.IDENTIFIER);
+    let type = TokenType.IDENTIFIER;
+
+    const lexeme = this.input.substring(this.start, this.offset);
+    switch (lexeme) {
+      case "true":
+        type = TokenType.TRUE;
+        break;
+
+      case "false":
+        type = TokenType.FALSE;
+        break;
+
+      case "null":
+        type = TokenType.NULL;
+        break;
+    }
+
+    this.addToken(type);
   }
 }
 

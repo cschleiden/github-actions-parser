@@ -1,13 +1,5 @@
-import { ILexingError, IRecognitionException } from "chevrotain";
-import { expressionMarker } from "./embedding";
-import { evaluator } from "./evaluator";
-import { ExpressionLexer, parser } from "./parser";
 import { ContextProvider } from "./types";
-
-// Work-around:
-// Export this to prevent name mangling, which breaks chevrotain's `functionName`
-// logic.
-export { ExpressionParser } from "./parser";
+import { expressionMarker } from "./embedding";
 
 export class ExpressionError extends Error {
   constructor(

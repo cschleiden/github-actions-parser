@@ -1,409 +1,177 @@
-import * as chevrotain from "chevrotain";
+import { Array, Binary, Expr, Grouping, Literal, Logical, Unary } from "./ast";
+import { Pos, Token, TokenType } from "./lexer";
 
-///////
-// Copy the content between here,
-
-const True = chevrotain.createToken({ name: "True", pattern: /true/ });
-const False = chevrotain.createToken({ name: "False", pattern: /false/ });
-const Null = chevrotain.createToken({ name: "Null", pattern: /null/ });
-const LParens = chevrotain.createToken({ name: "LParens", pattern: /\(/ });
-const RParens = chevrotain.createToken({ name: "RParens", pattern: /\)/ });
-const LSquare = chevrotain.createToken({ name: "LSquare", pattern: /\[/ });
-const RSquare = chevrotain.createToken({ name: "RSquare", pattern: /]/ });
-const Comma = chevrotain.createToken({ name: "Comma", pattern: /,/ });
-
-/**
- * Expressions cannot use arbitrary variables, everything needs to be access via a context,
- * so define all supported ones.
- * see https://help.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#contexts
- */
-export const Dot = chevrotain.createToken({ name: "Dot", pattern: /\./ });
-export const ContextMemberOrKeyword = chevrotain.createToken({
-  name: "ContextMemberOrKeyword",
-  pattern: chevrotain.Lexer.NA,
-});
-export const ContextMember = chevrotain.createToken({
-  name: "ContextMember",
-  pattern: /[a-zA-Z_][a-zA-Z0-9-_]*/,
-  categories: ContextMemberOrKeyword,
-});
-export const Context = chevrotain.createToken({
-  name: "Context",
-  pattern: chevrotain.Lexer.NA,
-  longer_alt: ContextMember,
-});
-export const Contexts = [
-  "github",
-  "env",
-  "job",
-  "steps",
-  "runner",
-  "secrets",
-  "strategy",
-  "matrix",
-  "needs",
-].map((c) =>
-  chevrotain.createToken({
-    name: `Context${c}`,
-    pattern: new RegExp(`${c}`),
-    categories: [Context, ContextMemberOrKeyword],
-    longer_alt: ContextMember,
-  })
-);
-
-//
-// Operators
-//
-export const Operator = chevrotain.createToken({
-  name: "Operator",
-  pattern: chevrotain.Lexer.NA,
-  longer_alt: ContextMember,
-});
-export const And = chevrotain.createToken({
-  name: "And",
-  pattern: /&&/,
-  categories: Operator,
-});
-export const Or = chevrotain.createToken({
-  name: "Or",
-  pattern: /\|\|/,
-  categories: Operator,
-});
-export const Eq = chevrotain.createToken({
-  name: "Eq",
-  pattern: /==/,
-  categories: Operator,
-});
-export const NEq = chevrotain.createToken({
-  name: "NotEq",
-  pattern: /!=/,
-  categories: Operator,
-});
-export const LT = chevrotain.createToken({
-  name: "LT",
-  pattern: /</,
-  categories: Operator,
-});
-export const LTE = chevrotain.createToken({
-  name: "LTE",
-  pattern: /<=/,
-  categories: Operator,
-});
-export const GT = chevrotain.createToken({
-  name: "GT",
-  pattern: />/,
-  categories: Operator,
-});
-export const GTE = chevrotain.createToken({
-  name: "GTE",
-  pattern: />=/,
-  categories: Operator,
-});
-export const Not = chevrotain.createToken({
-  name: "Not",
-  pattern: /!/,
-  categories: Operator,
-});
-
-//
-// Functions
-//
-// TODO: Adding all functions as tokens might not be the best idea, but this way we get validation during parsing
-export const Function = chevrotain.createToken({
-  name: "Function",
-  pattern: chevrotain.Lexer.NA,
-  longer_alt: ContextMember,
-});
-export const contains = chevrotain.createToken({
-  name: "contains",
-  pattern: /contains/,
-  categories: [Function, ContextMemberOrKeyword],
-  longer_alt: ContextMember,
-});
-export const startsWith = chevrotain.createToken({
-  name: "startsWith",
-  pattern: /startsWith/,
-  categories: [Function, ContextMemberOrKeyword],
-  longer_alt: ContextMember,
-});
-export const endsWith = chevrotain.createToken({
-  name: "endsWith",
-  pattern: /endsWith/,
-  categories: [Function, ContextMemberOrKeyword],
-  longer_alt: ContextMember,
-});
-export const join = chevrotain.createToken({
-  name: "join",
-  pattern: /join/,
-  categories: [Function, ContextMemberOrKeyword],
-  longer_alt: ContextMember,
-});
-export const toJSON = chevrotain.createToken({
-  name: "toJSON",
-  pattern: /toJSON/,
-  categories: [Function, ContextMemberOrKeyword],
-  longer_alt: ContextMember,
-});
-export const fromJSON = chevrotain.createToken({
-  name: "fromJSON",
-  pattern: /fromJSON/,
-  categories: [Function, ContextMemberOrKeyword],
-  longer_alt: ContextMember,
-});
-export const hashFiles = chevrotain.createToken({
-  name: "hashFiles",
-  pattern: /hashFiles/,
-  categories: [Function, ContextMemberOrKeyword],
-  longer_alt: ContextMember,
-});
-export const success = chevrotain.createToken({
-  name: "success",
-  pattern: /success/,
-  categories: [Function, ContextMemberOrKeyword],
-  longer_alt: ContextMember,
-});
-export const always = chevrotain.createToken({
-  name: "always",
-  pattern: /always/,
-  categories: [Function, ContextMemberOrKeyword],
-  longer_alt: ContextMember,
-});
-export const failure = chevrotain.createToken({
-  name: "failure",
-  pattern: /failure/,
-  categories: [Function, ContextMemberOrKeyword],
-  longer_alt: ContextMember,
-});
-export const format = chevrotain.createToken({
-  name: "format",
-  pattern: /format/,
-  categories: [Function, ContextMemberOrKeyword],
-  longer_alt: ContextMember,
-});
-export const cancelled = chevrotain.createToken({
-  name: "cancelled",
-  pattern: /cancelled/,
-  categories: [Function, ContextMemberOrKeyword],
-  longer_alt: ContextMember,
-});
-const Functions = [
-  contains,
-  startsWith,
-  endsWith,
-  join,
-  toJSON,
-  fromJSON,
-  hashFiles,
-  success,
-  always,
-  failure,
-  format,
-  cancelled,
-];
-
-export const StringLiteral = chevrotain.createToken({
-  name: "StringLiteral",
-  //pattern: /'(:?[^'']|\\(:?[bfnrtv\\/]|u[0-9a-fA-F]{4}))*'/,
-  pattern: /'((?:''|[^'])*)'/,
-});
-export const NumberLiteral = chevrotain.createToken({
-  name: "NumberLiteral",
-  pattern: /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/,
-});
-export const WhiteSpace = chevrotain.createToken({
-  name: "WhiteSpace",
-  pattern: /[ \t\n\r]+/,
-  group: chevrotain.Lexer.SKIPPED,
-});
-
-const allTokens = [
-  WhiteSpace,
-  NumberLiteral,
-
-  // Built-in functions
-  Function,
-  contains,
-  startsWith,
-  format,
-  endsWith,
-  join,
-  toJSON,
-  fromJSON,
-  hashFiles,
-  success,
-  always,
-  cancelled,
-  failure,
-
-  StringLiteral,
-  LParens,
-  RParens,
-  LSquare,
-  RSquare,
-  Comma,
-
-  // Operators
-  Operator,
-  And,
-  Or,
-  Eq,
-  NEq,
-  LTE,
-  LT,
-  GTE,
-  GT,
-  Not,
-
-  // Literals
-  True,
-  False,
-  Null,
-
-  // Contexts (github, env, etc.)
-  Context,
-  ...Contexts,
-  Dot,
-  ContextMemberOrKeyword,
-  ContextMember,
-];
-const ExpressionLexer = new chevrotain.Lexer(allTokens);
-
-export class ExpressionParser extends chevrotain.CstParser {
-  constructor() {
-    super(allTokens);
-    this.performSelfAnalysis();
+export class ParserError extends Error {
+  constructor(message: string, public pos: Pos) {
+    super(message);
   }
-
-  expression = this.RULE("expression", () => {
-    //this.OPTION(() => {
-    this.SUBRULE1(this.subExpression, { LABEL: "lhs" });
-    this.MANY(() => {
-      this.CONSUME(Operator);
-      this.SUBRULE2(this.subExpression, { LABEL: "rhs" });
-    });
-    //});
-  });
-
-  subExpression = this.RULE("subExpression", () => {
-    this.OPTION(() => this.CONSUME(Not));
-    this.OR([
-      { ALT: () => this.SUBRULE(this.logicalGrouping) },
-      { ALT: () => this.SUBRULE(this.functionCall) },
-      { ALT: () => this.SUBRULE(this.contextAccess) },
-      { ALT: () => this.SUBRULE(this.value) },
-      { ALT: () => this.SUBRULE(this.array) },
-    ]);
-  });
-
-  contextAccess = this.RULE("contextAccess", () => {
-    this.OR(
-      Contexts.map((f) => ({
-        ALT: () => this.CONSUME(f),
-      }))
-    );
-
-    this.MANY(() => {
-      this.SUBRULE(this.contextMember);
-    });
-  });
-
-  contextMember = this.RULE("contextMember", () => {
-    this.OR([
-      { ALT: () => this.SUBRULE(this.contextDotMember) },
-      { ALT: () => this.SUBRULE(this.contextBoxMember) },
-    ]);
-  });
-
-  contextDotMember = this.RULE("contextDotMember", () => {
-    this.CONSUME(Dot);
-    this.CONSUME(ContextMemberOrKeyword);
-  });
-
-  contextBoxMember = this.RULE("contextBoxMember", () => {
-    this.CONSUME(LSquare);
-    this.SUBRULE(this.expression);
-    this.CONSUME(RSquare);
-  });
-
-  array = this.RULE("array", () => {
-    this.CONSUME(LSquare);
-    this.MANY_SEP({
-      SEP: Comma,
-      DEF: () => {
-        this.SUBRULE(this.subExpression);
-      },
-    });
-    this.CONSUME(RSquare);
-  });
-
-  logicalGrouping = this.RULE("logicalGrouping", () => {
-    this.CONSUME(LParens);
-    this.SUBRULE(this.expression);
-    this.CONSUME(RParens);
-  });
-
-  functionCall = this.RULE("functionCall", () => {
-    this.OR1([
-      // fromJSON is the only function that might return an object, and then allow context access
-      {
-        ALT: () => {
-          this.CONSUME(fromJSON);
-          this.SUBRULE1(this.functionParameters);
-          this.OPTION(() => this.SUBRULE(this.contextMember));
-        },
-      },
-      {
-        ALT: () => {
-          this.OR2(
-            Functions.filter((f) => f !== fromJSON).map((f) => ({
-              ALT: () => this.CONSUME(f),
-            }))
-          );
-
-          this.SUBRULE2(this.functionParameters);
-        },
-      },
-    ]);
-  });
-
-  functionParameters = this.RULE("functionParameters", () => {
-    this.CONSUME(LParens);
-    this.MANY_SEP({
-      SEP: Comma,
-      DEF: () => {
-        this.SUBRULE(this.expression);
-      },
-    });
-    this.CONSUME(RParens);
-  });
-
-  value = this.RULE("value", () => {
-    this.OR([
-      { ALT: () => this.CONSUME(StringLiteral) },
-      { ALT: () => this.CONSUME(NumberLiteral) },
-      { ALT: () => this.SUBRULE(this.booleanValue) },
-      { ALT: () => this.CONSUME(Null) },
-    ]);
-  });
-
-  booleanValue = this.RULE("booleanValue", () => {
-    this.OR([
-      { ALT: () => this.CONSUME(True) },
-      { ALT: () => this.CONSUME(False) },
-    ]);
-  });
 }
 
-// return {
-//   lexer: ExpressionLexer,
-//   parser: ExpressionParser,
-//   defaultRule: "expression",
-// };
-// and here to the playground for visualization.
-//////////
+export class Parser {
+  private offset = 0;
 
-// reuse the same parser instance.
-export const defaultRule = "expression";
-export const parser = new ExpressionParser();
-export const BaseCstVisitor = parser.getBaseCstVisitorConstructor();
-export { ExpressionLexer };
+  constructor(private tokens: Token[]) {}
+
+  parse(): Expr {
+    return this.expression();
+  }
+
+  private expression(): Expr {
+    return this.logical_or();
+  }
+
+  private logical_or(): Expr {
+    let expr = this.logical_and();
+
+    while (this.match(TokenType.OR)) {
+      const operator = this.previous();
+      const right = this.logical_and();
+      expr = new Logical(expr, operator, right);
+    }
+
+    return expr;
+  }
+
+  private logical_and(): Expr {
+    let expr = this.equality();
+
+    while (this.match(TokenType.AND)) {
+      const operator = this.previous();
+      const right = this.equality();
+      expr = new Logical(expr, operator, right);
+    }
+
+    return expr;
+  }
+
+  private equality(): Expr {
+    let expr = this.comparison();
+
+    while (this.match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
+      const operator = this.previous();
+      const right = this.comparison();
+      expr = new Binary(expr, operator, right);
+    }
+
+    return expr;
+  }
+
+  private comparison(): Expr {
+    let expr = this.unary();
+
+    while (
+      this.match(
+        TokenType.GREATER,
+        TokenType.GREATER_EQUAL,
+        TokenType.LESS,
+        TokenType.LESS_EQUAL
+      )
+    ) {
+      const operator = this.previous();
+      const right = this.unary();
+      expr = new Binary(expr, operator, right);
+    }
+
+    return expr;
+  }
+
+  private unary(): Expr {
+    if (this.match(TokenType.BANG, TokenType.MINUS)) {
+      const operator = this.previous();
+      const unary = this.unary();
+      return new Unary(operator, unary);
+    }
+
+    return this.primary();
+  }
+
+  private primary(): Expr {
+    switch (true) {
+      case this.match(TokenType.FALSE):
+        return new Literal(false);
+
+      case this.match(TokenType.TRUE):
+        return new Literal(true);
+
+      case this.match(TokenType.NULL):
+        return new Literal(null);
+
+      case this.match(TokenType.NUMBER, TokenType.STRING):
+        return new Literal(this.previous().value!);
+
+      case this.match(TokenType.LEFT_PAREN): {
+        const expr = this.expression();
+        this.consume(TokenType.RIGHT_PAREN, "Expected ')' after expression.");
+        return new Grouping(expr);
+      }
+
+      case this.match(TokenType.LEFT_BRACKET): {
+        // Special case, empty array
+        if (this.match(TokenType.RIGHT_BRACKET)) {
+          return new Array([]);
+        }
+
+        const a = [this.expression()];
+
+        while (this.match(TokenType.COMMA)) {
+          const expr = this.expression();
+          a.push(expr);
+        }
+
+        this.consume(TokenType.RIGHT_BRACKET, "Expected ']'");
+
+        return new Array(a);
+      }
+    }
+
+    throw new Error("Should not get here...");
+  }
+
+  private match(...types: TokenType[]): boolean {
+    for (const type of types) {
+      if (this.check(type)) {
+        this.next();
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private check(type: TokenType): boolean {
+    if (this.atEnd()) {
+      return false;
+    }
+
+    return this.peek().type === type;
+  }
+
+  private atEnd(): boolean {
+    return this.peek().type === TokenType.EOF;
+  }
+
+  private next(): Token {
+    if (!this.atEnd()) {
+      ++this.offset;
+    }
+
+    return this.previous();
+  }
+
+  private peek(): Token {
+    return this.tokens[this.offset];
+  }
+
+  private previous(): Token {
+    return this.tokens[this.offset - 1];
+  }
+
+  private consume(type: TokenType, message: string): Token {
+    if (this.check(type)) {
+      return this.next();
+    }
+
+    //throw new Error(this.peek(), message);
+    throw new ParserError(message, this.peek().pos);
+  }
+}

@@ -1,326 +1,149 @@
-import * as Functions from "./functions";
-
 import {
-  And,
-  BaseCstVisitor,
-  Contexts,
-  Eq,
-  GT,
-  GTE,
-  LT,
-  LTE,
-  NEq,
-  Or,
-} from "./parser";
-import { PropertyPath, iteratePath } from "../utils/path";
+  Array,
+  Binary,
+  Expr,
+  ExprVisitor,
+  Grouping,
+  Literal,
+  Logical,
+  Unary,
+} from "./ast";
+import { Pos, Token, TokenType } from "./lexer";
 
-import { ContextProvider } from "./types";
-import { tokenMatcher } from "chevrotain";
+type T = string | number | boolean | null;
+type Result = T | T[];
 
-export interface ExpressionContext {
-  contextProvider: ContextProvider;
+export class RuntimeError extends Error {
+  constructor(msg: string, pos?: Pos) {
+    super(msg);
+  }
 }
 
-/**
- * This evaluates an expression by operation on the CST produced by the parser.
- */
-export class ExpressionEvaluator extends BaseCstVisitor {
-  constructor() {
-    super();
+export interface Environment {
+  getContextValue(key: Token): any;
+}
 
-    this.validateVisitor();
+export class DefaultEnvironment implements Environment {
+  getContextValue(key: Token) {
+    // TODO: Does the pos make sense here?
+    throw new RuntimeError(`Undefined context access '${key.lexeme}'`, key.pos);
+  }
+}
+
+export class Evaluator implements ExprVisitor<Result> {
+  constructor(private expr: Expr) {}
+
+  evaluate(env: Environment): Result {
+    return this.evaluateExpr(this.expr);
   }
 
-  expression(ctx: any, context: ExpressionContext) {
-    let result = this.visit(ctx.lhs, context);
+  visitLiteral(literal: Literal): Result {
+    return literal.literal;
+  }
 
-    if (ctx.rhs) {
-      ctx.rhs.forEach((rhsOperand, idx) => {
-        let rhsResult = this.visit(rhsOperand, context);
-        const operator = ctx.Operator[idx];
+  visitUnary(unary: Unary): Result {
+    const value = this.evaluateExpr(unary.expr);
 
-        // Coerce types
-        if (typeof result != typeof rhsResult) {
-          result = this._coerceValue(result);
-          rhsResult = this._coerceValue(rhsResult);
-        }
+    switch (unary.operator.type) {
+      case TokenType.MINUS:
+        return -1.0 * (value as number); // TODO: Only accept numbers?
 
-        switch (true) {
-          // ==
-          case tokenMatcher(operator, Eq):
-            result = result == rhsResult;
-            break;
-
-          // !=
-          case tokenMatcher(operator, NEq):
-            result = result != rhsResult;
-            break;
-
-          // &&
-          case tokenMatcher(operator, And):
-            result = result && rhsResult;
-            break;
-
-          // ||
-          case tokenMatcher(operator, Or):
-            result = result || rhsResult;
-            break;
-
-          // <
-          case tokenMatcher(operator, LT):
-            result = result < rhsResult;
-            break;
-
-          // <=
-          case tokenMatcher(operator, LTE):
-            result = result <= rhsResult;
-            break;
-
-          // >
-          case tokenMatcher(operator, GT):
-            result = result > rhsResult;
-            break;
-
-          // >=
-          case tokenMatcher(operator, GTE):
-            result = result >= rhsResult;
-            break;
-        }
-      });
+      case TokenType.BANG:
+        // TODO: support truthiness
+        return !(value as boolean); // TODO: Only accept booleans?
     }
 
-    return result;
+    return null;
   }
 
-  subExpression(ctx: any, context: ExpressionContext) {
-    let result: any;
+  visitLogical(logical: Logical): Result {
+    let left = this.evaluateExpr(logical.left);
+    let right = this.evaluateExpr(logical.right);
 
-    switch (true) {
-      case !!ctx.value:
-        result = this.visit(ctx.value, context);
-        break;
+    left = coalesceValue(left);
+    right = coalesceValue(right);
 
-      case !!ctx.logicalGrouping:
-        result = this.visit(ctx.logicalGrouping, context);
-        break;
+    switch (logical.operator.type) {
+      case TokenType.OR:
+        return !!(left || right);
 
-      case !!ctx.array:
-        result = this.visit(ctx.array, context);
-        break;
-
-      case !!ctx.functionCall:
-        result = this.visit(ctx.functionCall, context);
-        break;
-
-      case !!ctx.contextAccess:
-        result = this.visit(ctx.contextAccess, context);
-        break;
+      case TokenType.AND:
+        return !!(left && right);
     }
 
-    if (!!ctx.Not) {
-      result = !result;
+    throw new RuntimeError("Unexpected operator");
+  }
+
+  visitBinary(binary: Binary): Result {
+    let left = this.evaluateExpr(binary.left);
+    let right = this.evaluateExpr(binary.right);
+
+    if (typeof left !== typeof right || left === null || right === null) {
+      left = coalesceValue(left);
+      right = coalesceValue(right);
     }
 
-    return result;
-  }
+    // TODO: coalesce correctly
+    switch (binary.operator.type) {
+      case TokenType.EQUAL_EQUAL:
+        return left == right;
 
-  contextAccess(ctx: any, context: ExpressionContext) {
-    const contextName = Contexts.map((c) => (c.PATTERN as RegExp).source).find(
-      (c) => !!ctx[`Context${c}`]
-    );
-    if (!contextName) {
-      throw new Error("Unknown context: " + contextName);
+      case TokenType.BANG_EQUAL:
+        return left != right;
+
+      case TokenType.LESS:
+        return left < right;
+
+      case TokenType.LESS_EQUAL:
+        return left <= right;
+
+      case TokenType.GREATER:
+        return left > right;
+
+      case TokenType.GREATER_EQUAL:
+        return left >= right;
     }
 
-    // Aggregate path
-    const p: PropertyPath = [];
-    if (!!ctx.contextMember) {
-      for (const cM of ctx.contextMember as any[]) {
-        this.visit(cM, { path: p, context });
-      }
-    }
-
-    const r = this.getContextValue(contextName, p, context);
-    return r;
+    return null;
   }
 
-  protected getContextValue(
-    contextName: string,
-    path: PropertyPath,
-    context: ExpressionContext
-  ) {
-    const contextObject = context.contextProvider.get(contextName as any);
-    const result = iteratePath(path, contextObject);
-
-    return result || "";
+  visitGrouping(grouping: Grouping): Result {
+    return this.evaluateExpr(grouping.inner);
   }
 
-  contextMember(
-    ctx: any,
-    { path, context }: { path: PropertyPath; context: ExpressionContext }
-  ) {
-    switch (true) {
-      case !!ctx.contextDotMember:
-        return this.visit(ctx.contextDotMember, path);
-
-      case !!ctx.contextBoxMember:
-        return this.visit(ctx.contextBoxMember, { path, context });
-    }
+  visitArray(array: Array): Result {
+    return array.elements.map((x) => this.evaluateExpr(x) as T);
   }
 
-  contextDotMember(ctx: any, path: PropertyPath) {
-    const p = ctx.ContextMemberOrKeyword[0].image;
-    path.push(p);
+  private evaluateExpr(expr: Expr): Result {
+    return expr.accept(this);
   }
+}
 
-  contextBoxMember(
-    ctx: any,
-    { path, context }: { path: PropertyPath; context: ExpressionContext }
-  ) {
-    const p = this.visit(ctx.expression, context);
-    path.push(this._coerceValue(p, true));
-  }
+function coalesceValue(value: Result): number {
+  switch (true) {
+    case typeof value === "number":
+      return value as number;
 
-  logicalGrouping(ctx: any) {
-    return this.visit(ctx.expression);
-  }
+    case value === null:
+      return 0;
 
-  array(ctx: any) {
-    const result: any[] = [];
+    case value === true:
+      return 1;
 
-    if (ctx.subExpression) {
-      result.push(...ctx.subExpression.map((se) => this.visit(se)));
-    }
+    case value === false:
+      return 0;
 
-    return result;
-  }
-
-  functionCall(ctx: any, context: ExpressionContext) {
-    const parameters = this.visit(ctx.functionParameters, context);
-
-    switch (true) {
-      case !!ctx.contains:
-        return Functions.contains(parameters[0], parameters[1]);
-
-      case !!ctx.startsWith:
-        return Functions.startsWith(parameters[0], parameters[1]);
-
-      case !!ctx.endsWith:
-        return Functions.endsWith(parameters[0], parameters[1]);
-
-      case !!ctx.join:
-        return Functions.join(parameters[0], parameters[1]);
-
-      case !!ctx.toJSON:
-        return Functions.toJSON(parameters[0]);
-
-      case !!ctx.fromJSON: {
-        const result = Functions.fromJSON(parameters[0]);
-
-        if (!!ctx.contextMember) {
-          const p: PropertyPath = [];
-          for (const cM of ctx.contextMember as any[]) {
-            this.visit(cM, { path: p, context });
-          }
-          return iteratePath(p, result);
-        }
-
-        return result;
-      }
-
-      case !!ctx.hashFiles:
-        return Functions.hashFiles(parameters);
-
-      case !!ctx.format:
-        return Functions.format(parameters[0], ...parameters.slice(1));
-
-      case !!ctx.always:
-        return Functions.always();
-
-      case !!ctx.failure:
-        return Functions.failure();
-
-      case !!ctx.success:
-        return Functions.success();
-
-      case !!ctx.cancelled:
-        return Functions.cancelled();
-    }
-
-    return undefined;
-  }
-
-  functionParameters(ctx: any, context: ExpressionContext) {
-    return (ctx.expression || []).map((p) => this.visit(p, context));
-  }
-
-  value(ctx: any) {
-    switch (true) {
-      case !!ctx.NumberLiteral:
-        return parseFloat(ctx.NumberLiteral[0].image);
-
-      case !!ctx.booleanValue:
-        return this.visit(ctx.booleanValue);
-
-      case !!ctx.Null:
-        return null;
-
-      case !!ctx.StringLiteral: {
-        const value: string = ctx.StringLiteral[0].image;
-        return this._removeQuotes(value);
-      }
-    }
-  }
-
-  booleanValue(ctx: any) {
-    switch (true) {
-      case !!ctx.True:
-        return true;
-
-      default:
-      case !!ctx.False:
-        return false;
-    }
-  }
-
-  private _coerceValue(
-    val: number | string | boolean | null,
-    keepString = false
-  ): number | string {
-    if (typeof val === "number") {
-      return val;
-    }
-
-    if (typeof val === "string") {
-      if (keepString) {
-        return val;
-      }
-
-      if (val === "") {
+    case typeof value === "string":
+      if (value === "") {
         return 0;
       }
 
-      return +val;
-    }
+      try {
+        return parseFloat(value as string);
+      } catch {}
 
-    if (val === null) {
-      return 0;
-    }
-
-    if (val === true) {
-      return 1;
-    }
-
-    if (val === false) {
-      return 0;
-    }
-
-    return NaN;
-  }
-
-  private _removeQuotes(value: string): string {
-    return "" + value.substring(1, value.length - 1).replace(/''/g, "'");
+    default:
+      return NaN;
   }
 }
-
-export const evaluator = new ExpressionEvaluator();

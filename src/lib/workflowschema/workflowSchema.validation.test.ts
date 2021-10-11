@@ -1,11 +1,12 @@
 import { Context, DiagnosticKind } from "../../types";
-import { DynamicContext } from "../expressions/types";
+
 import { ContextProviderFactory } from "../parser/complete";
-import { parse } from "../parser/parser";
+import { DynamicContext } from "../expressions/types";
+import { EditContextProvider } from "./contextProvider";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
-import { EditContextProvider } from "./contextProvider";
 import { _getSchema } from "./workflowSchema";
+import { parse } from "../parser/parser";
 
 const context: Context = {
   client: null,
@@ -393,7 +394,7 @@ jobs:
       ).toEqual([]);
     });
 
-    it("matrix supports fromJSON", async () => {
+    it("matrix supports mapping as values", async () => {
       expect(
         await testValidation(
           `name: test

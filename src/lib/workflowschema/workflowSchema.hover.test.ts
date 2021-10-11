@@ -165,5 +165,34 @@ jobs:
       - run: echo \${{ steps['1'].ou|tcome }}`,
         "Evaluates to: `echo success`"
       ));
+
+    it("matrix supports mapping as values", () => {
+      hoverSimple(
+        `name: test
+on:
+  push:
+jobs:
+  build:
+    strategy:
+      matrix:
+        a: [A, AA]
+        b:
+          - first: B
+            second: BB
+          - first: X
+            second: XX
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out this project
+        uses: actions/checkout@v2
+      - name: Var test
+        env:
+          a: \${{ matrix.a }}
+          b0: \${{ matrix.b.fi|rst }}
+          b1: \${{ matrix.b.second }}
+        run: echo`,
+        "Evaluates to: `X`"
+      );
+    });
   });
 });

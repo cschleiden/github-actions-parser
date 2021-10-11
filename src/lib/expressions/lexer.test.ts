@@ -16,9 +16,7 @@ const expectTokenTypes = (input: string, ...expected: TokenType[]) => {
 
 describe("lexer", () => {
   describe("operators", () => {
-    it("+", () => expectTokenTypes("+", TokenType.PLUS));
     it("-", () => expectTokenTypes("-", TokenType.MINUS));
-    it("/", () => expectTokenTypes("/", TokenType.SLASH));
 
     it("<", () => expectTokenTypes("<", TokenType.LESS));
     it(">", () => expectTokenTypes(">", TokenType.GREATER));
@@ -27,6 +25,9 @@ describe("lexer", () => {
     it("==", () => expectTokenTypes("==", TokenType.EQUAL_EQUAL));
     it("<=", () => expectTokenTypes("<=", TokenType.LESS_EQUAL));
     it(">=", () => expectTokenTypes(">=", TokenType.GREATER_EQUAL));
+
+    it("&&", () => expectTokenTypes("&&", TokenType.AND));
+    it("||", () => expectTokenTypes("||", TokenType.OR));
   });
 
   describe("numbers", () => {
@@ -60,5 +61,72 @@ describe("lexer", () => {
         },
       } as Token);
     });
+
+    it("keywords", () => {
+      expect(lex("true").tokens[0]).toEqual({
+        type: TokenType.TRUE,
+        lexeme: "true",
+        pos: {
+          line: 0,
+          column: 0,
+        },
+      } as Token);
+
+      expect(lex("false").tokens[0]).toEqual({
+        type: TokenType.FALSE,
+        lexeme: "false",
+        pos: {
+          line: 0,
+          column: 0,
+        },
+      } as Token);
+
+      expect(lex("null").tokens[0]).toEqual({
+        type: TokenType.NULL,
+        lexeme: "null",
+        pos: {
+          line: 0,
+          column: 0,
+        },
+      } as Token);
+    });
+  });
+
+  describe("arrays", () => {
+    it("[1,2]", () =>
+      expectTokenTypes(
+        "[1,2]",
+        TokenType.LEFT_BRACKET,
+        TokenType.NUMBER,
+        TokenType.COMMA,
+        TokenType.NUMBER,
+        TokenType.RIGHT_BRACKET
+      ));
+  });
+
+  describe("simple expressions", () => {
+    it("1 == 2", () =>
+      expectTokenTypes(
+        "1 == 2",
+        TokenType.NUMBER,
+        TokenType.EQUAL_EQUAL,
+        TokenType.NUMBER
+      ));
+
+    it("1== 1", () =>
+      expectTokenTypes(
+        "1== 1",
+        TokenType.NUMBER,
+        TokenType.EQUAL_EQUAL,
+        TokenType.NUMBER
+      ));
+
+    it("1< 1", () =>
+      expectTokenTypes(
+        "1< 1",
+        TokenType.NUMBER,
+        TokenType.LESS,
+        TokenType.NUMBER
+      ));
   });
 });
