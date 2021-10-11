@@ -3,6 +3,7 @@ import {
   Binary,
   Expr,
   ExprVisitor,
+  FunctionCall,
   Grouping,
   Literal,
   Logical,
@@ -54,6 +55,32 @@ export class Evaluator implements ExprVisitor<Result> {
     }
 
     return null;
+  }
+
+  visitFunctionCall(functionCall: FunctionCall): Result {
+    // TODO: Check number of arguments
+
+    switch (functionCall.functionName.lexeme.toLocaleLowerCase()) {
+      case "startswith": {
+        const stack = this.evaluateExpr(functionCall.args[0]);
+        const needle = this.evaluateExpr(functionCall.args[1]);
+        return `${stack}`.startsWith(`${needle}`);
+      }
+
+      case "endswith": {
+        const stack = this.evaluateExpr(functionCall.args[0]);
+        const needle = this.evaluateExpr(functionCall.args[1]);
+        return `${stack}`.endsWith(`${needle}`);
+      }
+
+      case "tojson":
+        return JSON.stringify(this.evaluateExpr(functionCall.args[0]));
+    }
+
+    throw new RuntimeError(
+      `Unexpected function call: ${functionCall.functionName.lexeme}`,
+      functionCall.functionName.pos
+    );
   }
 
   visitLogical(logical: Logical): Result {

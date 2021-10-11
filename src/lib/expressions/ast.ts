@@ -7,6 +7,7 @@ export interface ExprVisitor<R> {
   visitLogical(binary: Logical): R;
   visitGrouping(grouping: Grouping): R;
   visitArray(array: Array): R;
+  visitFunctionCall(functionCall: FunctionCall): R;
 }
 
 export abstract class Expr {
@@ -30,6 +31,16 @@ export class Unary extends Expr {
 
   accept<R>(v: ExprVisitor<R>): R {
     return v.visitUnary(this);
+  }
+}
+
+export class FunctionCall extends Expr {
+  constructor(public functionName: Token, public args: Expr[]) {
+    super();
+  }
+
+  accept<R>(v: ExprVisitor<R>): R {
+    return v.visitFunctionCall(this);
   }
 }
 

@@ -4,25 +4,11 @@ logical_and		-> 	equality ( "&&" equality )*
 equality			-> 	comparison ( ( "!=" | "==" ) comparison)*
 comparison		-> 	unary ( ( ">" | ">=" | "<" | "<=" ) unary )*
 unary         -> 	"!" unary | functionCall
-functionCall  -> 	IDENTIFIER "(" args? ")" dereference*
+functionCall  -> 	primary | IDENTIFIER "(" args? ")" dereference*
 primary       -> 	NUMBER | STRING | IDENTIFIER | "true" | "false" | "null"
 									| "(" expression ")"
 									| array
 									| IDENTIFIER dereference+
 array         -> 	"[" expression ("," expression)* "]"
-dereference -> 	"[" expression "]" | "." expression
-
----
-
-literal | unary | binary | grouping
-literal -> True | False | String | Number | Null
-grouping -> "(" expression ")"
-unary -> ( "-" | "!" ) expression
-binary -> expression operator expression
-operator -> "<=" | "<" | ">=" | ">" | "==" | "!=" | "+" | "-" | "*" | "/" | "&&" | "||"
-
-array -> "[" expression ( "," expression )* "]"
-fcall -> Identifier "(" farguments? ")"
-farguments -> expression ( "," expression )*
-
-contextAccess -> Identifier
+dereference 	-> 	"[" expression "]" | "." expression
+args 					->	expression ("," expression)*

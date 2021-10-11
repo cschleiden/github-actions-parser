@@ -1,4 +1,13 @@
-import { Array, Binary, Expr, Grouping, Literal, Logical, Unary } from "./ast";
+import {
+  Array,
+  Binary,
+  Expr,
+  FunctionCall,
+  Grouping,
+  Literal,
+  Logical,
+  Unary,
+} from "./ast";
 import { Pos, Token, TokenType } from "./lexer";
 
 export class ParserError extends Error {
@@ -82,6 +91,30 @@ export class Parser {
       return new Unary(operator, unary);
     }
 
+    return this.functionCall();
+  }
+
+  private functionCall(): Expr {
+    if (this.match(TokenType.IDENTIFIER)) {
+      const identifier = this.previous();
+
+      if (this.match(TokenType.LEFT_PAREN)) {
+        // Parse arguments
+        const args: Expr[] = [];
+
+        while (!this.match(TokenType.RIGHT_PAREN)) {
+          args.push(this.expression());
+
+          // Either we are at the end of the arguments, or we expect a ","
+          if (!this.check(TokenType.RIGHT_PAREN)) {
+            this.consume(TokenType.COMMA, "");
+          }
+        }
+
+        return new FunctionCall(identifier, args);
+      }
+    }
+
     return this.primary();
   }
 
@@ -138,6 +171,11 @@ export class Parser {
     return false;
   }
 
+  /**
+   * Checks if the next token type matches the given type
+   * @param type Expected token type
+   * @returns Whether the next token matches the given type
+   */
   private check(type: TokenType): boolean {
     if (this.atEnd()) {
       return false;
@@ -166,12 +204,18 @@ export class Parser {
     return this.tokens[this.offset - 1];
   }
 
-  private consume(type: TokenType, message: string): Token {
+  /**
+   * Consume a token
+   * @param type TokenType to consume
+   * @param errorMessage Error message if next token doesn't match the type
+   * @returns Consumed token
+   */
+  private consume(type: TokenType, errorMessage: string): Token {
     if (this.check(type)) {
       return this.next();
     }
 
     //throw new Error(this.peek(), message);
-    throw new ParserError(message, this.peek().pos);
+    throw new ParserError(errorMessage, this.peek().pos);
   }
 }
