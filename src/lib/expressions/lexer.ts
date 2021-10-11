@@ -248,8 +248,13 @@ export class Lexer {
   }
 
   private consumeString() {
-    while (this.peek() != "'" && !this.atEnd()) {
-      if (this.peek() == "\n") this.line++;
+    while ((this.peek() !== "'" || this.peekNext() === "'") && !this.atEnd()) {
+      if (this.peek() === "\n") this.line++;
+      if (this.peek() === "'" && this.peekNext() === "'") {
+        // Escaped "'", consume
+        this.next();
+        this.next();
+      }
       this.next();
     }
 
@@ -262,7 +267,9 @@ export class Lexer {
     this.next();
 
     // Trim the surrounding quotes.
-    const value = this.input.substring(this.start + 1, this.offset - 1);
+    let value = this.input.substring(this.start + 1, this.offset - 1);
+    value = value.replace("''", "'");
+
     this.addToken(TokenType.STRING, value);
   }
 

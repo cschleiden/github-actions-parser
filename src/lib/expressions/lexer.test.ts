@@ -48,6 +48,18 @@ describe("lexer", () => {
         },
       } as Token);
     });
+
+    it("escaped string", () => {
+      expect(lex("'It''s okay'").tokens[0]).toEqual({
+        type: TokenType.STRING,
+        lexeme: "'It''s okay'",
+        value: "It's okay",
+        pos: {
+          line: 0,
+          column: 0,
+        },
+      } as Token);
+    });
   });
 
   describe("identifiers", () => {

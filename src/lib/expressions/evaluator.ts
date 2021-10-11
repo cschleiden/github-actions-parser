@@ -58,22 +58,31 @@ export class Evaluator implements ExprVisitor<Result> {
   }
 
   visitFunctionCall(functionCall: FunctionCall): Result {
-    // TODO: Check number of arguments
-
     switch (functionCall.functionName.lexeme.toLocaleLowerCase()) {
+      case "always": {
+        this.checkFunctionArguments(0, functionCall);
+        return true;
+      }
+
       case "startswith": {
+        this.checkFunctionArguments(2, functionCall);
+
         const stack = this.evaluateExpr(functionCall.args[0]);
         const needle = this.evaluateExpr(functionCall.args[1]);
         return `${stack}`.startsWith(`${needle}`);
       }
 
       case "endswith": {
+        this.checkFunctionArguments(2, functionCall);
+
         const stack = this.evaluateExpr(functionCall.args[0]);
         const needle = this.evaluateExpr(functionCall.args[1]);
         return `${stack}`.endsWith(`${needle}`);
       }
 
       case "tojson":
+        this.checkFunctionArguments(1, functionCall);
+
         return JSON.stringify(this.evaluateExpr(functionCall.args[0]));
     }
 
@@ -81,6 +90,21 @@ export class Evaluator implements ExprVisitor<Result> {
       `Unexpected function call: ${functionCall.functionName.lexeme}`,
       functionCall.functionName.pos
     );
+  }
+
+  private checkFunctionArguments(
+    requiredArguments: number,
+    functionCall: FunctionCall,
+    atLeast: boolean = false
+  ) {
+    if (requiredArguments != functionCall.args.length) {
+      if (!atLeast || requiredArguments > functionCall.args.length) {
+        throw new RuntimeError(
+          `Unexpected number of arguments for function call ${functionCall.functionName.lexeme}`,
+          functionCall.functionName.pos
+        );
+      }
+    }
   }
 
   visitLogical(logical: Logical): Result {
