@@ -10,6 +10,7 @@ import {
   Unary,
 } from "./ast";
 import { Pos, Token, TokenType } from "./lexer";
+import { contains, format, join, toJSON } from "./functions";
 
 type T = string | number | boolean | null;
 type Result = T | T[];
@@ -83,7 +84,30 @@ export class Evaluator implements ExprVisitor<Result> {
       case "tojson":
         this.checkFunctionArguments(1, functionCall);
 
-        return JSON.stringify(this.evaluateExpr(functionCall.args[0]));
+        return toJSON(this.evaluateExpr(functionCall.args[0]));
+
+      case "contains":
+        this.checkFunctionArguments(2, functionCall);
+
+        return contains(
+          this.evaluateExpr(functionCall.args[0]),
+          this.evaluateExpr(functionCall.args[1])
+        );
+
+      case "format":
+        this.checkFunctionArguments(1, functionCall, true);
+
+        const a = functionCall.args.map((x) => this.evaluateExpr(x) as string);
+        return format(a[0] as string, ...a.slice(1));
+
+      case "join":
+        this.checkFunctionArguments(1, functionCall, true);
+
+        return join(
+          this.evaluateExpr(functionCall.args[0]) as unknown[],
+          functionCall.args[1] &&
+            (this.evaluateExpr(functionCall.args[1]) as string)
+        );
     }
 
     throw new RuntimeError(
