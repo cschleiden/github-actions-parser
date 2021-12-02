@@ -68,6 +68,7 @@ const permissions: NodeDesc = {
         contents: permissionValue,
         deployments: permissionValue,
         discussions: permissionValue,
+        "id-token": permissionValue,
         issues: permissionValue,
         packages: permissionValue,
         pages: permissionValue,
