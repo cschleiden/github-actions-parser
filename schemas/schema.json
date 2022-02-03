@@ -752,7 +752,8 @@
                     "ubuntu-18.04",
                     "ubuntu-latest",
                     "windows-latest",
-                    "windows-2019"
+                    "windows-2019",
+                    "windows-2022"
                   ]
                 },
                 {

@@ -156,6 +156,7 @@ const runsOn = (context: Context): NodeDesc => ({
           "ubuntu-16.04",
           "windows-latest",
           "windows-2019",
+          "windows-2022",
           "macos-latest",
           "macos-11",
           "macos-10.15",
