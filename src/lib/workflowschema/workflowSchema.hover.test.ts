@@ -134,6 +134,7 @@ jobs:
   workflow_dispatch:
     inputs:
       bar:
+        type: number
         default: 42
 jobs:
   build:
