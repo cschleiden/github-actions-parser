@@ -22,7 +22,7 @@ export interface OnPaths {
   "paths-ignore"?: string[];
 }
 
-export type WorkflowDispatchInputsType = 'boolean' | 'number' | 'string' | 'choice';
+export type WorkflowDispatchInputsType = 'boolean' | 'string' | 'choice' | 'environment';
 
 export type On = {
   issues?: OnTypes<IssueActivities>;

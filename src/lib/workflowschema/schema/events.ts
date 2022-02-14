@@ -319,9 +319,9 @@ export const eventMap: NodeDescMap = mergeDeep(
                 type: "value",
                 allowedValues: [
                   {value: 'boolean'},
-                  {value: 'number'},
                   {value: 'string'},
                   {value: 'choice'},
+                  {value: 'environment'},
                 ]
               },
               options: {
