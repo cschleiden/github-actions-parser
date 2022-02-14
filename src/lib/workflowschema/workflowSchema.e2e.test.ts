@@ -190,6 +190,7 @@ on:
   workflow_dispatch:
     inputs:
       force:
+        type: boolean
         description: 'Also create pull request if only developer dependencies changed'
         default: 'false'
   schedule:

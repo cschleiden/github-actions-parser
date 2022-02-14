@@ -315,6 +315,18 @@ export const eventMap: NodeDescMap = mergeDeep(
               description: {
                 type: "value",
               },
+              type: {
+                type: "value",
+                allowedValues: [
+                  {value: 'boolean'},
+                  {value: 'string'},
+                  {value: 'choice'},
+                  {value: 'environment'},
+                ]
+              },
+              options: {
+                type: "sequence"
+              },
               default: {
                 type: "value",
               },
