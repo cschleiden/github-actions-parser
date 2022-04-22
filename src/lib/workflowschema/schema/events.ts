@@ -187,6 +187,7 @@ const _events: [string, string, ([string, string] | string)[]][] = [
     "Runs your workflow anytime the watch event occurs. More than one activity type triggers this event. For information about the REST API, see https://developer.github.com/v3/activity/starring/.",
     [],
   ],
+  ["workflow_call", "Allows workflows to be reused by other workflows.", []],
   ["workflow_dispatch", "", []],
   ["workflow_run", "", []],
 ];
@@ -318,17 +319,81 @@ export const eventMap: NodeDescMap = mergeDeep(
               type: {
                 type: "value",
                 allowedValues: [
-                  {value: 'boolean'},
-                  {value: 'string'},
-                  {value: 'choice'},
-                  {value: 'environment'},
-                ]
+                  { value: "boolean" },
+                  { value: "string" },
+                  { value: "choice" },
+                  { value: "environment" },
+                ],
               },
               options: {
-                type: "sequence"
+                type: "sequence",
               },
               default: {
                 type: "value",
+              },
+            },
+          },
+        },
+      },
+    },
+    workflow_call: {
+      type: "map",
+      description: "Allows workflows to be reused by other workflows.",
+      keys: {
+        inputs: {
+          type: "map",
+          description:
+            "When using the `workflow_call` event, you can optionally specify inputs that are passed to the called workflow from the caller workflow.",
+          itemDesc: {
+            type: "map",
+            keys: {
+              description: {
+                type: "value",
+                description: "A string description of the input parameter.",
+              },
+              deprecationMessage: {
+                type: "value",
+                description:
+                  "A string shown to users using the deprecated input.",
+              },
+              required: {
+                type: "value",
+                description:
+                  "A boolean to indicate whether the action requires the input parameter. Set to true when the parameter is required.",
+              },
+              type: {
+                description:
+                  "Required if input is defined for the on.workflow_call keyword. The value of this parameter is a string specifying the data type of the input. This must be one of: boolean, number, or string.",
+                type: "value",
+                allowedValues: [
+                  { value: "boolean" },
+                  { value: "number" },
+                  { value: "string" },
+                ],
+              },
+              default: {
+                type: "value",
+                description:
+                  "The default value is used when an input parameter isn't specified in a workflow file.",
+              },
+            },
+          },
+        },
+        secrets: {
+          description:
+            "A map of the secrets that can be used in the called workflow. Within the called workflow, you can use the secrets context to refer to a secret.",
+          type: "map",
+          itemDesc: {
+            type: "map",
+            keys: {
+              description: {
+                type: "value",
+                description: "A string description of the secret.",
+              },
+              required: {
+                type: "value",
+                description:
+                  "A boolean to indicate whether the workflow requires the secret.",
               },
             },
           },
