@@ -1,6 +1,7 @@
 import { evaluateExpression, replaceExpressions } from ".";
-import { Undetermined } from "./functions";
+
 import { ContextProvider } from "./types";
+import { Undetermined } from "./functions";
 
 const ctx: ContextProvider = {
   get: (context: string) => {
@@ -21,7 +22,6 @@ const ctx: ContextProvider = {
           base_ref: "",
           // event_name: event.event,
           // event: getEventPayload(event.event),
-
           ref: "refs/heads/master",
           event_name: "push",
           event: {

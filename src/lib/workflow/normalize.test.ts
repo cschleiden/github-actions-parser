@@ -1,6 +1,5 @@
-import { crossProduct, normalizeMatrix, normalizeWorkflow } from "./normalize";
-
 import { Workflow } from "../workflow";
+import { crossProduct, normalizeMatrix, normalizeWorkflow } from "./normalize";
 
 const testNormalize = (workflow: any): Workflow => {
   normalizeWorkflow("workflow.yaml", workflow);

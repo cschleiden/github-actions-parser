@@ -1,7 +1,6 @@
-import { Expression, Job, MatrixInvocations, Workflow } from "../workflow";
-
 import { DUMMY_KEY } from "../parser/ast";
-import { parseUses } from "../workflowschema/uses";
+import { Expression, Job, MatrixInvocations, Workflow } from "../workflow";
+import { parseUses } from "./uses";
 
 function toArray(input: string | string[]): string[] {
   if (Array.isArray(input)) {
