@@ -1,12 +1,12 @@
 const funcDescription = {
-  toJSON:
+  tojson:
     "Returns a pretty-print JSON representation of `value`. You can use this function to debug the information provided in contexts.",
 };
 
 export const Undetermined = {};
 
 export function getFunctionDescription(f: string): string | undefined {
-  return funcDescription[f];
+  return funcDescription[f?.toLowerCase()];
 }
 
 export function contains<T>(haystack: T | T[], needle: T): boolean {

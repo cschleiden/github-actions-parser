@@ -116,73 +116,73 @@ export const Function = chevrotain.createToken({
 });
 export const contains = chevrotain.createToken({
   name: "contains",
-  pattern: /contains/,
+  pattern: /contains/i,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
 export const startsWith = chevrotain.createToken({
   name: "startsWith",
-  pattern: /startsWith/,
+  pattern: /startsWith/i,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
 export const endsWith = chevrotain.createToken({
   name: "endsWith",
-  pattern: /endsWith/,
+  pattern: /endsWith/i,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
 export const join = chevrotain.createToken({
   name: "join",
-  pattern: /join/,
+  pattern: /join/i,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
 export const toJSON = chevrotain.createToken({
   name: "toJSON",
-  pattern: /toJSON/,
+  pattern: /toJSON/i,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
 export const fromJSON = chevrotain.createToken({
   name: "fromJSON",
-  pattern: /fromJSON/,
+  pattern: /fromJSON/i,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
 export const hashFiles = chevrotain.createToken({
   name: "hashFiles",
-  pattern: /hashFiles/,
+  pattern: /hashFiles/i,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
 export const success = chevrotain.createToken({
   name: "success",
-  pattern: /success/,
+  pattern: /success/i,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
 export const always = chevrotain.createToken({
   name: "always",
-  pattern: /always/,
+  pattern: /always/i,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
 export const failure = chevrotain.createToken({
   name: "failure",
-  pattern: /failure/,
+  pattern: /failure/i,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
 export const format = chevrotain.createToken({
   name: "format",
-  pattern: /format/,
+  pattern: /format/i,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });
 export const cancelled = chevrotain.createToken({
   name: "cancelled",
-  pattern: /cancelled/,
+  pattern: /cancelled/i,
   categories: [Function, ContextMemberOrKeyword],
   longer_alt: ContextMember,
 });

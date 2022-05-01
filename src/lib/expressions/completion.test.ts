@@ -1,5 +1,5 @@
-import { ContextProvider } from "./types";
 import { completeExpression } from "./completion";
+import { ContextProvider } from "./types";
 
 const contextProvider: ContextProvider = {
   get: (context) => {
@@ -38,7 +38,8 @@ const testComplete = async (input: string, expected: string[]) => {
 describe("auto-complete", () => {
   describe("functions", () => {
     it("toJSON", async () => {
-      await testComplete("toJS", ["toJSON"]);
+      await testComplete("to", ["toJSON"]);
+      await testComplete("toJs", ["toJSON"]);
       await testComplete("1 == toJS", ["toJSON"]);
       await testComplete("toJS| == 1", ["toJSON"]);
     });

@@ -1,7 +1,6 @@
 import { evaluateExpression, replaceExpressions } from ".";
-
-import { ContextProvider } from "./types";
 import { Undetermined } from "./functions";
+import { ContextProvider } from "./types";
 
 const ctx: ContextProvider = {
   get: (context: string) => {
@@ -188,6 +187,7 @@ describe("expression parser", () => {
     describe("contains", () => {
       it("in array", () => {
         expect(ev("contains([2, 1], 1)")).toBe(true);
+        expect(ev("Contains([2, 1], 1)")).toBe(true);
       });
 
       it("in string", () => {
