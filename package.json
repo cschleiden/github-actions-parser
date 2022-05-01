@@ -40,6 +40,6 @@
     "@types/js-yaml": "^3.12.4",
     "@types/micromatch": "^4.0.1",
     "jest": "^26.0.1",
-    "microbundle": "0.13.0"
+    "microbundle": "0.15.0"
   }
 }
