@@ -22,7 +22,11 @@ export interface OnPaths {
   "paths-ignore"?: string[];
 }
 
-export type WorkflowDispatchInputsType = 'boolean' | 'string' | 'choice' | 'environment';
+export type WorkflowDispatchInputsType =
+  | "boolean"
+  | "string"
+  | "choice"
+  | "environment";
 
 export type On = {
   issues?: OnTypes<IssueActivities>;
@@ -166,7 +170,7 @@ export type JobMap = { [jobId: string]: Job };
  * A normalized workflow
  *
  * For example, `on` can be represented via a scalar, a sequence, or a map in YAML. This
- * workflow type is normalized so `on` is always a map of event_type to it's options.
+ * workflow type is normalized so `on` is always a map of event_type to its options.
  */
 export interface Workflow {
   name?: string;
