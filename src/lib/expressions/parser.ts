@@ -7,10 +7,16 @@ const True = chevrotain.createToken({ name: "True", pattern: /true/ });
 const False = chevrotain.createToken({ name: "False", pattern: /false/ });
 const Null = chevrotain.createToken({ name: "Null", pattern: /null/ });
 const LParens = chevrotain.createToken({ name: "LParens", pattern: /\(/ });
-const RParens = chevrotain.createToken({ name: "RParens", pattern: /\)/ });
+export const RParens = chevrotain.createToken({
+  name: "RParens",
+  pattern: /\)/,
+});
 const LSquare = chevrotain.createToken({ name: "LSquare", pattern: /\[/ });
-const RSquare = chevrotain.createToken({ name: "RSquare", pattern: /]/ });
-const Comma = chevrotain.createToken({ name: "Comma", pattern: /,/ });
+export const RSquare = chevrotain.createToken({
+  name: "RSquare",
+  pattern: /]/,
+});
+export const Comma = chevrotain.createToken({ name: "Comma", pattern: /,/ });
 
 /**
  * Expressions cannot use arbitrary variables, everything needs to be access via a context,

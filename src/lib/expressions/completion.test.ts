@@ -62,5 +62,10 @@ describe("auto-complete", () => {
       await testComplete("1 == secrets.F", []);
       await testComplete("toJSON(secrets.", ["AWS_TOKEN"]);
     });
+
+    it("provides suggestions for contexts in function call", async () => {
+      // await testComplete("toJSON(env.|", ["BAR_TEST", "FOO"]);
+      await testComplete("toJSON(env.|)", ["BAR_TEST", "FOO"]);
+    });
   });
 });

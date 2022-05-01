@@ -3,6 +3,7 @@ import { CompletionOption } from "../../types";
 import { iteratePath, PropertyPath } from "../utils/path";
 import { getFunctionDescription } from "./functions";
 import {
+  Comma,
   Context,
   ContextMember,
   defaultRule,
@@ -10,6 +11,8 @@ import {
   ExpressionLexer,
   Function,
   parser,
+  RParens,
+  RSquare,
 } from "./parser";
 import { ContextProvider } from "./types";
 
@@ -36,18 +39,28 @@ export async function completeExpression(
     return [];
   }
 
-  const lastInputToken = partialTokenVector[partialTokenVector.length - 1];
+  let lastInputToken = partialTokenVector[partialTokenVector.length - 1];
+  let tokenIdx = 1;
+  while (
+    tokenIdx < partialTokenVector.length &&
+    (tokenMatcher(lastInputToken, RParens) ||
+      tokenMatcher(lastInputToken, RSquare) ||
+      tokenMatcher(lastInputToken, Comma))
+  ) {
+    ++tokenIdx;
+    lastInputToken = partialTokenVector[partialTokenVector.length - tokenIdx];
+  }
 
   // Check if we are auto-completing a context access
   if (
     tokenMatcher(lastInputToken, ContextMember) ||
     (tokenMatcher(lastInputToken, Dot) &&
       (tokenMatcher(
-        partialTokenVector[partialTokenVector.length - 2],
+        partialTokenVector[partialTokenVector.length - (tokenIdx + 1)],
         Context
       ) ||
         tokenMatcher(
-          partialTokenVector[partialTokenVector.length - 2],
+          partialTokenVector[partialTokenVector.length - (tokenIdx + 1)],
           ContextMember
         )))
   ) {
@@ -59,7 +72,7 @@ export async function completeExpression(
     // Get context access path
     let contextName: string | undefined;
     let path: PropertyPath = [];
-    for (let i = partialTokenVector.length - 1; i >= 0; --i) {
+    for (let i = partialTokenVector.length - (tokenIdx + 1); i >= 0; --i) {
       if (tokenMatcher(partialTokenVector[i], Dot)) {
         // Ignore .
       } else {
