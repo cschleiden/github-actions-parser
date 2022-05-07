@@ -162,10 +162,12 @@ describe("Completion", () => {
         "outputs",
         "permissions",
         "runs-on",
+        "secrets",
         "services",
         "steps",
         "strategy",
         "timeout-minutes",
+        "uses",
       ]);
     });
 
@@ -184,10 +186,12 @@ describe("Completion", () => {
           "needs",
           "outputs",
           "permissions",
+          "secrets",
           "services",
           "steps",
           "strategy",
           "timeout-minutes",
+          "uses",
         ]
       );
     });
