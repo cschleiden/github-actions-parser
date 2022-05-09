@@ -173,6 +173,28 @@ jobs:
     expect(result.diagnostics).toHaveLength(0);
   });
 
+  it("no validation errors when reusing other workflow in a job", async () => {
+    const result = await parse(
+      context,
+      'workflow.yml',
+      `name: Deploy
+on:
+  push:
+jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+    secrets: inherit
+  tests2:
+    uses: ./.github/workflows/tests.yml
+    secrets:
+      NODE_ENV: \${{ secrets.NODE_ENV }}`
+    );
+
+    const diagnosticsAsText = JSON.stringify(result.diagnostics)
+    expect(diagnosticsAsText).not.toContain("Key 'uses' is not allowed")
+    expect(diagnosticsAsText).not.toContain("Key 'secrets' is not allowed")
+  })
+
   it("supports workflow_dispatch inputs", async () => {
     const result = await parse(
       context,

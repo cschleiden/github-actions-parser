@@ -146,6 +146,10 @@ export interface Job {
   container?: Container;
 
   services?: { [id: string]: Container };
+
+  uses?: string;
+
+  secrets: 'inherit' | KeyValueMap
 }
 
 export type MatrixInvocation = {

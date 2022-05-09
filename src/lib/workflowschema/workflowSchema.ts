@@ -387,6 +387,25 @@ You can provide the environment as only the environment \`name\`, or as an envir
       },
       required: ["matrix"],
     },
+    uses: value('The location and version of a reusable workflow file to run as a job. For more information, see [Reusing workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows).'),
+    secrets: {
+      type: "oneOf",
+      oneOf: [
+        {
+          type: "value",
+          allowedValues: [
+            { value: "inherit" }
+          ],
+        },
+        {
+          type: "map",
+          itemDesc: {
+            type: "value",
+          },
+        }
+      ],
+      description: "A map of secrets that are passed to the called workflow. You can also use the \"inherit\" keyword to pass all the calling workflow's secrets to the called workflow."
+    }
   },
 
   required: ["runs-on", "steps"],
