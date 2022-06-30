@@ -176,7 +176,7 @@ jobs:
   it("no validation errors when reusing other workflow in a job", async () => {
     const result = await parse(
       context,
-      'workflow.yml',
+      "workflow.yml",
       `name: Deploy
 on:
   push:
@@ -190,10 +190,10 @@ jobs:
       NODE_ENV: \${{ secrets.NODE_ENV }}`
     );
 
-    const diagnosticsAsText = JSON.stringify(result.diagnostics)
-    expect(diagnosticsAsText).not.toContain("Key 'uses' is not allowed")
-    expect(diagnosticsAsText).not.toContain("Key 'secrets' is not allowed")
-  })
+    const diagnosticsAsText = JSON.stringify(result.diagnostics);
+    expect(diagnosticsAsText).not.toContain("Key 'uses' is not allowed");
+    expect(diagnosticsAsText).not.toContain("Key 'secrets' is not allowed");
+  });
 
   it("supports workflow_dispatch inputs", async () => {
     const result = await parse(
@@ -240,5 +240,30 @@ jobs:
 
     expect(result.diagnostics).toHaveLength(0);
     expect(result.workflow.jobs["update"].needs).toBeUndefined();
+  });
+
+  it("no validation errors when using workflow_run events", async () => {
+    const result = await parse(
+      context,
+      "workflow.yml",
+      `name: e2e workflow
+on:
+  workflow_run:
+    workflows: [build]
+    types:
+      - completed
+
+jobs:
+  e2e-tests:
+    name: end-to-end tests
+    if: \${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3`
+    );
+
+    expect(result.diagnostics).toHaveLength(0);
   });
 });
