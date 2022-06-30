@@ -153,14 +153,16 @@ const runsOn = (context: Context): NodeDesc => ({
       context.timeToCacheResponsesInMS,
       async () => {
         const labels = new Set<string>([
+          "ubuntu-22.04",
           "ubuntu-latest",
           "ubuntu-20.04",
           "ubuntu-18.04",
-          "ubuntu-16.04",
           "windows-latest",
-          "windows-2019",
           "windows-2022",
+          "windows-2019",
+          "windows-2016",
           "macos-latest",
+          "macos-12",
           "macos-11",
           "macos-10.15",
           "self-hosted",
@@ -387,25 +389,26 @@ You can provide the environment as only the environment \`name\`, or as an envir
       },
       required: ["matrix"],
     },
-    uses: value('The location and version of a reusable workflow file to run as a job. For more information, see [Reusing workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows).'),
+    uses: value(
+      "The location and version of a reusable workflow file to run as a job. For more information, see [Reusing workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows)."
+    ),
     secrets: {
       type: "oneOf",
       oneOf: [
         {
           type: "value",
-          allowedValues: [
-            { value: "inherit" }
-          ],
+          allowedValues: [{ value: "inherit" }],
         },
         {
           type: "map",
           itemDesc: {
             type: "value",
           },
-        }
+        },
       ],
-      description: "A map of secrets that are passed to the called workflow. You can also use the \"inherit\" keyword to pass all the calling workflow's secrets to the called workflow."
-    }
+      description:
+        'A map of secrets that are passed to the called workflow. You can also use the "inherit" keyword to pass all the calling workflow\'s secrets to the called workflow.',
+    },
   },
 
   required: ["runs-on", "steps"],
