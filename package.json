@@ -1,6 +1,6 @@
 {
   "name": "github-actions-parser",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "author": "Christopher Schleiden <cschleiden@live.de>",
   "license": "MIT",
   "source": "src/index.ts",
@@ -40,6 +40,7 @@
     "@types/js-yaml": "^3.12.4",
     "@types/micromatch": "^4.0.1",
     "jest": "^26.0.1",
-    "microbundle": "0.15.0"
+    "microbundle": "0.15.0",
+    "typescript": "4.2.3"
   }
 }
