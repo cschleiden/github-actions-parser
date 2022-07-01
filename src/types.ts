@@ -76,7 +76,7 @@ export type YNode = YAMLMap | YAMLMapping | YAMLSequence | YAMLScalar;
 
 export interface Context {
   /** Octokit client to use for dynamic auto completion */
-  client: Octokit;
+  client: Octokit | null;
 
   /** Repository owner */
   owner: string;
