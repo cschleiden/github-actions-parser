@@ -1,14 +1,14 @@
 import { CompletionOption, Kind, YNode } from "../../types";
-import { CustomValue, MapNodeDesc, NodeDesc } from "./schema";
-import { DUMMY_KEY, findNode, getPathFromNode } from "./ast";
-import { WorkflowDocument, parse } from "./parser";
 import { completeExpression, inExpression } from "../expressions/completion";
 import { expressionMarker, iterateExpressions } from "../expressions/embedding";
+import { DUMMY_KEY, findNode, getPathFromNode } from "./ast";
+import { parse, WorkflowDocument } from "./parser";
+import { CustomValue, MapNodeDesc, NodeDesc } from "./schema";
 
+import { YAMLNode } from "yaml-ast-parser";
 import { ContextProvider } from "../expressions/types";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
-import { YAMLNode } from "yaml-ast-parser";
 
 export interface ContextProviderFactory {
   get(
@@ -355,9 +355,8 @@ function _transform(input: string, pos: number): [string, number, string] {
           .trim();
       }
     } else {
-      partialInput = (pos > colon
-        ? line.substring(colon + 1)
-        : line.substring(0, colon)
+      partialInput = (
+        pos > colon ? line.substring(colon + 1) : line.substring(0, colon)
       ).trim();
       pos = pos - 1;
     }
