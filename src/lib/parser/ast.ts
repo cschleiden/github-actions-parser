@@ -14,48 +14,54 @@ YAML.Document;
 export function findNode(node: YAML.Node, pos: number): YAML.Node | null {
   let result: YAML.Node | null = null;
 
-  YAML.visit(node, () => {});
+  YAML.visit(node, {
+    Node: (key, node, path) => {
+      if (!node.range) {
+        throw new Error("Node has no range");
+      }
+
+      if (inPos([node.range![0], node.range![2]], pos)) {
+        result = node;
+      }
+    },
+  });
 
   return result;
 }
 
-export function getPathFromNode(node: YAML.Node | null): PropertyPath {
-  // Build up node path
-  const nodePath: YAML.Node[] = [];
-  let x = node;
-  while (x) {
-    // Add in reverse
-    nodePath.unshift(x);
-    x = x.parent as YNode;
-  }
+export function getPathFromNode(
+  doc: YAML.Document,
+  node: YAML.Node | null
+): PropertyPath {
+  let ancestry: readonly (YAML.Document | YAML.Node | YAML.Pair)[] = [];
+
+  YAML.visit(doc, {
+    Node: (key, n, path) => {
+      if (n === node) {
+        ancestry = path;
+        return YAML.visit.BREAK;
+      }
+    },
+  });
 
   const path: PropertyPath = ["$"];
-  while (nodePath.length) {
-    const x = nodePath.shift();
+  for (const n of ancestry) {
+    if (YAML.isPair<YAML.ParsedNode, YAML.ParsedNode>(n)) {
+      path.push((n.key as YAML.Scalar).value as string); // TODO: Is key always a string?
+    }
 
-    switch (x?.kind) {
-      case Kind.MAPPING:
-        if (x.key) {
-          path.push(x.key.value);
-        }
-
-        if (x.value) {
-          nodePath.unshift(x.value as YNode);
-        }
-        break;
-
-      case Kind.SEQ:
-        // Check next node to determine index
-        if (nodePath.length && x.items) {
-          const idx = x.items.indexOf(nodePath[0]);
-          if (idx !== -1) {
-            // Previous entry has to be a property. Note: this might be problematic with nested sequences,
-            // but that's not currently supported.
-            const propertyName: string = path[path.length - 1] as string;
-            path[path.length - 1] = [propertyName, idx];
-          }
-        }
-        break;
+    if (YAML.isSeq(n)) {
+      // TODO: Support sequences
+      // /// Check next node to determine index
+      // if (nodePath.length && x.items) {
+      //   const idx = x.items.indexOf(nodePath[0]);
+      //   if (idx !== -1) {
+      //     // Previous entry has to be a property. Note: this might be problematic with nested sequences,
+      //     // but that's not currently supported.
+      //     const propertyName: string = path[path.length - 1] as string;
+      //     path[path.length - 1] = [propertyName, idx];
+      //   }
+      // }
     }
   }
 

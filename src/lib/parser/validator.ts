@@ -1,5 +1,5 @@
 import YAML from "yaml";
-import { Diagnostic, DiagnosticKind, Position, YNode } from "../../types";
+import { Diagnostic, DiagnosticKind, Position } from "../../types";
 import { replaceExpressions } from "../expressions";
 import {
   containsExpression,
@@ -12,23 +12,32 @@ import { getPathFromNode } from "./ast";
 import { ContextProviderFactory } from "./complete";
 import { CustomValue, CustomValueValidation, NodeDesc } from "./schema";
 
-function kindToString(kind: Kind): string {
-  switch (kind) {
-    case Kind.SCALAR:
-      return "value";
-
-    case Kind.MAPPING:
-      return "mapping";
-
-    case Kind.MAP:
-      return "map";
-
-    case Kind.SEQ:
-      return "sequence";
-
-    default:
-      throw new Error("Unexpected node kind");
+function nodeToString(n: YAML.Node): string {
+  if (YAML.isScalar(n)) {
+    return "value";
   }
+
+  if (YAML.isMap(n)) {
+    return "map";
+  }
+
+  if (YAML.isSeq(n)) {
+    return "sequence";
+  }
+
+  if (YAML.isPair(n)) {
+    return "mapping";
+  }
+
+  throw new Error("Unexpected node type");
+}
+
+function nodePos(n: YAML.Node): Position {
+  if (!n.range) {
+    throw new Error("Node has no range");
+  }
+
+  return [n.range![0], n.range![2]];
 }
 
 function validateExpressions(
@@ -42,10 +51,23 @@ function validateExpressions(
   });
 }
 
+function reportTypeMismatch(
+  diagnostics: Diagnostic[],
+  expectedType: string,
+  n: YAML.Node
+) {
+  diagnostics.push({
+    pos: nodePos(n),
+    message: `Expected ${expectedType}, found ${nodeToString(n)}`,
+  });
+}
+
 async function validateNode(
+  doc: YAML.Document,
   node: YAML.Node,
+  parents: (YAML.Node | YAML.Pair<YAML.ParsedNode, YAML.ParsedNode>)[],
   nodeDesc: NodeDesc,
-  nodeToDesc: Map<YAML.Node, NodeDesc>,
+  nodeToDesc: Map<YAML.Node | YAML.Pair, NodeDesc>,
   workflow: Workflow | undefined,
   contextProviderFactory: ContextProviderFactory,
   diagnostics: Diagnostic[]
@@ -54,30 +76,21 @@ async function validateNode(
     return true;
   }
 
-  const n = node as YNode;
-
-  const reportTypeMismatch = (expectedType: string, actualKind: Kind) => {
-    diagnostics.push({
-      pos: [n.startPosition, n.endPosition],
-      message: `Expected ${expectedType}, found ${kindToString(actualKind)}`,
-    });
-  };
-
   switch (nodeDesc.type) {
     case "value": {
-      if (n.kind !== YAML.Kind.SCALAR) {
-        reportTypeMismatch("value", n.kind);
+      if (!YAML.isScalar(node)) {
+        reportTypeMismatch(diagnostics, "value", node);
       }
 
-      const scalarNode = node as YAMLScalar;
+      const scalarNode = node as YAML.Scalar;
 
       // Store for later lookup
       nodeToDesc.set(scalarNode, nodeDesc);
 
-      let input = scalarNode.value;
+      let input = scalarNode.value as string; // TODO: Is value always a string?
 
       if (nodeDesc.isExpression || containsExpression(input)) {
-        const path = getPathFromNode(n);
+        const path = getPathFromNode(doc, node);
 
         const contextProvider = await contextProviderFactory.get(
           workflow,
@@ -88,14 +101,17 @@ async function validateNode(
         // here.
         validateExpressions(
           // Use raw value here to match offsets
-          scalarNode.rawValue,
-          n.startPosition,
+          scalarNode.value as string, // TODO: Scalar string
+          nodePos(scalarNode)[0],
           diagnostics,
           contextProvider
         );
 
         if (nodeDesc.supportsExpression) {
-          input = replaceExpressions(scalarNode.rawValue, contextProvider);
+          input = replaceExpressions(
+            scalarNode.value as string,
+            contextProvider
+          ); // TODO: Scalar string
         }
       }
 
@@ -106,7 +122,7 @@ async function validateNode(
         !nodeDesc.allowedValues.find((x) => x.value === input)
       ) {
         diagnostics.push({
-          pos: [scalarNode.startPosition, scalarNode.endPosition],
+          pos: nodePos(scalarNode),
           message: `'${input}' is not in the list of allowed values`,
         });
       } else if (nodeDesc.customValueProvider) {
@@ -116,19 +132,19 @@ async function validateNode(
           customValues = await nodeDesc.customValueProvider(
             nodeDesc,
             workflow,
-            getPathFromNode(n)
+            getPathFromNode(doc, node)
           );
         } catch (e) {
           diagnostics.push({
             kind: DiagnosticKind.Warning,
-            pos: [scalarNode.startPosition, scalarNode.endPosition],
+            pos: nodePos(scalarNode),
             message: `Could not retrieve values: ${e?.message}`,
           });
         }
 
         if (customValues && !customValues?.find((x) => x.value === input)) {
           diagnostics.push({
-            pos: [scalarNode.startPosition, scalarNode.endPosition],
+            pos: nodePos(scalarNode),
             message: `'${input}' is not in the list of allowed values`,
           });
         }
@@ -138,19 +154,21 @@ async function validateNode(
     }
 
     case "map": {
-      if (n.kind !== Kind.MAP) {
-        if (n.kind === Kind.SCALAR) {
+      if (!YAML.isMap(node)) {
+        if (YAML.isScalar(node)) {
           diagnostics.push({
-            pos: [n.startPosition, n.endPosition],
-            message: `Unknown key '${n.value}'`,
+            pos: nodePos(node),
+            message: `Unknown key '${node.value}'`,
           });
+
           return false;
         }
 
-        reportTypeMismatch("map", n.kind);
+        reportTypeMismatch(diagnostics, "map", node);
+        break;
       }
 
-      const mapNode = node as YamlMap;
+      const mapNode = node as YAML.YAMLMap<YAML.ParsedNode, YAML.ParsedNode>;
       nodeToDesc.set(node, nodeDesc);
 
       let customValues: CustomValue[] | undefined;
@@ -159,21 +177,24 @@ async function validateNode(
           customValues = await nodeDesc.customValueProvider(
             nodeDesc,
             workflow,
-            getPathFromNode(n)
+            getPathFromNode(doc, node)
           );
         } catch (e) {
           diagnostics.push({
             kind: DiagnosticKind.Warning,
-            pos: [mapNode.startPosition, mapNode.endPosition],
+            pos: nodePos(mapNode),
             message: `Could not retrieve values: ${e?.message}`,
           });
         }
       }
 
-      const seenKeys = new Map<string, YAMLMapping>();
+      const seenKeys = new Map<
+        string,
+        YAML.Pair<YAML.ParsedNode, YAML.ParsedNode>
+      >();
 
-      for (const mapping of mapNode.mappings) {
-        const key = mapping.key.value;
+      for (const mapping of mapNode.items) {
+        const key = (mapping.key as YAML.Scalar).value as string; // TODO: Scalar string
         seenKeys.set(key, mapping);
 
         // Check if we know more about this key
@@ -184,7 +205,9 @@ async function validateNode(
           // Add mapping desc for later lookup (e.g., to complete keys)
           nodeToDesc.set(mapping, mappingDesc);
           await validateNode(
-            mapping.value,
+            doc,
+            mapping.value!,
+            [...parents, mapping],
             mappingDesc,
             nodeToDesc,
             workflow,
@@ -193,7 +216,9 @@ async function validateNode(
           );
         } else if (nodeDesc.itemDesc) {
           await validateNode(
-            mapping.value,
+            doc,
+            mapping.value!,
+            [...parents, mapping],
             nodeDesc.itemDesc,
             nodeToDesc,
             workflow,
@@ -207,6 +232,7 @@ async function validateNode(
       if (nodeDesc.required || customValues) {
         const requiredKeys = [
           ...(nodeDesc.required || []),
+          // Only include required custom values
           ...(customValues || [])
             .filter((x) => x.validation === CustomValueValidation.Required)
             .map((x) => x.value),
@@ -215,12 +241,12 @@ async function validateNode(
         for (const missingKey of requiredKeys.filter(
           (key) => !seenKeys.has(key)
         )) {
-          let pos: Position = [mapNode.startPosition, mapNode.endPosition];
-          if (mapNode.parent && mapNode.parent.key) {
-            pos = [
-              mapNode.parent.key.startPosition,
-              mapNode.parent.key.endPosition,
-            ];
+          let pos: Position = nodePos(mapNode);
+          if (parents.length > 0) {
+            const parent = parents[parents.length - 1];
+            if (YAML.isPair(parent)) {
+              pos = nodePos(parent.key);
+            }
           }
 
           diagnostics.push({
@@ -243,7 +269,7 @@ async function validateNode(
         );
         for (const [unknownKey, mappingNode] of unknownKeys) {
           diagnostics.push({
-            pos: [mappingNode.key.startPosition, mappingNode.key.endPosition],
+            pos: nodePos(mappingNode.key),
             message: `Key '${unknownKey}' is not allowed`,
           });
         }
@@ -253,20 +279,24 @@ async function validateNode(
     }
 
     case "sequence": {
-      if (n.kind !== Kind.SEQ) {
-        reportTypeMismatch("sequence", n.kind);
+      if (!YAML.isSeq(node)) {
+        reportTypeMismatch(diagnostics, "sequence", node);
       } else {
         nodeToDesc.set(node, nodeDesc);
 
+        const seqNode = node as YAML.YAMLSeq<YAML.ParsedNode>;
+
         if (nodeDesc.itemDesc) {
-          for (const item of n.items) {
+          for (const item of seqNode.items) {
             // Record the itemdesc as the desired desc for the item. This might fail in the validateNode call,
             // but is required for auto-complete (e.g., type doesn't match yet, but we still want to be able to
             // suggest values)
             nodeToDesc.set(item, nodeDesc.itemDesc);
 
             await validateNode(
+              doc,
               item,
+              [...parents, seqNode],
               nodeDesc.itemDesc,
               nodeToDesc,
               workflow,
@@ -286,9 +316,11 @@ async function validateNode(
       for (const nDesc of nodeDesc.oneOf) {
         switch (nDesc.type) {
           case "value":
-            if (node.kind === Kind.SCALAR) {
+            if (YAML.isScalar(node)) {
               await validateNode(
+                doc,
                 node,
+                parents,
                 nDesc,
                 nodeToDesc,
                 workflow,
@@ -300,9 +332,11 @@ async function validateNode(
             break;
 
           case "map":
-            if (node.kind === Kind.MAP) {
+            if (YAML.isMap(node)) {
               await validateNode(
+                doc,
                 node,
+                parents,
                 nDesc,
                 nodeToDesc,
                 workflow,
@@ -314,9 +348,11 @@ async function validateNode(
             break;
 
           case "sequence":
-            if (node.kind === Kind.SEQ) {
+            if (YAML.isSeq(node)) {
               await validateNode(
+                doc,
                 node,
+                parents,
                 nDesc,
                 nodeToDesc,
                 workflow,
@@ -331,8 +367,8 @@ async function validateNode(
 
       if (!foundMatchingNode) {
         diagnostics.push({
-          pos: [node.startPosition, node.endPosition],
-          message: `Did not expect '${kindToString(n.kind)}'`,
+          pos: nodePos(node),
+          message: `Did not expect '${nodeToString(node)}'`,
         });
       }
     }
@@ -344,21 +380,22 @@ async function validateNode(
 export interface ValidationResult {
   errors: Diagnostic[];
 
-  nodeToDesc: Map<YAMLNode, NodeDesc>;
+  nodeToDesc: Map<YAML.Node, NodeDesc>;
 }
 
 export async function validate(
-  root: YAMLNode,
+  doc: YAML.Document,
   schema: NodeDesc,
   workflow: Workflow | undefined,
   contextProviderFactory: ContextProviderFactory
 ): Promise<ValidationResult> {
   const diagnostics: Diagnostic[] = [];
-  const nodeToDesc = new Map<YAMLNode, NodeDesc>();
-  // nodeToDesc.set(null, schema);
+  const nodeToDesc = new Map<YAML.Node, NodeDesc>();
 
   await validateNode(
-    root,
+    doc,
+    doc.contents!,
+    [doc.contents!],
     schema,
     nodeToDesc,
     workflow,

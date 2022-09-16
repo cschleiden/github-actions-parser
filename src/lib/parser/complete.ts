@@ -1,4 +1,5 @@
-import { CompletionOption, Kind, YNode } from "../../types";
+import YAML from "yaml";
+import { CompletionOption } from "../../types";
 import { completeExpression, inExpression } from "../expressions/completion";
 import { expressionMarker, iterateExpressions } from "../expressions/embedding";
 import { DUMMY_KEY, findNode, getPathFromNode } from "./ast";
@@ -30,7 +31,7 @@ function filterAndSortCompletionOptions(
 
 async function completeMapKeys(
   doc: WorkflowDocument,
-  node: YNode | null,
+  node: YAML.Node | null,
   mapDesc: MapNodeDesc,
   line: string,
   partialInput: string
@@ -46,7 +47,7 @@ async function completeMapKeys(
       const customValues = await mapDesc.customValueProvider(
         mapDesc,
         doc.workflow,
-        getPathFromNode(node)
+        getPathFromNode(doc, node)
       );
       if (customValues) {
         options.push(...customValues);
@@ -70,7 +71,7 @@ async function completeMapKeys(
 }
 
 async function doComplete(
-  node: YNode,
+  node: YAML.Node,
   desc: NodeDesc,
   input: string,
   partialInput: string,

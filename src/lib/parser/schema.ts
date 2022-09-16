@@ -3,6 +3,7 @@ import { Workflow } from "../workflow";
 
 export type NodeDescMap = { [key: string]: NodeDesc };
 
+/** Generic node information */
 type Desc = {
   /** Description for this node, can contain markdown */
   description?: string;
