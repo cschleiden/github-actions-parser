@@ -1,11 +1,9 @@
-import { Diagnostic, DiagnosticKind, Position } from "../../types";
-import { YAMLNode, safeLoad } from "yaml-ast-parser";
-
+import YAML from "yaml";
+import { Diagnostic, DiagnosticKind } from "../../types";
+import { Workflow } from "../workflow";
+import { normalizeWorkflow } from "../workflow/normalize";
 import { ContextProviderFactory } from "./complete";
 import { NodeDesc } from "./schema";
-import { Workflow } from "../workflow";
-import { load as jsYamlLoad } from "js-yaml";
-import { normalizeWorkflow } from "../workflow/normalize";
 import { validate } from "./validator";
 
 export interface WorkflowDocument {
@@ -16,10 +14,10 @@ export interface WorkflowDocument {
   diagnostics: Diagnostic[];
 
   /** Workflow AST */
-  workflowST: YAMLNode;
+  workflowST: YAML.Document;
 
   /** Mapping of AST nodes to mapped schema descriptions */
-  nodeToDesc: Map<YAMLNode, NodeDesc>;
+  nodeToDesc: Map<YAML.Node, NodeDesc>;
 }
 
 export async function parse(
@@ -30,11 +28,11 @@ export async function parse(
 ): Promise<WorkflowDocument> {
   const diagnostics: Diagnostic[] = [];
 
-  // First, parse workflow using js-yaml
+  // First, parse workflow
   let workflow: Workflow | undefined;
 
   try {
-    workflow = jsYamlLoad(input);
+    workflow = YAML.parse(input);
   } catch {
     // Ignore error here, will be reported below
   }
@@ -53,14 +51,17 @@ export async function parse(
   //
   // Long term it's obviously wasteful to parse the input twice and the workflow JSON should be derived
   // from the AST, but for now this is the easiest option.
-  const yamlRoot = safeLoad(input);
-  if (yamlRoot) {
-    if (yamlRoot.errors.length > 0) {
+  const yamlDoc = YAML.parseDocument(input);
+  if (yamlDoc) {
+    if (yamlDoc.errors.length > 0) {
       diagnostics.push(
-        ...yamlRoot.errors.map((e) => ({
-          kind: e.isWarning ? DiagnosticKind.Warning : DiagnosticKind.Error,
-          message: e.reason,
-          pos: [e.mark.position, e.mark.position + 1] as Position,
+        ...yamlDoc.errors.map((e) => ({
+          kind:
+            e.name === "YAMLWarning"
+              ? DiagnosticKind.Warning
+              : DiagnosticKind.Error,
+          message: e.message,
+          pos: e.pos,
         }))
       );
     }
@@ -73,7 +74,7 @@ export async function parse(
   }
 
   const validationResult = await validate(
-    yamlRoot,
+    yamlDoc,
     schema,
     workflow,
     contextProviderFactory
@@ -82,7 +83,7 @@ export async function parse(
 
   return {
     workflow,
-    workflowST: yamlRoot,
+    workflowST: yamlDoc,
     nodeToDesc: validationResult.nodeToDesc,
     diagnostics,
   };

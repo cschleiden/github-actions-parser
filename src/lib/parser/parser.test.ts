@@ -1,9 +1,9 @@
 import { Diagnostic, DiagnosticKind } from "../../types";
 
-import { NodeDesc } from "./schema";
-import { NullCompletion } from "./test/fixtures";
 import { complete } from "./complete";
 import { parse } from "./parser";
+import { NodeDesc } from "./schema";
+import { NullCompletion } from "./test/fixtures";
 
 /** | in string denotes cursor position */
 const _testComplete = async (input: string, schema: NodeDesc) => {

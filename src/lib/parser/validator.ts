@@ -1,12 +1,6 @@
-import {
-  Kind,
-  YamlMap,
-  YAMLMapping,
-  YAMLNode,
-  YAMLScalar,
-} from "yaml-ast-parser";
+import YAML from "yaml";
 import { Diagnostic, DiagnosticKind, Position, YNode } from "../../types";
-import { evaluateExpression, replaceExpressions } from "../expressions";
+import { replaceExpressions } from "../expressions";
 import {
   containsExpression,
   iterateExpressions,
@@ -49,9 +43,9 @@ function validateExpressions(
 }
 
 async function validateNode(
-  node: YAMLNode,
+  node: YAML.Node,
   nodeDesc: NodeDesc,
-  nodeToDesc: Map<YAMLNode, NodeDesc>,
+  nodeToDesc: Map<YAML.Node, NodeDesc>,
   workflow: Workflow | undefined,
   contextProviderFactory: ContextProviderFactory,
   diagnostics: Diagnostic[]
@@ -71,7 +65,7 @@ async function validateNode(
 
   switch (nodeDesc.type) {
     case "value": {
-      if (n.kind !== Kind.SCALAR) {
+      if (n.kind !== YAML.Kind.SCALAR) {
         reportTypeMismatch("value", n.kind);
       }
 
