@@ -5,7 +5,6 @@ import { DUMMY_KEY, findNode, getPathFromNode } from "./ast";
 import { parse, WorkflowDocument } from "./parser";
 import { CustomValue, MapNodeDesc, NodeDesc } from "./schema";
 
-import { YAMLNode } from "yaml-ast-parser";
 import { ContextProvider } from "../expressions/types";
 import { PropertyPath } from "../utils/path";
 import { Workflow } from "../workflow";
