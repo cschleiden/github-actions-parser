@@ -48,6 +48,7 @@ export const Contexts = [
   "strategy",
   "matrix",
   "needs",
+  "inputs",
 ].map((c) =>
   chevrotain.createToken({
     name: `Context${c}`,
