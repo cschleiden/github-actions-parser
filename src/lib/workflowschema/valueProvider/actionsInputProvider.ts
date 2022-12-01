@@ -11,17 +11,19 @@ import { Context } from "../../../types";
 import { TTLCache } from "../../utils/cache";
 import { load } from "js-yaml";
 
-async function getActionYamlContent(
+export async function getActionYamlContent(
   context: Context,
   uses: RemoteUses
 ): Promise<string | undefined> {
   if (context?.client?.repos) {
+    const subdirectory = uses.subdirectory ? `${uses.subdirectory}/` : ''
+
     // TODO: CS: Think about how to surface API errors to consumers of the library. E.g., the token might
     // be invalid, or it might not meet SSO requirements
     let contentResp = await context.client.repos.getContent({
       owner: uses.owner,
       repo: uses.repository,
-      path: "action.yml",
+      path: subdirectory + "action.yml",
       ref: uses.ref,
     });
 
@@ -32,7 +34,7 @@ async function getActionYamlContent(
       contentResp = await context.client.repos.getContent({
         owner: uses.owner,
         repo: uses.repository,
-        path: "action.yaml",
+        path: subdirectory + "action.yaml",
         ref: uses.ref,
       });
     }
@@ -82,7 +84,7 @@ export const actionsInputProvider = (
   const uses = step.uses;
 
   return cache.get<CustomValue[] | undefined>(
-    `${uses.owner}/${uses.repository}@${uses.ref}`,
+    `${uses.owner}/${uses.repository}/${uses.subdirectory || ''}@${uses.ref}`,
     // Cache actions parameters for a long time
     1_000 * 60 * 60,
     async (): Promise<CustomValue[] | undefined> => {
