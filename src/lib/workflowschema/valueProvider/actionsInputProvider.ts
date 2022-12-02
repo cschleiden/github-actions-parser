@@ -11,7 +11,7 @@ import { Context } from "../../../types";
 import { TTLCache } from "../../utils/cache";
 import { load } from "js-yaml";
 
-export async function getActionYamlContent(
+async function getActionYamlContent(
   context: Context,
   uses: RemoteUses
 ): Promise<string | undefined> {
@@ -83,7 +83,7 @@ export const actionsInputProvider = (
 
   const uses = step.uses;
 
-  return cache.get<CustomValue[] | undefined>(
+  return await cache.get<CustomValue[] | undefined>(
     `${uses.owner}/${uses.repository}/${uses.subdirectory || ''}@${uses.ref}`,
     // Cache actions parameters for a long time
     1_000 * 60 * 60,
