@@ -18,23 +18,28 @@ async function getActionYamlContent(
   if (context?.client?.repos) {
     // TODO: CS: Think about how to surface API errors to consumers of the library. E.g., the token might
     // be invalid, or it might not meet SSO requirements
-    let contentResp = await context.client.repos.getContent({
-      owner: uses.owner,
-      repo: uses.repository,
-      path: "action.yml",
-      ref: uses.ref,
-    });
-
-    if ((contentResp.status as any) === 404) {
-      // There isn't an API to easily get two different files, when we cannot find `action.yml`, look
-      // for `action.yaml`, too.
-      // It might be okay to make two calls in parallel but for now this seems to work.
+    let contentResp: any;
+    try {
       contentResp = await context.client.repos.getContent({
         owner: uses.owner,
         repo: uses.repository,
-        path: "action.yaml",
+        path: "action.yml",
         ref: uses.ref,
       });
+    } catch (error) {
+      if ((error as any).status === 404) {
+        // There isn't an API to easily get two different files, when we cannot find `action.yml`, look
+        // for `action.yaml`, too.
+        // It might be okay to make two calls in parallel but for now this seems to work.
+        contentResp = await context.client.repos.getContent({
+          owner: uses.owner,
+          repo: uses.repository,
+          path: "action.yaml",
+          ref: uses.ref,
+        });
+      } else {
+        throw error;
+      }
     }
 
     if ((contentResp as any)?.data?.content) {
